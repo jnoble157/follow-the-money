@@ -28,8 +28,9 @@ export function Profile({ profile, officialDetail }: Props) {
     return <NoDataProfile profile={profile} />;
   }
 
-  // Build the slug map for the mini network so click-through works once
-  // EvidenceGraph supports it. (Currently the graph just renders.)
+  // Slug map drives the EvidenceGraph's click-through: nodes whose id
+  // appears here become linkable, and double-click (or the action card's
+  // "Open profile" button) routes to /profile/<slug>.
   const slugMap = Object.fromEntries(
     profile.network.nodes
       .filter((n) => n.profileSlug)

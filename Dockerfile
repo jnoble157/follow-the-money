@@ -21,13 +21,19 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
 
-# Copy node_modules + workspace package metadata.
+# Workspace deps are hoisted to the root node_modules/. The per-workspace
+# node_modules dirs may or may not exist depending on npm's hoisting; we
+# don't need them — `@txmoney/agent` and `@txmoney/mcp` resolve through
+# root node_modules/@txmoney/ symlinks pointing back at agent/ and mcp/.
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/agent/node_modules ./agent/node_modules
-COPY --from=deps /app/mcp/node_modules ./mcp/node_modules
 COPY package.json package-lock.json ./
-COPY agent ./agent
-COPY mcp ./mcp
+COPY agent/package.json ./agent/
+COPY mcp/package.json ./mcp/
+COPY web/package.json ./web/
+COPY agent/src ./agent/src
+COPY agent/tsconfig.json ./agent/
+COPY mcp/src ./mcp/src
+COPY mcp/tsconfig.json ./mcp/
 
 # Bake parquet into the image. Local data/parquet/ MUST exist on the host
 # at build time (.dockerignore allows it through). The build context is

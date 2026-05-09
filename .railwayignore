@@ -20,8 +20,21 @@ data/duckdb
 data/cache
 data/figures
 
-# Web app isn't run from this image.
-web
+# Local-only full parquet kept as a backup; we ship trimmed versions.
+data/parquet/tec_trim
+**/*.full.parquet
+
+# Web app isn't run from this image, but the workspace install needs
+# web/package.json. Exclude the heavy bits and keep only the manifest.
+web/.next
+web/node_modules
+web/app
+web/components
+web/lib
+web/public
+web/scripts
+web/styles
+web/test
 
 # Eval + recording artifacts.
 agent/recordings

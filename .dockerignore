@@ -19,8 +19,21 @@ data/duckdb
 data/cache
 data/figures
 
-# Web app isn't run from this image.
-web
+# Local-only backup parquet (full pre-trim).
+data/parquet/tec_trim
+**/*.full.parquet
+
+# Web app isn't run from this image, but the workspace install needs
+# web/package.json present.
+web/.next
+web/node_modules
+web/app
+web/components
+web/lib
+web/public
+web/scripts
+web/styles
+web/test
 
 # Eval + recording artifacts that aren't needed at runtime.
 agent/recordings

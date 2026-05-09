@@ -1,0 +1,39 @@
+# Railway uses this file in preference to .gitignore for the upload.
+# Same exclusions as .dockerignore, but explicitly NOT excluding
+# data/parquet/ (which the repo .gitignore strips), since the Dockerfile
+# bakes it into the image.
+
+.git
+.venv
+venv
+__pycache__
+*.pyc
+
+node_modules
+**/node_modules
+.next
+.turbo
+
+# Big raw data we don't want in the upload.
+data/raw
+data/duckdb
+data/cache
+data/figures
+
+# Web app isn't run from this image.
+web
+
+# Eval + recording artifacts.
+agent/recordings
+agent/eval/cassettes
+
+# Local-only.
+docs
+*.pdf
+*.log
+*.duckdb
+*.duckdb.wal
+.DS_Store
+.vscode
+.idea
+.vercel

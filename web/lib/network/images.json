@@ -157,8 +157,8 @@
   },
   "client:LINCOLN PROPERTY COMPANY": {
     "url": null,
-    "fetchedAt": "2026-05-09T18:27:45.808Z",
-    "v": 8
+    "fetchedAt": "2026-05-09T20:16:49.080Z",
+    "v": 9
   },
   "client:Legacy of Education, Inc.": {
     "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ3lNGz-5AIpWCw_ll-q251YIkFZ84iOkoOIw&s",
@@ -304,9 +304,10 @@
     "v": 9
   },
   "client:Wilkinson": {
-    "url": null,
-    "fetchedAt": "2026-05-09T18:24:57.330Z",
-    "v": 8
+    "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Elam-Camp%20house%2C%20Gordon%2C%20GA%2C%20US%20(05).jpg?width=160",
+    "title": "Wilkinson County [wikidata]",
+    "fetchedAt": "2026-05-09T20:16:49.733Z",
+    "v": 9
   },
   "donor:AECOM": {
     "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/AECOMOffice.jpg/250px-AECOMOffice.jpg",

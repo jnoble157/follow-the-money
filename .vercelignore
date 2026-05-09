@@ -1,0 +1,31 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+node_modules
+.next
+.turbo
+
+# Big raw + derived data — not needed on Vercel.
+data/raw
+data/parquet
+data/duckdb
+data/cache
+data/figures
+
+# Local-only docs and pdfs.
+*.pdf
+docs/pitch.pdf
+docs/tec-schema
+
+# Recordings and large eval artifacts that don't need to ship.
+agent/recordings
+agent/eval/cassettes
+
+# Local DBs and dumps.
+*.duckdb
+*.duckdb.wal
+.DS_Store
+.vscode
+.idea

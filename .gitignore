@@ -32,3 +32,4 @@ web/lib/profiles/*_manifest.json
 scratch.md
 *.pdf
 !docs/**/*.pdf
+.vercel

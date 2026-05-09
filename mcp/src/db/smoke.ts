@@ -12,6 +12,7 @@ const VIEWS = [
   "austin_lobby_clients",
   "tec_filers",
   "tec_contributions",
+  "tec_cover_sheet1",
   "tec_expenditures",
   "tec_lobby_registrations",
   "tec_lobby_subject_matter",

@@ -27,6 +27,7 @@ const VIEWS: Record<string, string> = {
   austin_lobby_reports: "austin/lobby/reports.parquet",
   tec_filers: "tec/cf/filers.parquet",
   tec_contributions: "tec/cf/contributions.parquet",
+  tec_cover_sheet1: "tec/cf/cover_sheet1.parquet",
   tec_expenditures: "tec/cf/expenditures.parquet",
   tec_lobby_registrations: "tec/lobby/registrations/*.parquet",
   tec_lobby_subject_matter: "tec/lobby/subject_matter/*.parquet",

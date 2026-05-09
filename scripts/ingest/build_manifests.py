@@ -537,6 +537,31 @@ def create_views(con: duckdb.DuckDBPyConnection, sample: int) -> None:
           END;
         """
     )
+    con.execute(
+        r"""
+        CREATE OR REPLACE MACRO tec_report_kind(form_type, schedule_type) AS
+          CASE
+            WHEN UPPER(COALESCE(form_type, '')) LIKE '%DAILY%' THEN 'daily'
+            WHEN UPPER(COALESCE(form_type, '')) LIKE '%SS'
+              OR UPPER(COALESCE(schedule_type, '')) LIKE '%SS'
+              OR UPPER(COALESCE(schedule_type, '')) = 'T-CTR'
+              THEN 'special'
+            ELSE 'regular'
+          END;
+        """
+    )
+    con.execute(
+        r"""
+        CREATE OR REPLACE MACRO tec_contribution_kind(schedule_type) AS
+          CASE
+            WHEN UPPER(COALESCE(schedule_type, '')) IN ('A2', 'A2SS', 'C2', 'C4', 'AS2')
+              THEN 'in_kind'
+            WHEN UPPER(COALESCE(schedule_type, '')) IN ('A', 'A1', 'AJ1', 'AL', 'AS1', 'C1', 'C3')
+              THEN 'monetary'
+            ELSE 'other'
+          END;
+        """
+    )
 
 
 def parquet_select(path: Path, sample: int) -> str:
@@ -572,6 +597,8 @@ def build_officials(
             rows.append((i, entry["slug"], "austin", recipient))
         for filer in entry.get("tecFilerNames", []):
             rows.append((i, entry["slug"], "tec", filer))
+        for alias in entry.get("transferAliases", []):
+            rows.append((i, entry["slug"], "alias", alias))
     if rows:
         con.executemany("INSERT INTO official_target VALUES (?, ?, ?, ?)", rows)
 
@@ -579,20 +606,84 @@ def build_officials(
 
     out_rows = con.execute(
         """
-        WITH summary AS (
+        WITH itemized_summary AS (
           SELECT
             clusterKey,
             MIN(manualSlug) FILTER (WHERE manualSlug IS NOT NULL) AS manualSlug,
             MAX(CASE WHEN dataset = 'tec' THEN 1 ELSE 0 END)::INTEGER AS hasTec,
             MAX(CASE WHEN dataset = 'austin' THEN 1 ELSE 0 END)::INTEGER AS hasAustin,
             COUNT(*)::INTEGER AS contributionCount,
-            SUM(amount) AS totalRaised,
+            SUM(amount) AS itemizedTotal,
             MIN(year) FILTER (WHERE year IS NOT NULL) AS minYear,
             MAX(year) FILTER (WHERE year IS NOT NULL) AS maxYear
           FROM official_contrib_base
           WHERE amount IS NOT NULL
           GROUP BY clusterKey
           HAVING SUM(amount) > 0
+        ),
+        total_summary AS (
+          SELECT
+            clusterKey,
+            MIN(manualSlug) FILTER (WHERE manualSlug IS NOT NULL) AS manualSlug,
+            MAX(CASE WHEN dataset IN ('tec', 'tec_cover') THEN 1 ELSE 0 END)::INTEGER AS hasTec,
+            MAX(CASE WHEN dataset = 'austin' THEN 1 ELSE 0 END)::INTEGER AS hasAustin,
+            COUNT(*)::INTEGER AS sourceCount,
+            SUM(amount) AS grossTotal,
+            MIN(year) FILTER (WHERE year IS NOT NULL) AS minYear,
+            MAX(year) FILTER (WHERE year IS NOT NULL) AS maxYear
+          FROM official_total_base
+          WHERE amount IS NOT NULL
+          GROUP BY clusterKey
+          HAVING SUM(amount) > 0
+        ),
+        internal_summary AS (
+          SELECT
+            clusterKey,
+            COUNT(*)::INTEGER AS internalCount,
+            SUM(amount) AS internalTotal
+          FROM official_internal_transfer_base
+          WHERE dataset = 'tec'
+            AND amount IS NOT NULL
+          GROUP BY clusterKey
+        ),
+        summary_keys AS (
+          SELECT clusterKey FROM itemized_summary
+          UNION
+          SELECT clusterKey FROM total_summary
+        ),
+        summary AS (
+          SELECT
+            k.clusterKey,
+            COALESCE(i.manualSlug, t.manualSlug) AS manualSlug,
+            GREATEST(COALESCE(i.hasTec, 0), COALESCE(t.hasTec, 0))::INTEGER AS hasTec,
+            GREATEST(COALESCE(i.hasAustin, 0), COALESCE(t.hasAustin, 0))::INTEGER AS hasAustin,
+            COALESCE(i.contributionCount, 0)::INTEGER AS contributionCount,
+            COALESCE(i.itemizedTotal, 0) AS itemizedTotal,
+            COALESCE(t.sourceCount, i.contributionCount, 0)::INTEGER AS sourceCount,
+            GREATEST(
+              COALESCE(t.grossTotal, i.itemizedTotal, 0) - COALESCE(x.internalTotal, 0),
+              0
+            ) AS totalRaised,
+            COALESCE(x.internalCount, 0)::INTEGER AS internalCount,
+            COALESCE(x.internalTotal, 0) AS internalTotal,
+            CASE
+              WHEN i.minYear IS NULL THEN t.minYear
+              WHEN t.minYear IS NULL THEN i.minYear
+              ELSE LEAST(i.minYear, t.minYear)
+            END AS minYear,
+            CASE
+              WHEN i.maxYear IS NULL THEN t.maxYear
+              WHEN t.maxYear IS NULL THEN i.maxYear
+              ELSE GREATEST(i.maxYear, t.maxYear)
+            END AS maxYear
+          FROM summary_keys k
+          LEFT JOIN itemized_summary i ON i.clusterKey = k.clusterKey
+          LEFT JOIN total_summary t ON t.clusterKey = k.clusterKey
+          LEFT JOIN internal_summary x ON x.clusterKey = k.clusterKey
+          WHERE GREATEST(
+            COALESCE(t.grossTotal, i.itemizedTotal, 0) - COALESCE(x.internalTotal, 0),
+            0
+          ) > 0
         ),
         display_counts AS (
           SELECT clusterKey, rawRecipient, COUNT(*) AS n
@@ -667,7 +758,7 @@ def build_officials(
               PARTITION BY b.clusterKey
               ORDER BY b.amount DESC, b.sourceRowId
             ) AS rn
-          FROM official_contrib_base b
+          FROM official_total_base b
         ),
         joined AS (
           SELECT
@@ -676,7 +767,11 @@ def build_officials(
             s.hasTec,
             s.hasAustin,
             s.contributionCount,
+            s.itemizedTotal,
+            s.sourceCount,
             s.totalRaised,
+            s.internalCount,
+            s.internalTotal,
             s.minYear,
             s.maxYear,
             d.rawRecipient,
@@ -706,6 +801,10 @@ def build_officials(
           hasAustin,
           contributionCount,
           totalRaised,
+          itemizedTotal,
+          sourceCount,
+          internalCount,
+          internalTotal,
           minYear,
           maxYear,
           rawRecipient,
@@ -744,6 +843,10 @@ def build_officials(
             has_austin,
             count,
             total,
+            itemized_total,
+            source_count,
+            internal_count,
+            internal_total,
             min_year,
             max_year,
             raw_name,
@@ -766,7 +869,7 @@ def build_officials(
         else:
             slug = unique_slug(public_official_slug(display_name, cluster_key), used_slugs)
         total_money = money_number(total)
-        avg = money_number(Decimal(total) / Decimal(count)) if count else 0.0
+        avg = money_number(Decimal(itemized_total) / Decimal(count)) if count else 0.0
         years_active = int(max_year - min_year + 1) if min_year is not None else 0
         role = official_role(
             role_source,
@@ -775,12 +878,15 @@ def build_officials(
             seek_office,
             seek_district,
         )
-        source = contribution_citation(
+        source = official_total_citation(
             dataset=dataset,
             row_id=source_row_id,
-            donor=source_donor or "Unknown contributor",
             recipient=source_recipient or display_name,
             amount=source_amount,
+            total=total,
+            source_count=source_count,
+            internal_count=internal_count,
+            internal_total=internal_total,
             date_text=source_date,
         )
         official = {
@@ -820,7 +926,7 @@ def create_official_contrib_base(con: duckdb.DuckDBPyConnection) -> None:
     )
     con.execute(
         r"""
-        CREATE TEMP TABLE official_contrib_base AS
+        CREATE TEMP TABLE official_contrib_all AS
         SELECT
           dataset,
           sourceRowId,
@@ -831,7 +937,9 @@ def create_official_contrib_base(con: duckdb.DuckDBPyConnection) -> None:
           rawDonor,
           amount,
           year,
-          dateText
+          dateText,
+          contributionKind,
+          isInternalTransfer
         FROM (
           SELECT
             'austin' AS dataset,
@@ -843,9 +951,14 @@ def create_official_contrib_base(con: duckdb.DuckDBPyConnection) -> None:
             clean_value(a.Donor) AS rawDonor,
             TRY_CAST(a.Contribution_Amount AS DECIMAL(18,2)) AS amount,
             TRY_CAST(a.Contribution_Year AS INTEGER) AS year,
-            clean_value(a.Contribution_Date) AS dateText
+            clean_value(a.Contribution_Date) AS dateText,
+            'monetary' AS contributionKind,
+            CASE WHEN dt.slug IS NOT NULL THEN 1 ELSE 0 END AS isInternalTransfer
           FROM austin a
           LEFT JOIN official_target t ON t.source = 'austin' AND t.name = a.Recipient
+          LEFT JOIN official_target dt
+            ON dt.slug = t.slug
+           AND clean_name(dt.name) = clean_name(a.Donor)
           LEFT JOIN austin_public_recipients p ON p.recipientName = clean_name(a.Recipient)
           WHERE p.recipientName IS NOT NULL OR t.slug IS NOT NULL
 
@@ -871,11 +984,24 @@ def create_official_contrib_base(con: duckdb.DuckDBPyConnection) -> None:
               WHEN REGEXP_MATCHES(COALESCE(c.contributionDt, ''), '^[0-9]{8}$')
                 THEN SUBSTR(c.contributionDt, 1, 4) || '-' || SUBSTR(c.contributionDt, 5, 2) || '-' || SUBSTR(c.contributionDt, 7, 2)
               ELSE clean_value(c.contributionDt)
-            END AS dateText
+            END AS dateText,
+            tec_contribution_kind(c.schedFormTypeCd) AS contributionKind,
+            CASE WHEN dt.slug IS NOT NULL THEN 1 ELSE 0 END AS isInternalTransfer
           FROM tec c
           LEFT JOIN official_target t ON t.source = 'tec' AND t.name = c.filerName
+          LEFT JOIN official_target dt
+            ON dt.slug = t.slug
+           AND clean_name(dt.name) = clean_name(
+              CASE
+                WHEN c.contributorPersentTypeCd = 'INDIVIDUAL'
+                  THEN tec_person_name(c.contributorNameLast, c.contributorNameFirst)
+                ELSE COALESCE(c.contributorNameOrganization, c.contributorNameShort)
+              END
+            )
           WHERE clean_value(c.filerIdent) IS NOT NULL
             AND COALESCE(c.infoOnlyFlag, '') <> 'Y'
+            AND tec_report_kind(c.formTypeCd, c.schedFormTypeCd) = 'regular'
+            AND tec_contribution_kind(c.schedFormTypeCd) <> 'other'
             AND (
               c.filerTypeCd IN ('COH', 'JCOH', 'SCC')
               OR t.slug IS NOT NULL
@@ -886,6 +1012,91 @@ def create_official_contrib_base(con: duckdb.DuckDBPyConnection) -> None:
           AND clusterKey IS NOT NULL
           AND rawRecipient IS NOT NULL
           AND amount IS NOT NULL
+        """
+    )
+    con.execute(
+        """
+        CREATE TEMP TABLE official_contrib_base AS
+        SELECT
+          dataset,
+          sourceRowId,
+          recipientKey,
+          clusterKey,
+          manualSlug,
+          rawRecipient,
+          rawDonor,
+          amount,
+          year,
+          dateText,
+          contributionKind
+        FROM official_contrib_all
+        WHERE isInternalTransfer = 0
+        """
+    )
+    con.execute(
+        """
+        CREATE TEMP TABLE official_internal_transfer_base AS
+        SELECT
+          dataset,
+          sourceRowId,
+          recipientKey,
+          clusterKey,
+          manualSlug,
+          rawRecipient,
+          rawDonor,
+          amount,
+          year,
+          dateText,
+          contributionKind
+        FROM official_contrib_all
+        WHERE isInternalTransfer = 1
+        """
+    )
+    con.execute(
+        r"""
+        CREATE TEMP TABLE official_total_base AS
+        SELECT
+          dataset,
+          sourceRowId,
+          recipientKey,
+          clusterKey,
+          manualSlug,
+          rawRecipient,
+          rawDonor,
+          amount,
+          year,
+          dateText
+        FROM official_contrib_base
+        WHERE dataset = 'austin'
+
+        UNION ALL
+
+        SELECT
+          'tec_cover' AS dataset,
+          clean_value(c.reportInfoIdent) AS sourceRowId,
+          'tec|' || clean_value(c.filerIdent) AS recipientKey,
+          COALESCE(t.slug, 'tec|' || clean_value(c.filerIdent)) AS clusterKey,
+          t.slug AS manualSlug,
+          clean_value(c.filerName) AS rawRecipient,
+          NULL::VARCHAR AS rawDonor,
+          TRY_CAST(c.totalContribAmount AS DECIMAL(18,2)) AS amount,
+          TRY_CAST(SUBSTR(c.periodEndDt, 1, 4) AS INTEGER) AS year,
+          CASE
+            WHEN REGEXP_MATCHES(COALESCE(c.periodEndDt, ''), '^[0-9]{8}$')
+              THEN SUBSTR(c.periodEndDt, 1, 4) || '-' || SUBSTR(c.periodEndDt, 5, 2) || '-' || SUBSTR(c.periodEndDt, 7, 2)
+            ELSE clean_value(c.periodEndDt)
+          END AS dateText
+        FROM tec_cover c
+        LEFT JOIN official_target t ON t.source = 'tec' AND t.name = c.filerName
+        WHERE clean_value(c.filerIdent) IS NOT NULL
+          AND COALESCE(c.infoOnlyFlag, '') <> 'Y'
+          AND tec_report_kind(c.formTypeCd, NULL) = 'regular'
+          AND TRY_CAST(c.totalContribAmount AS DECIMAL(18,2)) IS NOT NULL
+          AND (
+            c.filerTypeCd IN ('COH', 'JCOH', 'SCC')
+            OR c.formTypeCd IN ('COH', 'JCOH', 'SCCOH', 'CORCOH', 'CORJCOH')
+            OR t.slug IS NOT NULL
+          )
         """
     )
 
@@ -1205,7 +1416,8 @@ def create_donor_base(con: duckdb.DuckDBPyConnection) -> None:
           recipientFilerType,
           amount,
           year,
-          dateText
+          dateText,
+          contributionKind
         FROM (
           SELECT
             'austin' AS dataset,
@@ -1226,7 +1438,8 @@ def create_donor_base(con: duckdb.DuckDBPyConnection) -> None:
             'AUSTIN' AS recipientFilerType,
             TRY_CAST(Contribution_Amount AS DECIMAL(18,2)) AS amount,
             TRY_CAST(Contribution_Year AS INTEGER) AS year,
-            clean_value(Contribution_Date) AS dateText
+            clean_value(Contribution_Date) AS dateText,
+            'monetary' AS contributionKind
           FROM austin
 
           UNION ALL
@@ -1266,10 +1479,13 @@ def create_donor_base(con: duckdb.DuckDBPyConnection) -> None:
               WHEN REGEXP_MATCHES(COALESCE(contributionDt, ''), '^[0-9]{8}$')
                 THEN SUBSTR(contributionDt, 1, 4) || '-' || SUBSTR(contributionDt, 5, 2) || '-' || SUBSTR(contributionDt, 7, 2)
               ELSE clean_value(contributionDt)
-            END AS dateText
+            END AS dateText,
+            tec_contribution_kind(schedFormTypeCd) AS contributionKind
           FROM tec
           WHERE contributorPersentTypeCd IN ('INDIVIDUAL', 'ENTITY')
             AND COALESCE(infoOnlyFlag, '') <> 'Y'
+            AND tec_report_kind(formTypeCd, schedFormTypeCd) = 'regular'
+            AND tec_contribution_kind(schedFormTypeCd) <> 'other'
         )
         WHERE sourceRowId IS NOT NULL
           AND normalizedName IS NOT NULL
@@ -1537,9 +1753,13 @@ def official_donor_rows(con: duckdb.DuckDBPyConnection) -> list[tuple]:
             b.dateText
           FROM donor_base b
           JOIN official_link_map l ON l.recipientKey = b.recipientKey
+          LEFT JOIN official_target dt
+            ON dt.slug = l.clusterKey
+           AND clean_name(dt.name) = clean_name(b.rawName)
           WHERE b.donorType = 'organization'
             AND b.rawName IS NOT NULL
             AND b.amount IS NOT NULL
+            AND dt.slug IS NULL
         ),
         totals AS (
           SELECT
@@ -1952,6 +2172,63 @@ def contribution_citation(
             f"{recipient} from {donor}: {amount_text}{date}."
         ),
     }
+
+
+def official_total_citation(
+    *,
+    dataset: str,
+    row_id: str,
+    recipient: str,
+    amount: Decimal,
+    total: Decimal,
+    source_count: int,
+    internal_count: int,
+    internal_total: Decimal,
+    date_text: str | None,
+) -> dict:
+    if dataset == "austin":
+        date = f", {date_text}" if date_text else ""
+        return {
+            "reportInfoIdent": f"ATX-CONTRIB-ROLLUP-{row_id}-{source_count}",
+            "url": f"{AUSTIN_CONTRIBS_DATASET}?row={quote(str(row_id))}",
+            "rowSummary": (
+                f"Reported contribution rollup for {recipient}: "
+                f"{money_text(total)} from {source_count:,} source rows. "
+                f"Largest source row {row_id} reports {money_text(amount)}{date}."
+            ),
+        }
+
+    if dataset == "tec_cover":
+        doc_id = str(row_id).lstrip("0") or "0"
+        total_text = money_text(total)
+        amount_text = money_text(amount)
+        date = f", period ending {date_text}" if date_text else ""
+        transfer_note = ""
+        if internal_count:
+            transfer_note = (
+                f" The rollup subtracts {money_text(internal_total)} from "
+                f"{internal_count:,} itemized transfer rows inside the same "
+                "profile cluster."
+            )
+        return {
+            "reportInfoIdent": f"TEC-COVER-ROLLUP-{row_id}-{source_count}",
+            "url": tec_report_url(doc_id),
+            "rowSummary": (
+                f"Reported contribution rollup for {recipient}: {total_text} "
+                f"from {source_count:,} source rows. Largest TEC Cover Sheet "
+                f"1 report {row_id} reports "
+                f"{amount_text}{date}.{transfer_note}"
+            ),
+        }
+
+    return contribution_citation(
+        dataset=dataset,
+        row_id=row_id,
+        donor="itemized contributors",
+        recipient=recipient,
+        amount=amount,
+        date_text=date_text,
+    )
 
 
 def tec_report_url(report_info_ident: str) -> str:

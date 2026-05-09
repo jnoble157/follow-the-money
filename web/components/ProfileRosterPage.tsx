@@ -38,9 +38,9 @@ const JURISDICTION_LABEL: Record<Jurisdiction, string> = {
 
 const OFFICIAL_HEADERS: { key: SortKey; label: string; align: "left" | "right" }[] = [
   { key: "name", label: "Name", align: "left" },
-  { key: "count", label: "Donations", align: "right" },
-  { key: "total", label: "Total", align: "right" },
-  { key: "avg", label: "Avg", align: "right" },
+  { key: "count", label: "Itemized", align: "right" },
+  { key: "total", label: "Reported", align: "right" },
+  { key: "avg", label: "Avg item", align: "right" },
   { key: "yearsActive", label: "Years", align: "right" },
 ];
 

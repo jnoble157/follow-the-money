@@ -44,19 +44,19 @@ export function OfficialProfile({ official }: Props) {
         className="grid grid-cols-2 gap-3 md:grid-cols-4"
       >
         <StatCard
-          label="Total raised"
+          label="Reported contributions"
           value={formatMoney(official.totalRaised, { cents: true })}
           citationIndex={1}
           official={official}
         />
         <StatCard
-          label="Contributions"
+          label="Itemized rows"
           value={official.donationCount.toLocaleString()}
           citationIndex={2}
           official={official}
         />
         <StatCard
-          label="Average"
+          label="Itemized avg"
           value={formatMoney(official.avgDonation, { cents: true })}
           citationIndex={3}
           official={official}

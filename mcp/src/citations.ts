@@ -117,6 +117,38 @@ export function tecContributionCitation(args: {
   };
 }
 
+export function tecFilerTotalCitation(args: {
+  reportInfoIdent: string;
+  filerIdent: string;
+  filerName: string;
+  total: number;
+  sourceCount: number;
+  sourceKind: "cover" | "itemized";
+  amount: number;
+  date?: string | null;
+}): Citation {
+  const docId = String(args.reportInfoIdent).replace(/^0+/, "") || "0";
+  const rollup =
+    args.sourceKind === "cover" ? "TEC-COVER-ROLLUP" : "TEC-CONTRIB-ROLLUP";
+  const rows =
+    args.sourceKind === "cover"
+      ? "non-superseded Cover Sheet 1 total rows"
+      : "non-superseded itemized contribution rows";
+  const source =
+    args.sourceKind === "cover" ? "Cover Sheet 1 report" : "contribution report";
+  return {
+    reportInfoIdent: `${rollup}-${args.reportInfoIdent}-${args.sourceCount}`,
+    url: tecReportUrl(docId),
+    rowSummary:
+      `TEC filer contribution rollup, filerIdent ${args.filerIdent} (${args.filerName}): ` +
+      `$${args.total.toLocaleString("en-US")} from ${args.sourceCount.toLocaleString("en-US")} ${rows}. ` +
+      `Largest source ${source} ${args.reportInfoIdent} reports ` +
+      `$${args.amount.toLocaleString("en-US")}` +
+      (args.date ? `, ${args.date}` : "") +
+      ".",
+  };
+}
+
 export function tecExpenditureCitation(args: {
   reportInfoIdent: string;
   filerName: string;

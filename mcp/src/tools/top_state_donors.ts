@@ -118,13 +118,20 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
         NULLIF(TRIM(contributorOccupation), '')       AS occupation,
         TRY_CAST(contributionAmount AS DOUBLE)        AS amount,
         reportInfoIdent                               AS rid,
-        receivedDt                                    AS dt,
+        contributionDt                                AS dt,
         filerName                                     AS filerName
       FROM tec_contributions
       WHERE ${where.join(" AND ")}
-        AND TRY_CAST(SUBSTR(receivedDt, 1, 4) AS INTEGER) BETWEEN ? AND ?
+        AND TRY_CAST(SUBSTR(contributionDt, 1, 4) AS INTEGER) BETWEEN ? AND ?
         AND TRY_CAST(contributionAmount AS DOUBLE) IS NOT NULL
         AND COALESCE(infoOnlyFlag, '') <> 'Y'
+        AND NOT (
+          UPPER(COALESCE(formTypeCd, '')) LIKE '%DAILY%'
+          OR UPPER(COALESCE(formTypeCd, '')) LIKE '%SS'
+          OR UPPER(COALESCE(schedFormTypeCd, '')) LIKE '%SS'
+          OR UPPER(COALESCE(schedFormTypeCd, '')) = 'T-CTR'
+        )
+        AND UPPER(COALESCE(schedFormTypeCd, '')) IN ('A', 'A1', 'A2', 'AJ1', 'AL', 'AS1', 'AS2', 'C1', 'C2', 'C3', 'C4')
     ),
     ranked AS (
       SELECT
@@ -213,12 +220,20 @@ async function probeFilerActivity(args: {
   }>(
     `
     SELECT
-      MIN(SUBSTR(receivedDt, 1, 4)) AS firstYear,
-      MAX(SUBSTR(receivedDt, 1, 4)) AS lastYear,
+      MIN(SUBSTR(contributionDt, 1, 4)) AS firstYear,
+      MAX(SUBSTR(contributionDt, 1, 4)) AS lastYear,
       COUNT(*)::INTEGER             AS totalContributions
     FROM tec_contributions
     WHERE ${where.join(" AND ")}
       AND COALESCE(infoOnlyFlag, '') <> 'Y'
+      AND TRY_CAST(contributionAmount AS DOUBLE) IS NOT NULL
+      AND NOT (
+        UPPER(COALESCE(formTypeCd, '')) LIKE '%DAILY%'
+        OR UPPER(COALESCE(formTypeCd, '')) LIKE '%SS'
+        OR UPPER(COALESCE(schedFormTypeCd, '')) LIKE '%SS'
+        OR UPPER(COALESCE(schedFormTypeCd, '')) = 'T-CTR'
+      )
+      AND UPPER(COALESCE(schedFormTypeCd, '')) IN ('A', 'A1', 'A2', 'AJ1', 'AL', 'AS1', 'AS2', 'C1', 'C2', 'C3', 'C4')
     `,
     params,
   );

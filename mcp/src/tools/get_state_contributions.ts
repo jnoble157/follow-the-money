@@ -86,13 +86,13 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
     where.push("contributorEmployer ILIKE ?");
     params.push(`%${args.employerLike.replace(/[%_]/g, "")}%`);
   }
-  // receivedDt is yyyyMMdd, no separators. Compare as string.
+  // contributionDt is yyyyMMdd, no separators. Compare as string.
   if (args.dateFrom) {
-    where.push("receivedDt >= ?");
+    where.push("contributionDt >= ?");
     params.push(args.dateFrom.replace(/-/g, ""));
   }
   if (args.dateTo) {
-    where.push("receivedDt <= ?");
+    where.push("contributionDt <= ?");
     params.push(args.dateTo.replace(/-/g, ""));
   }
   if (args.minAmount !== undefined) {
@@ -123,10 +123,17 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
       NULLIF(TRIM(contributorEmployer), '')     AS employer,
       NULLIF(TRIM(contributorOccupation), '')   AS occupation,
       TRY_CAST(contributionAmount AS DOUBLE)    AS amount,
-      receivedDt                                AS dt,
+      contributionDt                            AS dt,
       reportInfoIdent                           AS rid
     FROM tec_contributions
     WHERE ${where.join(" AND ")}
+      AND NOT (
+        UPPER(COALESCE(formTypeCd, '')) LIKE '%DAILY%'
+        OR UPPER(COALESCE(formTypeCd, '')) LIKE '%SS'
+        OR UPPER(COALESCE(schedFormTypeCd, '')) LIKE '%SS'
+        OR UPPER(COALESCE(schedFormTypeCd, '')) = 'T-CTR'
+      )
+      AND UPPER(COALESCE(schedFormTypeCd, '')) IN ('A', 'A1', 'A2', 'AJ1', 'AL', 'AS1', 'AS2', 'C1', 'C2', 'C3', 'C4')
     ORDER BY TRY_CAST(contributionAmount AS DOUBLE) DESC NULLS LAST
     LIMIT ?
     `,

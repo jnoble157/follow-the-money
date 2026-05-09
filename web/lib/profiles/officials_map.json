@@ -103,7 +103,7 @@
   {
     "slug": "beto-orourke",
     "austinRecipients": [],
-    "tecFilerNames": ["Beto for Texas", "Texans for Beto"],
+    "tecFilerNames": ["Beto for Texas"],
     "partyAffiliation": "sos_2018_general_democratic"
   },
   {
@@ -146,7 +146,15 @@
     "slug": "wendy-davis",
     "austinRecipients": [],
     "tecFilerNames": ["Davis, Wendy R.", "Wendy R Davis for Governor Inc", "Wendy R. Davis for Governor Inc.", "Wendy R. Davis for Governor, Inc."],
+    "transferAliases": ["Wendy Davis Campaign"],
     "partyAffiliation": "sos_2014_general_democratic"
+  },
+  {
+    "slug": "william-h-white-18964",
+    "austinRecipients": [],
+    "tecFilerNames": ["White, William H."],
+    "transferAliases": ["Bill White for Texas", "Friends of Bill White"],
+    "partyAffiliation": "sos_2010_general_democratic"
   },
   {
     "slug": "dan-patrick",

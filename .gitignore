@@ -28,6 +28,7 @@ data/cache/
 !data/README.md
 
 web/lib/profiles/*_manifest.json
+!web/lib/profiles/official_bios_manifest.json
 
 agent/src/eval/reports/
 

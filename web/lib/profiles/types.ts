@@ -50,8 +50,21 @@ export type OfficialDonorLink = {
   source: Citation;
 };
 
+export type OfficialBio = {
+  slug: string;
+  text: string;
+  model: string;
+  grounding: "model_knowledge" | "web_search";
+  sources: {
+    title: string;
+    url: string;
+  }[];
+  generatedAt: string;
+};
+
 export type OfficialDetail = OfficialWithStats & {
   aliases: string[];
+  bio?: OfficialBio;
 };
 
 export type DonorRecipient = {

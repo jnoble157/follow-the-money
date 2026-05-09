@@ -19,6 +19,8 @@ const JURISDICTION_LABEL: Record<string, string> = {
 
 export function OfficialProfile({ official }: Props) {
   const graph = officialDonorGraph(official);
+  const profileText = official.bio?.text ?? fallbackProfileText(official);
+  const profileSources = official.bio?.sources ?? [];
 
   return (
     <main className="mx-auto flex w-full max-w-[1120px] flex-col gap-8 px-6 py-8">
@@ -73,32 +75,65 @@ export function OfficialProfile({ official }: Props) {
         />
       </section>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.82fr)]">
-        <div className="space-y-8">
-          <OfficialDonorLinks donors={official.topOrganizationDonors} />
-        </div>
-        {official.aliases.length > 0 ? (
-          <section aria-labelledby="official-aliases-heading">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(260px,0.72fr)_minmax(0,1.28fr)]">
+        <div className="space-y-6">
+          <section aria-labelledby="official-profile-heading">
             <h2
-              id="official-aliases-heading"
+              id="official-profile-heading"
               className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted"
             >
-              Filing aliases
+              Profile
             </h2>
-            <details open className="rounded-md border border-rule bg-white p-4">
-              <summary className="cursor-pointer font-mono text-[12px] uppercase tracking-wider text-ink">
-                Raw recipient names
-              </summary>
-              <ul className="mt-3 space-y-1 text-[12px] text-ink">
-                {official.aliases.map((alias) => (
-                  <li key={alias} className="font-mono">
-                    {alias}
-                  </li>
+            <p className="max-w-[54ch] text-[15px] leading-7 text-ink">
+              {profileText}
+              {official.bio ? null : (
+                <Footnote index={6} citation={official.source} />
+              )}
+            </p>
+            {profileSources.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {profileSources.slice(0, 3).map((source) => (
+                  <a
+                    key={source.url}
+                    href={source.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-sm border border-rule bg-white px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-evidence hover:border-ink hover:text-ink"
+                  >
+                    {sourceLabel(source.url)}
+                  </a>
                 ))}
-              </ul>
-            </details>
+              </div>
+            ) : null}
           </section>
-        ) : null}
+
+          {official.aliases.length > 0 ? (
+            <section aria-labelledby="official-aliases-heading">
+              <h2
+                id="official-aliases-heading"
+                className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted"
+              >
+                Filing aliases
+              </h2>
+              <details open className="rounded-md border border-rule bg-white p-4">
+                <summary className="cursor-pointer font-mono text-[12px] uppercase tracking-wider text-ink">
+                  Raw recipient names
+                </summary>
+                <ul className="mt-3 space-y-1 text-[12px] text-ink">
+                  {official.aliases.map((alias) => (
+                    <li key={alias} className="font-mono">
+                      {alias}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </section>
+          ) : null}
+        </div>
+
+        <div className="min-w-0">
+          <OfficialDonorLinks donors={official.topOrganizationDonors} />
+        </div>
       </div>
 
       {graph.nodes.length > 0 ? (
@@ -108,6 +143,18 @@ export function OfficialProfile({ official }: Props) {
       ) : null}
     </main>
   );
+}
+
+function fallbackProfileText(official: OfficialDetail): string {
+  return `${official.name} is listed in the profile data as ${official.role} for ${JURISDICTION_LABEL[official.jurisdiction]}. Filing aliases and donor rollups are drawn from the source rows attached to this profile.`;
+}
+
+function sourceLabel(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "Source";
+  }
 }
 
 function StatCard({

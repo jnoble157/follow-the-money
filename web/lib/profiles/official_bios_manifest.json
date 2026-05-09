@@ -1,0 +1,314 @@
+[
+  {
+    "slug": "greg-abbott",
+    "text": "Greg Abbott is the Governor of Texas and serves as the state's chief executive officer. He is a Republican who leads statewide governance and oversees the administration of state agencies and initiatives.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:45:33.062Z"
+  },
+  {
+    "slug": "dan-patrick",
+    "text": "Dan Patrick is the Lieutenant Governor of Texas, serving as the state's second-highest executive officer and presiding officer of the Texas Senate. He is a Republican elected to statewide office and previously worked as a radio and television broadcaster.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:45:40.211Z"
+  },
+  {
+    "slug": "beto-orourke",
+    "text": "Beto O'Rourke is an American politician who served as a US Representative from Texas. He has been active in Texas politics as a Democratic candidate for statewide office.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:45:48.199Z"
+  },
+  {
+    "slug": "wendy-davis",
+    "text": "Wendy R. Davis is a Democratic politician who served as a member of the Texas State Senate. She was also a candidate for governor of Texas.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:45:54.546Z"
+  },
+  {
+    "slug": "ken-paxton",
+    "text": "Ken Paxton is the Attorney General of Texas, serving as the state's chief legal officer. He is a member of the Republican Party and oversees legal matters and litigation on behalf of the state.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:46:00.384Z"
+  },
+  {
+    "slug": "christi-l-craddick-30098",
+    "text": "Christi L. Craddick is a Railroad Commissioner for the state of Texas. She serves on the Railroad Commission of Texas, the state agency responsible for regulating oil and gas operations, pipelines, and related safety programs.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:46:12.976Z"
+  },
+  {
+    "slug": "donald-b-huffines-69651",
+    "text": "Donald B. Huffines is a Texas state senator who serves in the Texas Legislature and represents constituents at the state level. He is a member of the Republican Party and carries out legislative duties including sponsoring and voting on state laws.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:46:29.492Z"
+  },
+  {
+    "slug": "george-p-bush-68738",
+    "text": "George P. Bush is an American attorney and Republican politician who served as Texas Land Commissioner. He has been a statewide candidate in Texas and oversaw the state agency responsible for land management and veterans' land programs.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:46:58.148Z"
+  },
+  {
+    "slug": "glenn-hegar-jr-51286",
+    "text": "Glenn Hegar Jr is the Texas Comptroller of Public Accounts and a Republican statewide officeholder. He oversees state fiscal operations and is responsible for financial reporting, revenue estimation, and administration of certain state fiscal programs.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:47:03.253Z"
+  },
+  {
+    "slug": "kirk-watson",
+    "text": "Kirk Watson is the Mayor of Austin and serves as the chief executive of the City of Austin. He previously served in the Texas Legislature and has worked in law and municipal public service.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:47:12.065Z"
+  },
+  {
+    "slug": "john-whitmire-19581",
+    "text": "John Whitmire is a Texas state senator who serves in the Texas Legislature representing a Houston-area constituency. He is a member of the Democratic Party and has served in elected office in Texas for many years.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:47:19.438Z"
+  },
+  {
+    "slug": "judith-zaffirini-20971",
+    "text": "Judith Zaffirini is a Texas State Senator who represents constituents in the Texas state legislature. She is a member of the Democratic Party and serves on legislative committees and works on state policy matters.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:47:32.047Z"
+  },
+  {
+    "slug": "dawn-c-buckingham-m-d-69001",
+    "text": "Dawn C. Buckingham is the Texas Land Commissioner, responsible for management of state lands and related resources. She is a physician and former member of the Texas Legislature who serves in statewide executive office.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:48:06.111Z"
+  },
+  {
+    "slug": "juan-hinojosa-13805",
+    "text": "Juan Hinojosa is a Texas State Senator and a member of the Democratic Party. He serves in the Texas Legislature representing constituents on state legislative matters.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:48:13.171Z"
+  },
+  {
+    "slug": "morgan-d-meyer-69344",
+    "text": "Morgan D. Meyer is a State Representative serving in the Texas Legislature. He is a Republican elected official who participates in drafting and reviewing state legislation and serving on legislative committees.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:48:19.749Z"
+  },
+  {
+    "slug": "tom-craddick-20051",
+    "text": "Tom Craddick is a Texas State Representative who has served in the Texas House of Representatives and previously held leadership as Speaker of the House. He is a Republican serving in the state legislature and carries out legislative duties and committee work on behalf of his constituents.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:48:25.997Z"
+  },
+  {
+    "slug": "todd-a-hunter-20493",
+    "text": "Todd A. Hunter is a Republican who serves as a State Representative in the Texas Legislature. He has previously held local public office and performs legislative duties on behalf of his constituents.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:48:32.658Z"
+  },
+  {
+    "slug": "charles-l-geren-29493",
+    "text": "Charles L. Geren is a Republican State Representative in the Texas state legislature. He serves as a state elected official working on legislative matters for his Texas constituency.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:48:44.881Z"
+  },
+  {
+    "slug": "robert-lee-nichols-35962",
+    "text": "Robert Lee Nichols is a Republican member of the Texas State Senate representing parts of East Texas. He serves as a state senator in the Texas Legislature, participating in lawmaking and committee work on behalf of his constituents.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:49:07.502Z"
+  },
+  {
+    "slug": "royce-west-20990",
+    "text": "Royce West is a Democratic State Senator serving in the Texas state legislature. He represents constituents in the Texas State Senate and serves on legislative committees to consider and shape state law.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:49:15.353Z"
+  },
+  {
+    "slug": "angie-c-button-62309",
+    "text": "Angie C. Button is a Republican member of the Texas House of Representatives. She serves as a state representative in the Texas legislature and participates in drafting and reviewing state legislation and serving constituents.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:49:28.262Z"
+  },
+  {
+    "slug": "john-carona-sr-19837",
+    "text": "John J. Carona is a former Texas state senator who represented a district in the Dallas area. While in office he served on legislative committees and drew on a background in the private sector to work on business and education-related matters.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:50:05.430Z"
+  },
+  {
+    "slug": "jerry-patterson-20841",
+    "text": "Jerry E. Patterson is an American politician who served as Texas Land Commissioner and as a statewide officeholder in Texas. He previously served in the Texas Legislature and has been active in state public affairs.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:50:15.024Z"
+  },
+  {
+    "slug": "dustin-r-burrows-70273",
+    "text": "Dustin R. Burrows is a Republican State Representative serving in the Texas Legislature. He participates in legislative and committee work in the Texas House on behalf of his constituents.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:50:21.405Z"
+  },
+  {
+    "slug": "richard-e-pena-raymond-21186",
+    "text": "Richard E. Pena Raymond is a Democratic State Representative in the Texas Legislature who serves in the Texas state government. A physician by training, he has emphasized healthcare and public health matters during his legislative service.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:50:24.746Z"
+  },
+  {
+    "slug": "trenton-e-ashby-67800",
+    "text": "Trenton E. Ashby is a Republican State Representative in the Texas Legislature. He serves as a member of the Texas House of Representatives and participates in legislative committees and lawmaking for the state.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:50:30.469Z"
+  },
+  {
+    "slug": "jeff-c-leach-67738",
+    "text": "Jeff C. Leach is a State Representative serving in the Texas state legislature. He is a Republican public official representing constituents in the Texas state government.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:50:36.236Z"
+  },
+  {
+    "slug": "d-bryan-hughes-51630",
+    "text": "D. Bryan Hughes is a Texas state senator serving in the Texas Legislature as a Republican. He previously served in the Texas House of Representatives and serves on legislative committees in the state senate.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:50:41.981Z"
+  },
+  {
+    "slug": "dennis-h-bonnen-32574",
+    "text": "Dennis H. Bonnen is a Texas state legislator who served as Speaker of the Texas House of Representatives. He represented constituents in the Texas legislature and held leadership responsibilities within the chamber.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:51:08.619Z"
+  },
+  {
+    "slug": "lois-w-kolkhorst-41354",
+    "text": "Lois W. Kolkhorst is a Texas state senator who serves in the Texas Legislature as a Republican. She previously served in the Texas House of Representatives and has held leadership roles on legislative committees.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:51:17.419Z"
+  },
+  {
+    "slug": "ryan-sitton-67797",
+    "text": "Ryan Sitton is an engineer and former member of the Texas Railroad Commission, the state agency that regulates aspects of the oil and gas industry. He has worked in the energy sector and has been a candidate for statewide office in Texas.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:51:50.427Z"
+  },
+  {
+    "slug": "kelton-g-seliger-52862",
+    "text": "Kelton G. Seliger is a Republican State Senator in the Texas Legislature. He serves in the state senate and participates in legislative committees and processes impacting state policy.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:52:07.043Z"
+  },
+  {
+    "slug": "eduardo-lucio-jr-20257",
+    "text": "Eduardo A. Lucio Jr is a Texas state senator who has represented constituents in the state legislature. He served as a member of the Texas Senate and held leadership roles on several legislative committees.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:52:17.940Z"
+  },
+  {
+    "slug": "christopher-g-turner-62790",
+    "text": "Christopher G. Turner is a Texas State Representative serving in the Texas House as a member of the Democratic Party. He has served in House Democratic leadership and works on legislation and constituent services for his district.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:52:23.576Z"
+  },
+  {
+    "slug": "walter-w-christian-32395",
+    "text": "Walter W. Christian is a Republican who serves as a Railroad Commissioner for the state of Texas. He previously held elected office in the Texas Legislature and works on matters related to energy regulation and utilities.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:52:34.216Z"
+  },
+  {
+    "slug": "craig-l-estes-33299",
+    "text": "Craig L. Estes is a State Senator in the Texas state legislature. He has served on legislative committees and represented constituents from his region in the Texas State Senate.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:52:42.569Z"
+  },
+  {
+    "slug": "sid-miller-42143",
+    "text": "Sid Miller is the Texas Agriculture Commissioner, responsible for overseeing the state's agriculture department and related programs. He previously served in the Texas House of Representatives before being elected to his current statewide office.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:52:52.042Z"
+  },
+  {
+    "slug": "trey-martinez-fischer-40542",
+    "text": "Trey Martinez Fischer is a State Representative in the Texas legislature and a Democratic public official based in San Antonio. He serves in the Texas state government and has held leadership roles within the Democratic caucus.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:52:55.930Z"
+  },
+  {
+    "slug": "angela-paxton-81932",
+    "text": "Angela Paxton is a Republican who serves as a Texas State Senator. She represents constituents in the Texas Legislature and participates in state lawmaking and constituent services.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:52:59.630Z"
+  }
+]

@@ -15,6 +15,7 @@
     "build": "npm run build --workspace=web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
+    "build:official-bios": "npx tsx scripts/build_official_bios.ts",
     "mcp:stdio": "npm run mcp:stdio --workspace=mcp",
     "eval": "npm run eval --workspace=agent",
     "record-hero": "npm run record-hero --workspace=agent"

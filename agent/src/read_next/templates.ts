@@ -20,6 +20,14 @@ import type { GraphNodeKind } from "@txmoney/mcp/events";
 // "Who actually funded Y?") that maps to a concrete tool sequence the
 // agent already knows. The LLM picks among these shapes; it doesn't
 // invent new ones.
+//
+// HARD RULE: every template shape must be SELF-CONTAINED. The next agent
+// run has no memory of the prior report — no "these lobbyists," no
+// "the same donor," no "other X-linked PACs." The only reference is
+// {entity}, which gets slot-filled with a concrete named entity from
+// the just-finished report's graph. If a question shape needs to refer
+// to "the biggest donor" or "this cycle," it can't be a template; the
+// next agent has nothing to anchor the reference to.
 
 export type ReadNextEntity = {
   kind: GraphNodeKind;
@@ -91,7 +99,9 @@ function questionMentions(ctx: ReadNextContext, term: string): boolean {
 export const TEMPLATES: ReadNextTemplate[] = [
   {
     id: "where_else_donor",
-    shape: "Where else did {entity} put political money this cycle?",
+    // No "this cycle" — fresh agent has no shared cycle context. The
+    // entity name carries the rest.
+    shape: "Where else does {entity} send political money in Texas?",
     kickerHint: "follow the wallet to its other recipients",
     appliesTo: ["donor"],
     precondition: (_ctx, e) => !looksLikePersonalName(e.label),
@@ -138,21 +148,9 @@ export const TEMPLATES: ReadNextTemplate[] = [
     kickerHint: "fold the lobbyist's giving back into the report",
     appliesTo: ["lobbyist"],
   },
-  {
-    id: "biggest_donor_other_recipients",
-    shape: "Who else does {entity}'s biggest donor support across Texas?",
-    kickerHint: "follow the top donor sideways into other races",
-    appliesTo: ["filer"],
-    // Only fires when the report surfaced top donors — otherwise the
-    // referenced "biggest donor" doesn't exist in the user's working set.
-    precondition: (ctx) =>
-      ctx.narrative.some(
-        (n) =>
-          /top donor|biggest donor|wrote the largest|leading donor/i.test(
-            n.text,
-          ),
-      ),
-  },
+  // Removed: a "biggest donor of X" template can only resolve via the
+  // prior report, not via a fresh agent run that has no memory of who
+  // the biggest donor was. Keep templates entity-anchored.
 ];
 
 // Build the candidate list. Each entity gets one row per template that

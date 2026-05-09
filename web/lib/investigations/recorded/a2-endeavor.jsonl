@@ -14,4 +14,4 @@
 {"ts":1778357084835,"event":{"type":"graph_node","id":"endeavor","label":"Endeavor-related contributors","kind":"donor","sublabel":"Employer field contains \"Endeavor\""}}
 {"ts":1778357085811,"event":{"type":"graph_edge","from":"endeavor","to":"watson","label":"Repeated $1k–$2.5k contributions"}}
 {"ts":1778357086630,"event":{"type":"investigation_complete"}}
-{"ts":1778357088430,"event":{"type":"read_next","question":"Which Endeavor principals also gave to other Watson-linked PACs or candidates?","kicker":"FOLLOW THE PRINCIPALS","rationale":"Identifying Endeavor principals who donated to other Watson-linked committees would reveal broader coordinated funding patterns across cycles."}}
+{"ts":1778357088430,"event":{"type":"read_next","question":"Which other Texas politicians get money from Endeavor Real Estate?","kicker":"FOLLOW THE FIRM, NOT THE FILER","rationale":"Endeavor's principals have written checks to Watson for two decades. The next step trims off Watson and asks who else collects from the same firm — same employer string, different filerNames."}}

@@ -96,6 +96,22 @@ function questionMentions(ctx: ReadNextContext, term: string): boolean {
   return ctx.question.toLowerCase().includes(term.toLowerCase());
 }
 
+// TEC filer records store names as "Lastname, Firstname M." — fine for
+// the graph node where formality matches the source data, awkward in
+// casual-reader read-next copy ("Where does Watson, Kirk P.'s money
+// really go?"). Flip to "Firstname Lastname" for display, dropping any
+// trailing initial. Non-matching strings (PACs, firms, "Watson Mayoral")
+// pass through unchanged.
+export function humanizeEntityLabel(label: string): string {
+  const m = label.match(
+    /^([A-Z][a-zA-Z'’-]+(?:\s+[IVX]+)?),\s+([A-Z][a-zA-Z'’-]+)(?:\s+[A-Z]\.?)?(?:\s+\([^)]+\))?$/,
+  );
+  if (!m) return label;
+  const last = m[1];
+  const first = m[2];
+  return `${first} ${last}`;
+}
+
 export const TEMPLATES: ReadNextTemplate[] = [
   {
     id: "where_else_donor",
@@ -170,7 +186,7 @@ export function buildCandidates(
       out.push({
         templateId: tpl.id,
         entityIndex: idx,
-        question: tpl.shape.replace("{entity}", entity.label),
+        question: tpl.shape.replace("{entity}", humanizeEntityLabel(entity.label)),
         kickerHint: tpl.kickerHint,
       });
     }

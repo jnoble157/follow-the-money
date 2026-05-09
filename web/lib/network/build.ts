@@ -1,5 +1,9 @@
 import path from "node:path";
-import { DuckDBInstance, type DuckDBConnection } from "@duckdb/node-api";
+// `@duckdb/node-api` ships a native binary (libduckdb.so) that isn't
+// available on Vercel's runtime. Production short-circuits to the static
+// snapshot before this module ever calls into duckdb, so we lazy-load
+// the type+impl to keep the static import out of the bundle's hot path.
+type DuckDBConnection = import("@duckdb/node-api").DuckDBConnection;
 
 // Cross-dataset entity graph for the /network page. We query the Austin
 // campaign-finance + lobby parquets and take the top-N entities of each kind
@@ -26,6 +30,7 @@ let connP: Promise<DuckDBConnection> | null = null;
 async function getConn(): Promise<DuckDBConnection> {
   if (connP) return connP;
   connP = (async () => {
+    const { DuckDBInstance } = await import("@duckdb/node-api");
     const instance = await DuckDBInstance.create(":memory:");
     const conn = await instance.connect();
     for (const [view, rel] of Object.entries(VIEWS)) {

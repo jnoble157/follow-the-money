@@ -4,9 +4,6 @@ import {
   UnknownInvestigationError,
 } from "@/lib/investigations/stub";
 import {
-  runInvestigation as runLiveLocal,
-} from "@txmoney/agent";
-import {
   isAgentServiceConfigured,
   runRemote,
 } from "@/lib/investigations/agent-client";
@@ -18,6 +15,17 @@ import {
 } from "@/lib/investigations/replay";
 import { findHeroByQuestion } from "@/lib/investigations/registry";
 import type { InvestigationEvent } from "@/lib/investigations/types";
+
+// `@txmoney/agent` pulls in `@duckdb/node-api` (native libduckdb.so) at
+// module load. On Vercel, libduckdb isn't on disk, so any static import
+// fails the route entirely. Load the local runner lazily — production
+// uses the remote service and never executes this branch.
+async function loadLocalRunner(): Promise<
+  typeof import("@txmoney/agent")["runInvestigation"]
+> {
+  const mod = await import("@txmoney/agent");
+  return mod.runInvestigation;
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -88,6 +96,7 @@ async function* selectStream(
     };
     return;
   }
+  const runLiveLocal = await loadLocalRunner();
   const live = runLiveLocal(question, sessionId);
   for await (const ev of streamAndRecord(live, question)) {
     yield ev;

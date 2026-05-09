@@ -3,13 +3,11 @@
 
 import type {
   Citation,
-  DonorRow,
   GraphNodeKind,
 } from "@/lib/investigations/types";
 import type {
   GraphEdgeView,
   GraphNodeView,
-  NarrativeChunk,
 } from "@/lib/investigations/state";
 
 export type ProfileKind =
@@ -94,72 +92,12 @@ export type DonorWithStats = DonorSummary & {
   employerVariants: string[];
 };
 
-export type ProfileStat = {
-  label: string;
-  value: string;
-  citation: Citation;
-};
-
-export type ExpenditureRow = {
-  rank: number;
-  payee: string;
-  description: string;
-  amount: number;
-  date?: string; // ISO yyyy-mm-dd; presentation layer formats
-  citation: Citation;
-};
-
-export type LobbyTieRow = {
-  // Either the lobbyist or the client side, depending on which profile owns
-  // the section. The renderer is agnostic.
-  counterpartyName: string;
-  // For a firm/PAC profile: the registrant's name. For a lobbyist profile:
-  // the client's name. Always required so the table reads either way.
-  role: string; // "lobbyist for", "registered subject", "employer of record"
-  subject?: string;
-  citation: Citation;
-};
-
-export type ProfileSection =
-  | { kind: "top_donors"; title: string; rows: DonorRow[] }
-  | { kind: "top_expenditures"; title: string; rows: ExpenditureRow[] }
-  | { kind: "lobby_ties"; title: string; rows: LobbyTieRow[] }
-  | { kind: "narrative"; title: string; chunks: NarrativeChunk[] };
-
 export type ProfileNetwork = {
   // Same shape as the investigation graph so we can reuse the renderer.
   // `profileSlug` targets profile pages; `href` is for donor pages and other
   // non-profile routes the static graph knows exactly.
   nodes: GraphNodeView[];
   edges: GraphEdgeView[];
-};
-
-export type RelatedProfileRef = {
-  slug: string;
-  // Cached display values so the chip can render without resolving the
-  // related profile. Both populate at registry-build time.
-  name: string;
-  role?: string;
-};
-
-export type Profile = {
-  slug: string;
-  name: string;
-  kind: ProfileKind;
-  role?: string;
-  jurisdiction?: Jurisdiction;
-  // Aliases the search classifier matches against in addition to the name.
-  // Useful for "Mayor Watson" → "Kirk Watson", "Endeavor" → "Endeavor Real Estate Group".
-  aliases?: string[];
-  bio: { text: string; citations: Citation[] };
-  stats: ProfileStat[];
-  sections: ProfileSection[];
-  network: ProfileNetwork;
-  related: RelatedProfileRef[];
-  defaultQuestion?: string;
-  // For honest "no data" placeholder profiles (federal officials, etc.). When
-  // set, the renderer collapses to a refusal block instead of the full page.
-  noDataReason?: string;
 };
 
 // Re-export so callers don't import from two places when constructing profiles.

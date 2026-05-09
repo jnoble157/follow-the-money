@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { existsSync, readdirSync } from "node:fs";
 
 // HTTP smoke test against a running dev server. Run with:
 //   npm run dev    # in another terminal
@@ -177,13 +178,21 @@ test("home page renders trending strip and officials roster", async () => {
   assert.match(body, /Looking for a federal official\?/);
 });
 
-test("/profile/kirk-watson renders the profile", async () => {
+test("/profile/kirk-watson renders generated official data", async () => {
   const body = await html("/profile/kirk-watson");
   assert.match(body, /Kirk Watson/);
   assert.match(body, /Mayor of Austin/);
-  assert.match(body, /Investigate this/);
-  // Stat surface should include the headline transfer dollar figure.
-  assert.match(body, /\$1,186,764/);
+  assert.match(body, /Reported contributions/);
+  assert.match(body, /Democratic National Committee/);
+  assert.match(body, /Evidence graph/);
+});
+
+test("/profile/greg-abbott renders generated official data", async () => {
+  const body = await html("/profile/greg-abbott");
+  assert.match(body, /Greg Abbott/);
+  assert.match(body, /Governor of Texas/);
+  assert.match(body, /RGA Right Direction PAC/);
+  assert.match(body, /Evidence graph/);
 });
 
 test("donor and generated public official pages deep-link both ways", async () => {
@@ -199,6 +208,13 @@ test("donor and generated public official pages deep-link both ways", async () =
     official,
     /href="\/donor\/texans-for-lawsuit-reform-pac-78701"/,
   );
+});
+
+test("profile pages do not ship handwritten profile modules", () => {
+  const peopleDir = "lib/profiles/people";
+  if (!existsSync(peopleDir)) return;
+  const files = readdirSync(peopleDir).filter((name) => name.endsWith(".ts"));
+  assert.deepEqual(files, []);
 });
 
 test("/investigate?q=<hero question> sends the question to the client", async () => {

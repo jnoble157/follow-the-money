@@ -54,7 +54,7 @@ export function RelatedRail({ currentQuestion, graphNodes, readNext }: Props) {
             className="group block rounded-sm border border-rule p-3 hover:border-ink"
           >
             <p className="font-mono text-[10px] uppercase tracking-wider text-accent">
-              Profile · {profile.role ?? profile.kind}
+              Profile · {profile.role ?? "Public official"}
             </p>
             <p className="mt-1 font-serif text-[14px] leading-snug text-ink group-hover:underline decoration-accent decoration-1 underline-offset-4">
               {profile.name}
@@ -83,14 +83,14 @@ function pickRelatedProfile(
     }
   }
 
-  // Second: substring overlap between profile aliases and the question +
-  // any graph node label. Cheap and surprisingly accurate at this scale.
+  // Second: substring overlap between generated profile search keys and the
+  // question plus any graph node label.
   if (!currentQuestion && graphNodes.length === 0) return null;
   const haystack = normalize(
     [currentQuestion ?? "", ...graphNodes.map((n) => n.label)].join(" "),
   );
   for (const profile of listAllProfiles()) {
-    const terms = [profile.name, ...(profile.aliases ?? [])].map(normalize);
+    const terms = profile.terms.map(normalize);
     if (terms.some((t) => t && haystack.includes(t))) return profile;
   }
   return null;

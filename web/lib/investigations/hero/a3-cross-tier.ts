@@ -173,9 +173,6 @@ export const a3CrossTier: HeroInvestigation = {
           label: m.name,
           kind: "lobbyist" as const,
           sublabel: m.austinEmployer,
-          // Only McDaniel has a baked profile right now; the rest stay
-          // unlinked rather than route to a 404.
-          profileSlug: m.name === "Demetrius McDaniel" ? "demetrius-mcdaniel" : undefined,
         },
         delayAfterMs: 100,
       },

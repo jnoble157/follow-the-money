@@ -1,51 +1,17 @@
 import type {
   DonorSummary,
   OfficialWithStats,
-  Profile,
-  ProfileKind,
 } from "./types";
-import { kirkWatson } from "./people/kirk-watson";
-import { gregAbbott } from "./people/greg-abbott";
-import { demetriusMcDaniel } from "./people/demetrius-mcdaniel";
-import { endeavorRealEstate } from "./people/endeavor-real-estate";
-import { saveAustinNow } from "./people/save-austin-now";
-import { ridesharingWorks } from "./people/ridesharing-works";
 import manifest from "./officials_manifest.json";
 import donorManifest from "./donors_manifest.json";
 
-// Source of truth for everything profile-shaped. Order matters: it determines
-// the order of the home-page Officials list and the related-profile fallback.
-export const PROFILES: Profile[] = [
-  kirkWatson,
-  gregAbbott,
-  demetriusMcDaniel,
-  endeavorRealEstate,
-  saveAustinNow,
-  ridesharingWorks,
-];
-
-const BY_SLUG = new Map(PROFILES.map((p) => [p.slug, p]));
 const OFFICIALS = manifest as OfficialWithStats[];
 const OFFICIALS_BY_SLUG = new Map(OFFICIALS.map((o) => [o.slug, o]));
 const DONORS = donorManifest as DonorSummary[];
 const DONORS_BY_SLUG = new Map(DONORS.map((d) => [d.slug, d]));
 
-export function getProfileBySlug(slug: string): Profile | null {
-  return BY_SLUG.get(slug) ?? null;
-}
-
-export function listAllProfiles(): Profile[] {
-  return PROFILES;
-}
-
 export function listAllProfileSlugs(): string[] {
-  const slugs = new Set(PROFILES.map((p) => p.slug));
-  for (const row of OFFICIALS) slugs.add(row.slug);
-  return [...slugs];
-}
-
-export function listProfilesByKind(kind: ProfileKind): Profile[] {
-  return PROFILES.filter((p) => p.kind === kind);
+  return OFFICIALS.map((o) => o.slug);
 }
 
 // The home Officials list shows public officials and then named candidates
@@ -124,7 +90,7 @@ export function listOfficialsWithStats(): OfficialWithStats[] {
 }
 
 export function hasProfilePage(slug: string): boolean {
-  return BY_SLUG.has(slug) || OFFICIALS_BY_SLUG.has(slug);
+  return OFFICIALS_BY_SLUG.has(slug);
 }
 
 export function applyOfficialOverride<T extends OfficialWithStats>(row: T): T {
@@ -154,22 +120,28 @@ export function donorSlug(name: string, zipCode: string | null | undefined) {
   return `${stem || "donor"}-${zip || "unknown"}`;
 }
 
-// Aliases used by the search classifier. Built once from the profile registry
-// rather than re-declared, so adding an alias to a profile is enough.
+// Profile search is generated from the official manifest. Curated aliases can
+// exist in officials_map.json for aggregation, but profile pages do not carry
+// handwritten evidence.
 export type ProfileSearchKey = {
   slug: string;
   name: string;
   role?: string;
-  // Lowercased terms (name + aliases) for match.
   terms: string[];
 };
 
-const SEARCH_KEYS: ProfileSearchKey[] = PROFILES.map((p) => ({
-  slug: p.slug,
-  name: p.name,
-  role: p.role,
-  terms: [p.name, ...(p.aliases ?? [])].map((t) => t.toLowerCase()),
-}));
+const SEARCH_KEYS: ProfileSearchKey[] = OFFICIALS.map(applyOfficialOverride).map(
+  (o) => ({
+    slug: o.slug,
+    name: o.name,
+    role: o.role,
+    terms: [o.name, o.slug.replace(/-/g, " ")].map((t) => t.toLowerCase()),
+  }),
+);
+
+export function listAllProfiles(): ProfileSearchKey[] {
+  return SEARCH_KEYS;
+}
 
 export function listProfileSearchKeys(): ProfileSearchKey[] {
   return SEARCH_KEYS;

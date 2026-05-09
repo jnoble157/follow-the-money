@@ -119,7 +119,7 @@ export const b1SaveAustin: HeroInvestigation = {
       },
       delayAfterMs: 800,
     },
-    { kind: "emit", event: { type: "graph_node", id: "san", label: "Save Austin Now PAC", kind: "pac", sublabel: "$4.95M, 2021 Prop B", profileSlug: "save-austin-now" }, delayAfterMs: 150 },
+    { kind: "emit", event: { type: "graph_node", id: "san", label: "Save Austin Now PAC", kind: "pac", sublabel: "$4.95M, 2021 Prop B" }, delayAfterMs: 150 },
     ...donors.slice(0, 6).flatMap((d, i) => [
       {
         kind: "emit" as const,

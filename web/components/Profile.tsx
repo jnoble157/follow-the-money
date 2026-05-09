@@ -5,12 +5,14 @@ import { DonorTable } from "./DonorTable";
 import { EntityChip } from "./EntityChip";
 import { EvidenceGraph } from "./EvidenceGraph";
 import { Footnote, FootnoteGroup } from "./Footnote";
+import { OfficialDonorLinks } from "./OfficialDonorLinks";
 import { formatMoney } from "@/lib/formatMoney";
 import { formatDate } from "@/lib/formatDate";
-import type { Profile as ProfileType } from "@/lib/profiles/types";
+import type { OfficialDetail, Profile as ProfileType } from "@/lib/profiles/types";
 
 type Props = {
   profile: ProfileType;
+  officialDetail?: OfficialDetail | null;
 };
 
 const KIND_LABEL: Record<string, string> = {
@@ -21,7 +23,7 @@ const KIND_LABEL: Record<string, string> = {
   pac: "PAC · committee",
 };
 
-export function Profile({ profile }: Props) {
+export function Profile({ profile, officialDetail }: Props) {
   if (profile.noDataReason) {
     return <NoDataProfile profile={profile} />;
   }
@@ -46,6 +48,9 @@ export function Profile({ profile }: Props) {
           {profile.sections.map((section, i) => (
             <SectionRenderer key={i} section={section} />
           ))}
+          {officialDetail ? (
+            <OfficialDonorLinks donors={officialDetail.topOrganizationDonors} />
+          ) : null}
         </div>
         <div className="space-y-6">
           {profile.network.nodes.length > 0 ? (

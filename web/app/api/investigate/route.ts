@@ -71,7 +71,7 @@ async function* selectStream(
     yield {
       type: "investigation_failed",
       reason:
-        "This question isn't in the recorded set and OPENAI_API_KEY isn't configured. Try one of the trending questions on the home page.",
+        "This is a stub demo. This question isn't in the recorded set and OPENAI_API_KEY isn't configured. Try one of the trending questions on the home page.",
     };
     return;
   }

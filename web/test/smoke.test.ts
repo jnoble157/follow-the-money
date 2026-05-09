@@ -183,6 +183,19 @@ test("/profile/kirk-watson renders the profile", async () => {
   assert.match(body, /\$1,186,764/);
 });
 
+test("donor and generated public official pages deep-link both ways", async () => {
+  const donor = await html("/donor/texans-for-lawsuit-reform-pac-78701");
+  assert.match(donor, /href="\/profile\/fred-tate-87311"/);
+  assert.match(donor, /Fred Tate/);
+
+  const official = await html("/profile/fred-tate-87311");
+  assert.match(official, /Top organization donors/);
+  assert.match(
+    official,
+    /href="\/donor\/texans-for-lawsuit-reform-pac-78701"/,
+  );
+});
+
 test("/investigate?q=<hero question> sends the question to the client", async () => {
   // The page server-renders the InvestigationConsole shell with the question
   // as initial state; the agent stream itself is started client-side. We only

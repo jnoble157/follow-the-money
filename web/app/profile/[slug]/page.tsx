@@ -1,11 +1,16 @@
 import { notFound } from "next/navigation";
+import { OfficialProfile } from "@/components/OfficialProfile";
 import { Profile } from "@/components/Profile";
-import { getProfileBySlug, listAllProfiles } from "@/lib/profiles/registry";
+import { getOfficialDetailBySlug } from "@/lib/profiles/officials";
+import {
+  getProfileBySlug,
+  listAllProfileSlugs,
+} from "@/lib/profiles/registry";
 
 type Params = { slug: string };
 
 export function generateStaticParams(): Params[] {
-  return listAllProfiles().map((p) => ({ slug: p.slug }));
+  return listAllProfileSlugs().map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -15,10 +20,17 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const profile = getProfileBySlug(slug);
-  if (!profile) return { title: "Profile not found · Texas Money Investigator" };
+  if (profile) {
+    return {
+      title: `${profile.name} · Texas Money Investigator`,
+      description: profile.bio.text,
+    };
+  }
+  const official = getOfficialDetailBySlug(slug);
+  if (!official) return { title: "Profile not found · Texas Money Investigator" };
   return {
-    title: `${profile.name} · Texas Money Investigator`,
-    description: profile.bio.text,
+    title: `${official.name} · Texas Money Investigator`,
+    description: `${official.role} campaign-finance aggregate.`,
   };
 }
 
@@ -29,6 +41,8 @@ export default async function ProfilePage({
 }) {
   const { slug } = await params;
   const profile = getProfileBySlug(slug);
-  if (!profile) return notFound();
-  return <Profile profile={profile} />;
+  const official = getOfficialDetailBySlug(slug);
+  if (profile) return <Profile profile={profile} officialDetail={official} />;
+  if (official) return <OfficialProfile official={official} />;
+  return notFound();
 }

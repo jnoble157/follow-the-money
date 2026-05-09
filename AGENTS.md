@@ -78,6 +78,7 @@ A useful self-check: would a senior engineer reading this file blind guess it wa
 - Date fields in the bulk CSV are `yyyyMMdd` strings. Parse once at ingest, store as `DATE` in Parquet. Never let a string date escape into the agent's narrative.
 - Money fields use `BigDecimal` per the schema and arrive as strings like `0000000000.00`. Cast to `DECIMAL(14,2)` at ingest. Do not use floats anywhere amounts are summed.
 - Lobby `FilerID` and campaign-finance `filerIdent` are different namespaces. Joining them goes through fuzzy name match, not ID equality. The MCP server exposes this explicitly: a tool that joins lobbyist to candidate names returns a `confidence` field, and the agent's prompt requires showing low-confidence joins as "possible match" rather than "match."
+- `web/lib/profiles/*_manifest.json` files are generated from Parquet and are gitignored. Regenerate them with `python scripts/ingest/build_manifests.py` after rebuilding `data/parquet/` or changing `web/lib/profiles/officials_map.json`. Keep `officials_map.json` tracked; it is curated input, not generated output.
 
 ## 6. Architecture rules
 
@@ -196,6 +197,7 @@ The cost of an honest "I don't know" is a clarifying message. The cost of a fabr
 - [ ] Demo script in `DEMO.md` still works end-to-end (or has been updated)
 - [ ] If MCP tool surface changed: skill doc updated; eval rerun
 - [ ] If entity-resolution code touched: eval rerun, fuzzy-match thresholds reviewed
+- [ ] If web profile manifests changed locally: they remain gitignored and can be regenerated with `python scripts/ingest/build_manifests.py`
 - [ ] No new dependency without justification in the commit body
 - [ ] No secrets, sponsor keys, or raw TEC data files in the diff
 - [ ] Commit message names the specific change and the reason

@@ -1,4 +1,9 @@
-import type { OfficialWithStats, Profile, ProfileKind } from "./types";
+import type {
+  DonorSummary,
+  OfficialWithStats,
+  Profile,
+  ProfileKind,
+} from "./types";
 import { kirkWatson } from "./people/kirk-watson";
 import { gregAbbott } from "./people/greg-abbott";
 import { demetriusMcDaniel } from "./people/demetrius-mcdaniel";
@@ -6,6 +11,7 @@ import { endeavorRealEstate } from "./people/endeavor-real-estate";
 import { saveAustinNow } from "./people/save-austin-now";
 import { ridesharingWorks } from "./people/ridesharing-works";
 import manifest from "./officials_manifest.json";
+import donorManifest from "./donors_manifest.json";
 
 // Source of truth for everything profile-shaped. Order matters: it determines
 // the order of the home-page Officials list and the related-profile fallback.
@@ -19,6 +25,10 @@ export const PROFILES: Profile[] = [
 ];
 
 const BY_SLUG = new Map(PROFILES.map((p) => [p.slug, p]));
+const OFFICIALS = manifest as OfficialWithStats[];
+const OFFICIALS_BY_SLUG = new Map(OFFICIALS.map((o) => [o.slug, o]));
+const DONORS = donorManifest as DonorSummary[];
+const DONORS_BY_SLUG = new Map(DONORS.map((d) => [d.slug, d]));
 
 export function getProfileBySlug(slug: string): Profile | null {
   return BY_SLUG.get(slug) ?? null;
@@ -26,6 +36,12 @@ export function getProfileBySlug(slug: string): Profile | null {
 
 export function listAllProfiles(): Profile[] {
   return PROFILES;
+}
+
+export function listAllProfileSlugs(): string[] {
+  const slugs = new Set(PROFILES.map((p) => p.slug));
+  for (const row of OFFICIALS) slugs.add(row.slug);
+  return [...slugs];
 }
 
 export function listProfilesByKind(kind: ProfileKind): Profile[] {
@@ -97,32 +113,45 @@ export function listOfficialsForHome(): OfficialEntry[] {
   ];
 }
 
-// Merge registry entries with the build-time manifest. Drops anyone who lacks
-// stats (non-profiled candidates, zero-donation officials). Order follows the
-// manifest so the builder controls presentation.
-export function listOfficialsWithStats(): OfficialWithStats[] {
-  const bySlug = new Map(
-    listOfficialsForHome()
-      .filter((o): o is OfficialEntry & { slug: string } => !!o.slug)
-      .map((o) => [o.slug, o]),
-  );
+const OFFICIAL_OVERRIDES = new Map(
+  listOfficialsForHome()
+    .filter((o): o is OfficialEntry & { slug: string } => !!o.slug)
+    .map((o) => [o.slug, o]),
+);
 
-  const out: OfficialWithStats[] = [];
-  for (const row of manifest) {
-    const entry = bySlug.get(row.slug);
-    if (!entry) continue;
-    out.push({
-      slug: row.slug,
-      name: entry.name,
-      role: entry.role,
-      jurisdiction: entry.jurisdiction,
-      donationCount: row.donationCount,
-      totalRaised: row.totalRaised,
-      avgDonation: row.avgDonation,
-      yearsActive: row.yearsActive,
-    });
-  }
-  return out;
+export function listOfficialsWithStats(): OfficialWithStats[] {
+  return OFFICIALS.map(applyOfficialOverride);
+}
+
+export function hasProfilePage(slug: string): boolean {
+  return BY_SLUG.has(slug) || OFFICIALS_BY_SLUG.has(slug);
+}
+
+export function applyOfficialOverride<T extends OfficialWithStats>(row: T): T {
+  const entry = OFFICIAL_OVERRIDES.get(row.slug);
+  if (!entry) return row;
+  return {
+    ...row,
+    name: entry.name,
+    role: entry.role,
+    jurisdiction: entry.jurisdiction,
+  };
+}
+
+export function listDonorsWithStats(): DonorSummary[] {
+  return DONORS;
+}
+
+export function getDonorBySlug(slug: string): DonorSummary | null {
+  return DONORS_BY_SLUG.get(slug) ?? null;
+}
+
+export function donorSlug(name: string, zipCode: string | null | undefined) {
+  const stem = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const zip = (zipCode ?? "unknown")
+    .toLowerCase()
+    .replace(/[^0-9a-z]+/g, "");
+  return `${stem || "donor"}-${zip || "unknown"}`;
 }
 
 // Aliases used by the search classifier. Built once from the profile registry

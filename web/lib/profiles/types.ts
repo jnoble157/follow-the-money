@@ -22,7 +22,7 @@ export type ProfileKind =
 export type Jurisdiction = "austin" | "tx_state" | "tx_federal";
 
 // Stats surfaced on the home-page officials table. Built by
-// scripts/ingest/build_officials_manifest.py from Parquet and merged with the
+// scripts/ingest/build_manifests.py from Parquet and merged with the
 // registry entry.
 export type OfficialWithStats = {
   slug: string;
@@ -33,6 +33,55 @@ export type OfficialWithStats = {
   totalRaised: number;
   avgDonation: number;
   yearsActive: number;
+  source: Citation;
+  topOrganizationDonors: OfficialDonorLink[];
+};
+
+export type OfficialDonorLink = {
+  displayName: string;
+  donorSlug?: string;
+  total: number;
+  contributionCount: number;
+  source: Citation;
+};
+
+export type OfficialDetail = OfficialWithStats & {
+  aliases: string[];
+};
+
+export type DonorRecipient = {
+  recipient: string;
+  total: number;
+  source: Citation;
+  recipientSlug?: string;
+  recipientRole?: string;
+  recipientJurisdiction?: Jurisdiction;
+};
+
+export type DonorYearlyTotal = {
+  year: number;
+  total: number;
+  source: Citation;
+};
+
+export type DonorSummary = {
+  slug: string;
+  displayName: string;
+  donorType: "individual" | "organization";
+  totalGiven: number;
+  contributionCount: number;
+  avgContribution: number;
+  primaryEmployer: string | null;
+  primaryCity: string | null;
+  primaryZip: string;
+  yearsActive: number;
+  source: Citation;
+};
+
+export type DonorWithStats = DonorSummary & {
+  topRecipients: DonorRecipient[];
+  yearlyTotals: DonorYearlyTotal[];
+  employerVariants: string[];
 };
 
 export type ProfileStat = {

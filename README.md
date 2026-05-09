@@ -126,12 +126,20 @@ python scripts/ingest/download.py cf        # ~1.0 GB, ~30 s on a fast pipe — 
 python scripts/ingest/build.py austin               # < 5 s
 python scripts/ingest/build.py lobby                # ~100 s
 python scripts/ingest/build.py cf --delete-csv      # ~70 s
+
+# Build web profile manifests from Parquet
+python scripts/ingest/build_manifests.py
 ```
 
 The TEC `cf` step is the one that unlocks state-level investigations
 (Governor, AG, state legislators, statewide PACs). The other steps cover
 Austin City Council; the agent will return "no records found" for state
 filers until you've run both `download.py cf` and `build.py cf`.
+
+The web app imports generated profile manifests from `web/lib/profiles/` at
+build time. Those `*_manifest.json` files are gitignored because they are
+large derived data. Regenerate them after rebuilding Parquet or editing
+`web/lib/profiles/officials_map.json`.
 
 The MCP server, agent runtime, and frontend each have their own quickstart in their respective folders.
 

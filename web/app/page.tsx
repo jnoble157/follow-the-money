@@ -7,15 +7,6 @@ export default function HomePage() {
   return (
     <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-6 py-10">
       <section className="space-y-4">
-        <div className="flex items-baseline gap-3">
-          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
-            Texas Money Investigator
-          </span>
-          <span className="font-mono text-[11px] text-rule">·</span>
-          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
-            TEC + City of Austin · public records
-          </span>
-        </div>
         <h1 className="font-serif text-[44px] leading-tight text-ink">
           Follow the money in Texas state and Austin city politics.
         </h1>

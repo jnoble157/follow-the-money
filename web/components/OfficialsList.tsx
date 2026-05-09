@@ -114,39 +114,30 @@ export function OfficialsList({ perPage = 8 }: Props) {
         >
           {tab === "officials" ? "Public officials" : "Donors"}
         </h2>
-        {tab === "officials" && (
-          <Link
-            href={"/officials" as Route}
-            className="text-[11px] font-mono text-muted hover:text-ink transition-colors"
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setTab("officials")}
+            className={
+              tab === "officials"
+                ? "rounded-sm border border-ink bg-ink px-3 py-1.5 text-[12px] font-mono text-white"
+                : "rounded-sm border border-rule bg-white/70 px-3 py-1.5 text-[12px] font-mono text-ink hover:border-ink hover:bg-white"
+            }
           >
-            View all
-          </Link>
-        )}
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setTab("officials")}
-          className={
-            tab === "officials"
-              ? "rounded-sm border border-ink bg-ink px-3 py-1.5 text-[12px] font-mono text-white"
-              : "rounded-sm border border-rule bg-white/70 px-3 py-1.5 text-[12px] font-mono text-ink hover:border-ink hover:bg-white"
-          }
-        >
-          Officials
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("donors")}
-          className={
-            tab === "donors"
-              ? "rounded-sm border border-ink bg-ink px-3 py-1.5 text-[12px] font-mono text-white"
-              : "rounded-sm border border-rule bg-white/70 px-3 py-1.5 text-[12px] font-mono text-ink hover:border-ink hover:bg-white"
-          }
-        >
-          Donors
-        </button>
+            Officials
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("donors")}
+            className={
+              tab === "donors"
+                ? "rounded-sm border border-ink bg-ink px-3 py-1.5 text-[12px] font-mono text-white"
+                : "rounded-sm border border-rule bg-white/70 px-3 py-1.5 text-[12px] font-mono text-ink hover:border-ink hover:bg-white"
+            }
+          >
+            Donors
+          </button>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-md border border-rule bg-white">

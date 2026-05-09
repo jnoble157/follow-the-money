@@ -1,6 +1,13 @@
-# Long-running agent service deployed to Railway. Bakes the parquet
-# (~600 MB) into the image so DuckDB queries hit local files. The web
-# app on Vercel posts to /investigate over HTTP/SSE.
+# Long-running agent service deployed to Railway. Fetches the parquet
+# (~600 MB unpacked) from a GitHub Release at build time so DuckDB
+# queries hit local files. The web app on Vercel posts to /investigate
+# over HTTP/SSE.
+#
+# To bump the parquet, upload a new tarball to a new release tag and
+# update PARQUET_RELEASE_TAG below.
+
+ARG PARQUET_RELEASE_TAG=parquet-v1
+ARG PARQUET_REPO=jnoble157/follow-the-money
 
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
@@ -35,11 +42,20 @@ COPY agent/tsconfig.json ./agent/
 COPY mcp/src ./mcp/src
 COPY mcp/tsconfig.json ./mcp/
 
-# Bake parquet into the image. Local data/parquet/ MUST exist on the host
-# at build time (.dockerignore allows it through). The build context is
-# uploaded by `railway up` from the repo root, so the local 600 MB of
-# parquet ends up here.
-COPY data/parquet ./data/parquet
+# Pull parquet from a public GitHub Release. The arg-rebinding here is
+# the standard Docker pattern: ARG FOO is consumed inside this stage.
+ARG PARQUET_RELEASE_TAG
+ARG PARQUET_REPO
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p data \
+    && echo "fetching parquet from ${PARQUET_REPO}@${PARQUET_RELEASE_TAG}" \
+    && curl --fail --location --silent --show-error \
+       "https://github.com/${PARQUET_REPO}/releases/download/${PARQUET_RELEASE_TAG}/parquet.tar.gz" \
+       | tar -xz -C data \
+    && du -sh data/parquet \
+    && apt-get -y purge curl ca-certificates && apt-get -y autoremove
 
 EXPOSE 8080
 

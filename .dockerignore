@@ -13,15 +13,13 @@ node_modules
 .next
 .turbo
 
-# We bake parquet, not raw zips/csvs.
+# Parquet is fetched from a GitHub Release at image-build time, not
+# copied from the build context.
 data/raw
+data/parquet
 data/duckdb
 data/cache
 data/figures
-
-# Local-only backup parquet (full pre-trim).
-data/parquet/tec_trim
-**/*.full.parquet
 
 # Web app isn't run from this image, but the workspace install needs
 # web/package.json present.

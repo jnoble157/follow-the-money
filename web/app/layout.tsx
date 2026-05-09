@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AttributionFooter } from "@/components/AttributionFooter";
+import { MoneyMarquee } from "@/components/MoneyMarquee";
 import { NavBar } from "@/components/NavBar";
 import { Wordmark } from "@/components/Wordmark";
 import "@/styles/globals.css";
@@ -19,6 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen flex flex-col">
         <Wordmark right={<NavBar />} />
+        <MoneyMarquee />
         <div className="flex-1 flex flex-col">{children}</div>
         <AttributionFooter />
       </body>

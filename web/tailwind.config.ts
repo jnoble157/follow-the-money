@@ -25,6 +25,7 @@ const config: Config = {
       animation: {
         pulseRing: "pulseRing 1.6s ease-in-out infinite",
         cursorBlink: "cursorBlink 1.1s steps(2, jump-none) infinite",
+        marquee: "marquee 60s linear infinite",
       },
       keyframes: {
         pulseRing: {
@@ -34,6 +35,10 @@ const config: Config = {
         cursorBlink: {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0" },
+        },
+        marquee: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
         },
       },
     },

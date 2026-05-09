@@ -7,6 +7,8 @@ import type { Route } from "next";
 const links = [
   { href: "/officials", label: "Public Officials" },
   { href: "/donors", label: "Donors" },
+  { href: "/network", label: "Network" },
+  { href: "/documentation", label: "Documentation" },
 ] as const;
 
 export function NavBar() {

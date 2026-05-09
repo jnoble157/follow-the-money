@@ -47,7 +47,7 @@ const HEROES: Record<string, HeroMeta> = {
   },
   "a3-cross-tier": {
     id: "a3-cross-tier",
-    question: "Who quietly works both Austin City Hall and the Texas Capitol?",
+    question: "Do Austin's lobbyists also work the state capitol?",
     pillLabel: "Twelve cross-tier lobbyists",
     tags: ["lobby", "austin", "tec-state", "cross-tier", "fuzzy-join"],
   },

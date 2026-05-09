@@ -41,7 +41,7 @@ const tecCitation = {
 // same way in the lede.
 export const a3CrossTier: HeroInvestigation = {
   id: "a3-cross-tier",
-  question: "Who quietly works both Austin City Hall and the Texas Capitol?",
+  question: "Do Austin's lobbyists also work the state capitol?",
   pillLabel: "Twelve cross-tier lobbyists",
   tags: ["lobby", "austin", "tec-state", "cross-tier", "fuzzy-join"],
   searchAliases: [
@@ -56,7 +56,7 @@ export const a3CrossTier: HeroInvestigation = {
       kind: "emit",
       event: {
         type: "plan_started",
-        question: "Who quietly works both Austin City Hall and the Texas Capitol?",
+        question: "Do Austin's lobbyists also work the state capitol?",
       },
       delayAfterMs: 350,
     },

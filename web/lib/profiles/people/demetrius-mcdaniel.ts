@@ -88,5 +88,5 @@ export const demetriusMcDaniel: Profile = {
     { slug: "endeavor-real-estate", name: "Endeavor Real Estate Group", role: "Lobby client cluster" },
   ],
   defaultQuestion:
-    "Who quietly works both Austin City Hall and the Texas Capitol?",
+    "Do Austin's lobbyists also work the state capitol?",
 };

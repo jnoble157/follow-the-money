@@ -31,7 +31,7 @@ const HERO_QUESTIONS = [
   HEADLINE_QUESTION,
   "What happens to politicians' leftover campaign money?",
   "Are real-estate developers paying Austin politicians?",
-  "Who quietly works both Austin City Hall and the Texas Capitol?",
+  "Do Austin's lobbyists also work the state capitol?",
   "Which tech-founder money reshaped Austin's homelessness policy in 2021?",
   "Which Silicon Valley giant tried to buy an Austin election?",
 ];

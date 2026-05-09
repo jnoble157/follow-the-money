@@ -478,5 +478,45 @@
     "grounding": "model_knowledge",
     "sources": [],
     "generatedAt": "2026-05-09T23:56:06.856Z"
+  },
+  {
+    "slug": "kenneth-p-king-67681",
+    "text": "Kenneth P. King is a Texas state representative serving in the Texas House of Representatives. He is a Republican lawmaker who represents constituents at the state level and participates in the legislative process on behalf of Texas residents.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:56:11.750Z"
+  },
+  {
+    "slug": "abel-herrero-54318",
+    "text": "Abel Herrero is a State Representative in the Texas Legislature who represents constituents at the state level. He is an attorney by profession and serves on legislative committees while handling constituent services and statewide policy matters.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:56:16.078Z"
+  },
+  {
+    "slug": "stephanie-d-klick-57431",
+    "text": "Stephanie D. Klick is a State Representative serving in the Texas state legislature. In her public role she works on state legislative matters and serves on legislative committees.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:56:26.019Z"
+  },
+  {
+    "slug": "kevin-p-eltife-36573",
+    "text": "Kevin P. Eltife is a former member of the Texas State Senate. He previously served as mayor of Tyler and has been active in business and civic affairs in the state.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:56:30.752Z"
+  },
+  {
+    "slug": "craig-goldman-62004",
+    "text": "Craig Goldman is a State Representative in the Texas House of Representatives. He serves as a member of the Texas state legislature, representing his community and performing legislative duties on behalf of his constituents.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:56:35.348Z"
   }
 ]

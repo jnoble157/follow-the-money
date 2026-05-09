@@ -3,16 +3,15 @@
 // underlying parquet (~600 MB) doesn't fit on Vercel.
 //
 // Endpoints:
-//   GET  /health                      → 200 OK
+//   GET  /health                                  → 200 OK
 //   POST /investigate { question, sessionId }     → SSE of InvestigationEvent
-//   POST /resume     { sessionId, choice }        → SSE of InvestigationEvent
 //
 // Auth: optional shared-secret header `x-agent-token` matched against
 // AGENT_SHARED_SECRET. When the env var is absent the endpoint is open.
 //
 //   $ AGENT_PORT=8080 OPENAI_API_KEY=… npx tsx agent/src/server.ts
 import http from "node:http";
-import { runInvestigation, resolveDisambiguation } from "./runner.ts";
+import { runInvestigation } from "./runner.ts";
 import type { InvestigationEvent } from "@txmoney/mcp/events";
 
 const PORT = Number(process.env.PORT ?? process.env.AGENT_PORT ?? 8080);
@@ -103,26 +102,6 @@ const server = http.createServer(async (req, res) => {
     startSse(res);
     await streamGenerator(res, runInvestigation(question, sessionId));
     return;
-  }
-
-  if (method === "POST" && url.pathname === "/resume") {
-    if (!authOk(req)) return send(res, 401, { error: "unauthorized" });
-    let body: { sessionId?: unknown; disambiguationId?: unknown; merged?: unknown };
-    try {
-      body = await readJson(req);
-    } catch (err) {
-      return send(res, 400, { error: "invalid json", detail: String(err) });
-    }
-    const sessionId = typeof body.sessionId === "string" ? body.sessionId : "";
-    const disambiguationId =
-      typeof body.disambiguationId === "string" ? body.disambiguationId : "";
-    const merged = typeof body.merged === "boolean" ? body.merged : false;
-    if (!sessionId || !disambiguationId) {
-      return send(res, 400, { error: "missing sessionId or disambiguationId" });
-    }
-    const ok = resolveDisambiguation(sessionId, disambiguationId, merged);
-    if (!ok) return send(res, 404, { error: "no pending disambiguation" });
-    return send(res, 200, { ok: true });
   }
 
   send(res, 404, { error: "not found" });

@@ -51,23 +51,6 @@ export async function* runRemote(
   yield* parseSse(res.body);
 }
 
-export async function resolveRemote(
-  sessionId: string,
-  disambiguationId: string,
-  merged: boolean,
-): Promise<boolean> {
-  const base = process.env.AGENT_SERVICE_URL;
-  if (!base) throw new AgentServiceUnavailableError();
-  const url = `${base.replace(/\/$/, "")}/resume`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: buildHeaders(),
-    body: JSON.stringify({ sessionId, disambiguationId, merged }),
-  });
-  if (res.status === 404) return false;
-  return res.ok;
-}
-
 // Minimal SSE parser. The agent service writes one event per `data: …\n\n`
 // frame; we don't bother with `event:` or `id:` lines.
 async function* parseSse(

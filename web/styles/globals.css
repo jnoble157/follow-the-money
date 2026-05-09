@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Inter",
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Menlo", "Consolas",
+    "Liberation Mono", monospace;
+  --font-serif: "Charter", "Iowan Old Style", "Source Serif Pro",
+    "Apple Garamond", Georgia, serif;
+}
+
+html,
+body {
+  background: #fafaf7;
+  color: #1a1a1a;
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Numbers and identifiers in the narrative pick up tabular figures so the
+   columns of dollar amounts in tables line up. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+@layer components {
+  .citation-chip {
+    @apply relative ml-0.5 inline-flex items-baseline justify-center align-super text-[10px] font-mono leading-none text-accent;
+    min-width: 1.05em;
+    padding: 1px 3px 1px 3px;
+    border-bottom: 1px dotted theme("colors.accent");
+    cursor: help;
+  }
+  .citation-chip:hover,
+  .citation-chip:focus-visible {
+    @apply text-ink;
+    border-bottom-color: theme("colors.ink");
+    outline: none;
+  }
+  .pill {
+    @apply text-left text-[13px] leading-snug rounded-sm border border-rule bg-white/70 px-3 py-1.5 hover:border-ink hover:bg-white transition-colors;
+  }
+  .pill-kbd {
+    @apply font-mono text-[11px] text-muted;
+  }
+  .focus-ring {
+    @apply outline-none ring-0 focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-page;
+  }
+}

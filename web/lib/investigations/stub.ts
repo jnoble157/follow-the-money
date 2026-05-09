@@ -1,0 +1,107 @@
+import type {
+  HeroInvestigation,
+  InvestigationEvent,
+  ScriptStep,
+} from "./types";
+import { findHeroByQuestion } from "./registry";
+
+// Deterministic engine: drives one HeroInvestigation script through the same
+// event stream the real agent loop will eventually produce. Sessions live in
+// a process-local Map keyed by sessionId; on the dev server this is fine. In
+// production we'd swap to a Redis-backed store; for the hackathon demo this
+// machine is the production environment.
+
+type PendingDisambiguation = {
+  id: string;
+  resolve: (merged: boolean) => void;
+};
+
+type Session = {
+  sessionId: string;
+  investigation: HeroInvestigation;
+  pending?: PendingDisambiguation;
+};
+
+const SESSIONS = new Map<string, Session>();
+
+export type EngineDelays = {
+  // Multiplier on the script's natural delays. <1 speeds up (handy for tests
+  // and ambient mode); 1 is realistic; >1 slows down for stage demos.
+  speed?: number;
+};
+
+export class UnknownInvestigationError extends Error {
+  constructor(question: string) {
+    super(`No hero investigation registered for question: ${question}`);
+    this.name = "UnknownInvestigationError";
+  }
+}
+
+export async function* runInvestigation(
+  sessionId: string,
+  question: string,
+  delays: EngineDelays = {},
+): AsyncGenerator<InvestigationEvent> {
+  const investigation = findHeroByQuestion(question);
+  if (!investigation) {
+    throw new UnknownInvestigationError(question);
+  }
+  const session: Session = { sessionId, investigation };
+  SESSIONS.set(sessionId, session);
+
+  try {
+    for await (const ev of executeSteps(
+      session,
+      investigation.steps,
+      delays,
+    )) {
+      yield ev;
+    }
+  } finally {
+    SESSIONS.delete(sessionId);
+  }
+}
+
+async function* executeSteps(
+  session: Session,
+  steps: ScriptStep[],
+  delays: EngineDelays,
+): AsyncGenerator<InvestigationEvent> {
+  const speed = delays.speed ?? 1;
+  for (const step of steps) {
+    if (step.kind === "emit") {
+      yield step.event;
+      if (step.delayAfterMs > 0) {
+        await sleep(step.delayAfterMs * speed);
+      }
+      continue;
+    }
+
+    // await_disambiguation: park the session until /resume is called for this
+    // disambiguation id, then walk the appropriate branch.
+    const merged = await new Promise<boolean>((resolve) => {
+      session.pending = { id: step.id, resolve };
+    });
+    session.pending = undefined;
+    const branch = merged ? step.ifMerged : step.ifKept;
+    for await (const ev of executeSteps(session, branch, delays)) {
+      yield ev;
+    }
+  }
+}
+
+export function resolveDisambiguation(
+  sessionId: string,
+  disambiguationId: string,
+  merged: boolean,
+): boolean {
+  const session = SESSIONS.get(sessionId);
+  if (!session?.pending) return false;
+  if (session.pending.id !== disambiguationId) return false;
+  session.pending.resolve(merged);
+  return true;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}

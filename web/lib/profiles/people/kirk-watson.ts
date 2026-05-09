@@ -141,5 +141,5 @@ export const kirkWatson: Profile = {
     { slug: "save-austin-now", name: "Save Austin Now PAC", role: "2021 Prop B committee" },
     { slug: "demetrius-mcdaniel", name: "Demetrius McDaniel", role: "Cross-tier lobbyist" },
   ],
-  defaultQuestion: "Where did Kirk Watson's biggest political spending in 2022 actually go?",
+  defaultQuestion: "What happens to politicians' leftover campaign money?",
 };

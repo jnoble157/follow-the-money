@@ -35,9 +35,8 @@ export const HAND_SCRIPTED: HeroInvestigation[] = [
 export const RECORDED_FIXTURES: HeroInvestigation[] = [
   {
     id: "a2-endeavor",
-    question:
-      "What's the relationship between Endeavor Real Estate Group and Mayor Watson?",
-    pillLabel: "Endeavor Real Estate \u2194 Watson",
+    question: "Are real-estate developers paying Austin politicians?",
+    pillLabel: "One firm, two decades of checks",
     tags: [
       "austin",
       "watson",
@@ -47,13 +46,26 @@ export const RECORDED_FIXTURES: HeroInvestigation[] = [
       "entity-resolution",
       "employer-rollup",
     ],
+    searchAliases: [
+      "Endeavor Real Estate Group",
+      "Endeavor",
+      "Watson Endeavor",
+      "real estate developers",
+      "real estate donors",
+    ],
     steps: [],
   },
   {
     id: "b3-uber",
-    question: "Who funded Ridesharing Works for Austin in 2016?",
-    pillLabel: "Uber's 2016 Austin spend",
+    question: "Which Silicon Valley giant tried to buy an Austin election?",
+    pillLabel: "$3.21M into one ballot fight",
     tags: ["austin", "ballot", "2016", "pac", "corporate-money"],
+    searchAliases: [
+      "Ridesharing Works for Austin",
+      "Uber",
+      "Lyft",
+      "2016 Prop 1",
+    ],
     steps: [],
   },
 ];

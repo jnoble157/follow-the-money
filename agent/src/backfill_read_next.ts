@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import OpenAI from "openai";
 import { loadDotEnv } from "./env.ts";
-import { generateReadNext } from "./read_next.ts";
+import { generateReadNext } from "./read_next/index.ts";
 import type { InvestigationEvent } from "@txmoney/mcp/events";
 
 // One-shot: walks each recorded JSONL fixture under
@@ -59,14 +59,14 @@ async function processFile(
   const narrative = events
     .filter((e): e is Extract<InvestigationEvent, { type: "narrative_chunk" }> => e.type === "narrative_chunk")
     .map((e) => ({ role: e.role ?? "body", text: e.text }));
-  const graphNodes = events
+  const entities = events
     .filter((e): e is Extract<InvestigationEvent, { type: "graph_node" }> => e.type === "graph_node")
-    .map((e) => ({ kind: e.kind, label: e.label }));
+    .map((e) => ({ kind: e.kind, label: e.label, sublabel: e.sublabel }));
 
   const event = await generateReadNext(client, model, {
     question: meta.question,
     narrative,
-    graphNodes,
+    entities,
   });
   if (!event) return { skipped: true, reason: "model returned malformed JSON" };
 

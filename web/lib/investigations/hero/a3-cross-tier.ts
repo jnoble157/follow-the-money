@@ -35,17 +35,28 @@ const tecCitation = {
     "Texas Ethics Commission, 2025 Registered Lobbyists (Excel); the state lobby register, ~1,800 active registrations.",
 };
 
+// Question reframed for the home page: "who quietly works both sides" is
+// the rabbit-hole frame; "Austin city lobbyists also lobby the state
+// legislature" was the technocratic frame. The cross-tier reveal lands the
+// same way in the lede.
 export const a3CrossTier: HeroInvestigation = {
   id: "a3-cross-tier",
-  question: "Which Austin city lobbyists also lobby the Texas state legislature?",
-  pillLabel: "Cross-tier lobbyists",
+  question: "Who quietly works both Austin City Hall and the Texas Capitol?",
+  pillLabel: "Twelve cross-tier lobbyists",
   tags: ["lobby", "austin", "tec-state", "cross-tier", "fuzzy-join"],
+  searchAliases: [
+    "Austin city lobbyists",
+    "Texas state lobbyists",
+    "cross-tier lobby",
+    "Demetrius McDaniel",
+    "Drenner Group",
+  ],
   steps: [
     {
       kind: "emit",
       event: {
         type: "plan_started",
-        question: "Which Austin city lobbyists also lobby the Texas state legislature?",
+        question: "Who quietly works both Austin City Hall and the Texas Capitol?",
       },
       delayAfterMs: 350,
     },
@@ -112,6 +123,16 @@ export const a3CrossTier: HeroInvestigation = {
         sourceRows: [austinCitation.reportInfoIdent, tecCitation.reportInfoIdent],
       },
       delayAfterMs: 350,
+    },
+    {
+      kind: "emit",
+      event: {
+        type: "narrative_chunk",
+        role: "headline",
+        text: "Twelve lobbyists work both sides: the city register and the Capitol register, in 2025.",
+        citations: [austinCitation],
+      },
+      delayAfterMs: 600,
     },
     {
       kind: "emit",
@@ -201,6 +222,20 @@ export const a3CrossTier: HeroInvestigation = {
           total: 0,
           citation: i % 2 === 0 ? austinCitation : tecCitation,
         })),
+      },
+      delayAfterMs: 600,
+    },
+    // Read-next pick: the natural follow-up to a register-overlap is the
+    // donor side of the same names. Do any of these dual-tier lobbyists
+    // also write checks to the officials they're paid to influence?
+    {
+      kind: "emit",
+      event: {
+        type: "read_next",
+        question: "Do any of these lobbyists also donate to the officials they lobby?",
+        kicker: "FROM REGISTER TO DONOR",
+        rationale:
+          "Twelve names appear on both city and state lobby registers. The next step joins the donor file: a registrant who also gives to the people they're paid to influence is a different story from one who doesn't.",
       },
       delayAfterMs: 0,
     },

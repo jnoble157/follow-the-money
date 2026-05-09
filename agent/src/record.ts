@@ -27,16 +27,14 @@ type HeroMeta = {
 const HEROES: Record<string, HeroMeta> = {
   "a1-watson": {
     id: "a1-watson",
-    question:
-      "Where did Kirk Watson's biggest political spending in 2022 actually go?",
-    pillLabel: "Watson's biggest 2022 spend",
+    question: "What happens to politicians' leftover campaign money?",
+    pillLabel: "$1.18M Senate-to-mayor pivot",
     tags: ["austin", "watson", "mayor", "expenditure", "tec-state", "transfer"],
   },
   "a2-endeavor": {
     id: "a2-endeavor",
-    question:
-      "What's the relationship between Endeavor Real Estate Group and Mayor Watson?",
-    pillLabel: "Endeavor Real Estate \u2194 Watson",
+    question: "Are real-estate developers paying Austin politicians?",
+    pillLabel: "One firm, two decades of checks",
     tags: [
       "austin",
       "watson",
@@ -49,21 +47,21 @@ const HEROES: Record<string, HeroMeta> = {
   },
   "a3-cross-tier": {
     id: "a3-cross-tier",
-    question:
-      "Which Austin city lobbyists also lobby the Texas state legislature?",
-    pillLabel: "Cross-tier lobbyists",
+    question: "Who quietly works both Austin City Hall and the Texas Capitol?",
+    pillLabel: "Twelve cross-tier lobbyists",
     tags: ["lobby", "austin", "tec-state", "cross-tier", "fuzzy-join"],
   },
   "b1-save-austin": {
     id: "b1-save-austin",
-    question: "Who funded Save Austin Now PAC for the 2021 Prop B campaign?",
-    pillLabel: "Save Austin Now (Prop B)",
+    question:
+      "Which tech-founder money reshaped Austin's homelessness policy in 2021?",
+    pillLabel: "$4.95M reshaped Prop B",
     tags: ["austin", "ballot", "2021", "pac", "tech-money"],
   },
   "b3-uber": {
     id: "b3-uber",
-    question: "Who funded Ridesharing Works for Austin in 2016?",
-    pillLabel: "Uber's 2016 Austin spend",
+    question: "Which Silicon Valley giant tried to buy an Austin election?",
+    pillLabel: "$3.21M into one ballot fight",
     tags: ["austin", "ballot", "2016", "pac", "corporate-money"],
   },
 };

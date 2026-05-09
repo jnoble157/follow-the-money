@@ -75,11 +75,16 @@ function formatCount(n: number): string {
   return n.toLocaleString("en-US");
 }
 
+// Question reframed for the common-man home tile: a basic-curiosity
+// Google-search-style question that maps cleanly onto the underlying
+// scripted answer (Robert Epstein, Prophet Capital, the soccer-stadium
+// fight). "Can one rich person buy an Austin election?" is what someone
+// types into a search bar at midnight; the lede still tells the full
+// story.
 export const s1Epstein: HeroInvestigation = {
   id: "s1-epstein",
-  question:
-    "Who was the biggest individual political spender in Austin's 2018 ballot cycle?",
-  pillLabel: "Biggest 2018 Austin ballot spender",
+  question: "Can one rich person buy an Austin election?",
+  pillLabel: "One donor's $338K Austin spree",
   tags: [
     "austin",
     "ballot",
@@ -88,13 +93,21 @@ export const s1Epstein: HeroInvestigation = {
     "real-estate",
     "entity-resolution",
   ],
+  searchAliases: [
+    "Robert Epstein",
+    "Prophet Capital",
+    "Fair Play Austin PAC",
+    "McKalla Place",
+    "2018 ballot cycle",
+    "biggest individual donor",
+    "richest Austin donor",
+  ],
   steps: [
     {
       kind: "emit",
       event: {
         type: "plan_started",
-        question:
-          "Who was the biggest individual political spender in Austin's 2018 ballot cycle?",
+        question: "Can one rich person buy an Austin election?",
       },
       delayAfterMs: 350,
     },
@@ -228,6 +241,16 @@ export const s1Epstein: HeroInvestigation = {
       kind: "emit",
       event: {
         type: "narrative_chunk",
+        role: "headline",
+        text: `${formatAmount(rolledTotal)} from a single donor, across four Austin PACs in 2018.`,
+        citations: [fairPlay175kCitation],
+      },
+      delayAfterMs: 600,
+    },
+    {
+      kind: "emit",
+      event: {
+        type: "narrative_chunk",
         role: "lede",
         text: `One donor anchors Austin's 2018 ballot cycle. Robert Epstein, founder of Prophet Capital Asset Management LP, wrote ${formatCount(rolledCount)} contributions totaling ${formatAmount(rolledTotal)} across four PACs — including ${formatAmount(fairPlayTotal)} into Fair Play Austin PAC, the committee that opposed the McKalla Place soccer-stadium deal on the November ballot.`,
         citations: [fairPlay175kCitation, indyAustinCitation],
@@ -323,6 +346,23 @@ export const s1Epstein: HeroInvestigation = {
             citation: fairPlay175kCitation,
           },
         ],
+      },
+      delayAfterMs: 600,
+    },
+    // Read-next pick: the OTHER PAC the headline donor fed in the same
+    // cycle. The Indy Austin contributions are smaller but the question
+    // shape ("who funded that one?") is exactly the rabbit-hole the new
+    // template registry covers. Hard-pick the template here so the
+    // hand-scripted hero replays the same kind of follow-up the live
+    // agent's read-next pipeline produces.
+    {
+      kind: "emit",
+      event: {
+        type: "read_next",
+        question: "Who actually funded Indy Austin?",
+        kicker: "FOLLOW THE OTHER PAC",
+        rationale:
+          "Robert Epstein wrote $24,000 to a second 2018 Austin PAC. Indy Austin's full donor file shows who else fed the same flank of the ballot fight.",
       },
       delayAfterMs: 0,
     },

@@ -28,18 +28,30 @@ const fieldCitation = {
     "2024 Austin mayor's race fundraising by candidate (cover sheets aggregated).",
 };
 
+// Question reframed for the common-man home tile: a basic-curiosity
+// "what happens to..." question. The underlying scripted answer (Watson
+// transferred $1.18M of state-Senate funds into KPW PAC for his mayoral
+// race) is the canonical example of the answer; the lede names the
+// mechanism + legal context.
 export const a1Watson: HeroInvestigation = {
   id: "a1-watson",
-  question: "Where did Kirk Watson's biggest political spending in 2022 actually go?",
-  pillLabel: "Watson's biggest 2022 spend",
+  question: "What happens to politicians' leftover campaign money?",
+  pillLabel: "$1.18M Senate-to-mayor pivot",
   tags: ["austin", "watson", "mayor", "expenditure", "tec-state", "transfer"],
+  searchAliases: [
+    "Kirk Watson",
+    "Watson 2022",
+    "KPW PAC",
+    "Watson mayoral",
+    "Senate transfer",
+    "campaign account transfer",
+  ],
   steps: [
     {
       kind: "emit",
       event: {
         type: "plan_started",
-        question:
-          "Where did Kirk Watson's biggest political spending in 2022 actually go?",
+        question: "What happens to politicians' leftover campaign money?",
       },
       delayAfterMs: 350,
     },
@@ -157,6 +169,17 @@ export const a1Watson: HeroInvestigation = {
       kind: "emit",
       event: {
         type: "narrative_chunk",
+        role: "headline",
+        text:
+          "$1,186,764 of old state Senate money, rolled into a new Austin mayoral war chest.",
+        citations: [transferCitation],
+      },
+      delayAfterMs: 600,
+    },
+    {
+      kind: "emit",
+      event: {
+        type: "narrative_chunk",
         role: "lede",
         text:
           "Watson's single largest 2022 political expenditure was a $1,186,764 transfer from his Texas State Senate campaign account into a new committee, KPW PAC. The expenditure description on the filing reads 'Contribution (from prior Senate C/OH funds)' — a clean recycling of state-level fundraising into a city committee.",
@@ -257,6 +280,21 @@ export const a1Watson: HeroInvestigation = {
             citation: fieldCitation,
           },
         ],
+      },
+      delayAfterMs: 600,
+    },
+    // Read-next pick: KPW PAC's other side of the ledger. The headline
+    // traces money INTO the new committee; the natural follow-up is what
+    // it spent the money on. Maps to the `what_did_filer_fund` template
+    // shape against the kpw-pac graph node.
+    {
+      kind: "emit",
+      event: {
+        type: "read_next",
+        question: "Where did KPW PAC's money actually go?",
+        kicker: "FOLLOW THE SPEND",
+        rationale:
+          "$1.18M moved into the committee. The next step is the expenditure ledger: vendors, ad buys, transfers — the actual shape of an Austin mayoral campaign budget.",
       },
       delayAfterMs: 0,
     },

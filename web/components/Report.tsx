@@ -17,9 +17,15 @@ type Props = {
 };
 
 // The report panel. The agent's answer rendered as a structured news
-// report rather than a chat transcript: status strip, question, lede,
-// methods callout, body, reading note, missing-data note, citations
+// report rather than a chat transcript: status strip, question, headline,
+// lede, body, methods callout, reading note, missing-data note, citations
 // footer. Each section appears only when there's content for it.
+//
+// Render order is intentional. The headline pops at-a-glance for a casual
+// reader; the lede picks up where the headline left off; the body adds
+// pattern; the methods callout sits *below* the body so the agent's
+// entity-resolution work doesn't push the answer down the page. Citations
+// at the bottom carry Hard Rule 1 — the journalist's verification surface.
 export function Report({ state, fallbackQuestion }: Props) {
   const { status, narrative, failureReason } = state;
   const question = state.question ?? fallbackQuestion ?? null;
@@ -47,15 +53,18 @@ export function Report({ state, fallbackQuestion }: Props) {
           {failureReason}
         </p>
       ) : null}
+      {grouped.headline.map((c) => (
+        <Headline key={c.id} chunk={c} indexer={indexer} />
+      ))}
       {grouped.lede.map((c) => (
         <Lede key={c.id} chunk={c} indexer={indexer} />
+      ))}
+      {grouped.body.map((c) => (
+        <Paragraph key={c.id} chunk={c} indexer={indexer} />
       ))}
       {grouped.methods.length > 0 ? (
         <MethodsCallout chunks={grouped.methods} indexer={indexer} />
       ) : null}
-      {grouped.body.map((c) => (
-        <Paragraph key={c.id} chunk={c} indexer={indexer} />
-      ))}
       {grouped.reading_note.map((c) => (
         <ReadingNote key={c.id} chunk={c} indexer={indexer} />
       ))}
@@ -77,6 +86,7 @@ type Grouped = Record<NarrativeRole, NarrativeChunk[]>;
 
 function groupByRole(chunks: NarrativeChunk[]): Grouped {
   const out: Grouped = {
+    headline: [],
     lede: [],
     body: [],
     methods: [],
@@ -101,6 +111,36 @@ function makeFootnoteIndexer(): Indexer {
       return start;
     },
   };
+}
+
+// The takeaway. Sized between the question header (28px) and the lede
+// (18px) so the visual hierarchy is question -> headline -> lede -> body.
+// 22px serif with `tnum` digits — punchy enough to register at a glance,
+// distinct from the question above it. Footnote sits at the end like
+// every other chunk so Hard Rule 1 still holds.
+function Headline({
+  chunk,
+  indexer,
+}: {
+  chunk: NarrativeChunk;
+  indexer: Indexer;
+}) {
+  const start = chunk.citations.length > 0 ? indexer.next(chunk.citations.length) : 0;
+  // The headline sits between the 28px question and the 18px lede. To keep
+  // the visual hierarchy obvious without a marketing-style color callout,
+  // we shift typeface register: serif italic at 20px with a slightly
+  // dropped contrast (text-muted-ish via 85% ink). It reads as a deck /
+  // pull-line, clearly distinct from the question (regular roman 28px)
+  // and the lede (regular roman 18px) while staying in the editorial
+  // palette.
+  return (
+    <p className="font-serif italic text-[20px] leading-snug text-ink/85 tnum">
+      {chunk.text}
+      {chunk.citations.length > 0 ? (
+        <FootnoteGroup startIndex={start} citations={chunk.citations} />
+      ) : null}
+    </p>
+  );
 }
 
 function Lede({
@@ -318,23 +358,24 @@ function CitationsFooter({ narrative }: { narrative: NarrativeChunk[] }) {
       <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
         Citations
       </p>
-      <ol className="space-y-1.5 text-[12px] text-ink">
+      <ol className="space-y-1.5 text-[13px] text-ink">
         {ordered.map((c, i) => (
           <li key={c.reportInfoIdent} className="flex gap-3">
             <span className="font-mono tnum text-muted">[{i + 1}]</span>
-            <div className="flex-1 space-y-0.5">
-              <span className="font-mono text-[11px] text-accent">
-                {c.reportInfoIdent}
-              </span>
+            <div className="flex-1">
               <p className="leading-snug text-ink">{c.rowSummary}</p>
-              <a
-                href={c.url}
-                target="_blank"
-                rel="noreferrer"
-                className="font-mono text-[11px] text-evidence underline decoration-dotted hover:text-accent"
-              >
-                Open source filing →
-              </a>
+              <p className="font-mono text-[11px] text-muted">
+                <span className="text-accent/80">{c.reportInfoIdent}</span>
+                <span className="text-rule"> · </span>
+                <a
+                  href={c.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-evidence underline decoration-dotted hover:text-accent"
+                >
+                  Open source filing →
+                </a>
+              </p>
             </div>
           </li>
         ))}

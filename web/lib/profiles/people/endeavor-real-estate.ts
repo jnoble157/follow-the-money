@@ -125,5 +125,5 @@ export const endeavorRealEstate: Profile = {
   related: [
     { slug: "kirk-watson", name: "Kirk Watson", role: "Mayor of Austin" },
   ],
-  defaultQuestion: "What's the relationship between Endeavor Real Estate Group and Mayor Watson?",
+  defaultQuestion: "Are real-estate developers paying Austin politicians?",
 };

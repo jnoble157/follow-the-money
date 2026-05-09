@@ -32,17 +32,28 @@ const samples = donors.map((d) =>
   row(d.token, `Save Austin Now PAC, donor ${d.name}, employer ${d.employer}, $${d.amount.toLocaleString("en-US")}, 2021.`),
 );
 
+// Question reframed for the home page: "the tech-founder money that
+// reshaped Austin homelessness policy" is the rabbit-hole frame; "who
+// funded Save Austin Now PAC for the 2021 Prop B campaign" was the
+// technocratic frame. The PAC name and the prop number land in the lede.
 export const b1SaveAustin: HeroInvestigation = {
   id: "b1-save-austin",
-  question: "Who funded Save Austin Now PAC for the 2021 Prop B campaign?",
-  pillLabel: "Save Austin Now (Prop B)",
+  question: "Which tech-founder money reshaped Austin's homelessness policy in 2021?",
+  pillLabel: "$4.95M reshaped Prop B",
   tags: ["austin", "ballot", "2021", "pac", "tech-money"],
+  searchAliases: [
+    "Save Austin Now PAC",
+    "Save Austin Now",
+    "Prop B 2021",
+    "camping ban",
+    "Philip Canfield",
+  ],
   steps: [
     {
       kind: "emit",
       event: {
         type: "plan_started",
-        question: "Who funded Save Austin Now PAC for the 2021 Prop B campaign?",
+        question: "Which tech-founder money reshaped Austin's homelessness policy in 2021?",
       },
       delayAfterMs: 300,
     },
@@ -92,6 +103,16 @@ export const b1SaveAustin: HeroInvestigation = {
       kind: "emit",
       event: {
         type: "narrative_chunk",
+        role: "headline",
+        text: "$4,950,000 raised by Save Austin Now PAC for the 2021 Prop B camping-ban fight, mostly from tech founders.",
+        citations: [totalCitation],
+      },
+      delayAfterMs: 600,
+    },
+    {
+      kind: "emit",
+      event: {
+        type: "narrative_chunk",
         role: "lede",
         text: "Save Austin Now PAC raised $4,950,000 for the 2021 Prop B campaign — the ballot question to reinstate Austin's public-camping ban. The committee's biggest individual gifts came from Texas tech founders and venture investors: Philip Canfield (Ariet Capital, $450,000), Joe Liemandt (ESW Capital / Trilogy, $100,000), Stephen Oskoui and Luke Nosek (Gigafund / Founders Fund, $100,000 each), and Joe Lonsdale (8VC, $75,000). Royston Danielle of TelcoDR contributed $148,000; the only corporate gift in this slice is $100,000 from Charles Maund Toyota.",
         citations: [totalCitation, samples[0], samples[1]],
@@ -133,6 +154,21 @@ export const b1SaveAustin: HeroInvestigation = {
           total: d.amount,
           citation: samples[i],
         })),
+      },
+      delayAfterMs: 600,
+    },
+    // Read-next pick: rollup by employer. Several Big Five donors share
+    // tech-firm employer strings; the agent's `cluster_employer_variants`
+    // tool would fold those into a single rolled-up entity and tee up
+    // the obvious follow-up — which Austin firms actually drove the PAC.
+    {
+      kind: "emit",
+      event: {
+        type: "read_next",
+        question: "Which Austin firms actually paid for Save Austin Now?",
+        kicker: "ROLL UP THE EMPLOYERS",
+        rationale:
+          "Five names wrote roughly half the total. Their employer fields cluster into a handful of Austin tech and real-estate firms — the rolled-up view is one tool call away.",
       },
       delayAfterMs: 0,
     },

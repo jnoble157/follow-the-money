@@ -57,9 +57,15 @@ export function classify(query: string): Suggestion[] {
     }
   }
 
-  // 2. Hero investigations — substring match on question + pill label.
+  // 2. Hero investigations — substring match on question + pill label +
+  // search aliases. Aliases catch the case where a hero's user-facing
+  // question is reframed away from a literal entity name a user might
+  // still type ("Save Austin Now PAC" still surfaces b1 even though b1's
+  // headline question no longer mentions the PAC by name).
   for (const inv of HERO_INVESTIGATIONS) {
-    const haystack = normalize(`${inv.question} ${inv.pillLabel}`);
+    const haystack = normalize(
+      [inv.question, inv.pillLabel, ...(inv.searchAliases ?? [])].join(" "),
+    );
     if (haystack.includes(q)) {
       out.push({
         kind: "investigation",

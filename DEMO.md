@@ -22,41 +22,61 @@ that's a sev-1.
 the Texas Ethics Commission and City of Austin Open Data, with an agent
 that writes sourced narrative reports."
 
-1. **Open `/`.** Point at the trending strip (recorded heroes) and the
-   public-officials roster.
-2. **Click the S1 hero — "Who was the biggest individual political spender
-   in Austin's 2018 ballot cycle?"** Watch the plan trace stream live:
-   `find_filer` -> `top_donors` -> `cluster_employer_variants` ->
-   methods chunk + lede + complete. The methods chunk is the agent
-   declaring its auto-merge with the cluster confidence.
-3. **Switch to the Endeavor relationship hero (A2).** Plan trace shows
-   the multi-step join across PAC committees and donor employer text;
-   narrative names Endeavor employees and the receiving PAC with
-   citations to TEC report numbers.
-4. **Run the Uber/Ridesharing 2016 hero (B3).** Lede opens with the
-   pattern ("two companies bought one PAC"), body hits the 93% / 7%
-   split, citations resolve to the Austin City Clerk dataset.
-5. **Free-form question.** Type "Who funded Save Austin Now PAC for the
-   2021 Prop B campaign?" — the agent runs `top_donors` directly,
-   surfaces the high-dollar individual contributors, and grounds every
-   number in TEC reports.
-6. **Demonstrate the federal refusal.** Type "Who are Ted Cruz's biggest
+1. **Open `/`.** Point at the trending strip (rabbit-hole tiles, each one
+   a different shape of investigation) and the public-officials roster.
+2. **Click the S1 hero — "Can one rich person buy an Austin election?"**
+   The headline lands first ("$338,987 from a single donor, across four
+   Austin PACs in 2018."), then the lede tells the soccer-stadium story.
+   Plan trace streams live: `top_pacs` -> `get_contributions` ->
+   `cluster_employer_variants` -> headline + lede + body + methods +
+   complete. The methods chunk (now below the body) is the agent
+   declaring its three-variant auto-merge with the cluster confidence,
+   and the read-next rail teases "Who actually funded Indy Austin?" — the
+   *other* PAC the donor seeded.
+3. **Switch to the Endeavor hero (A2) — "Are real-estate developers
+   paying Austin politicians?"** Plan trace shows the multi-step join
+   across donor employer text; narrative names Endeavor-linked
+   contributors and Watson's state filer with citations to TEC report
+   numbers. Headline pops the two-decade pattern in one line.
+4. **Run the Uber/Ridesharing 2016 hero (B3) — "Which Silicon Valley
+   giant tried to buy an Austin election?"** Headline reads "$3.21M
+   from two Silicon Valley rideshare giants into one Austin ballot
+   fight in 2016. Uber wrote 93% of it." Citations resolve to the
+   Austin City Clerk dataset.
+5. **Click into the read-next rail** from any of the three. New pipeline:
+   the question is template-instantiated against this report's graph
+   nodes, so the rabbit hole can't dead-end on missing data. The kicker
+   teases the *reveal*, not the topic.
+6. **Free-form question.** Type "Who is funding kirk watson" — the live
+   agent picks the right tools (`find_state_filer` -> `top_state_donors`),
+   emits a headline + lede with TREPAC and the major donors, and grounds
+   every number in TEC report numbers. (The runner rejects
+   `complete_investigation` until the agent has emitted a headline, so
+   this surface is reliable even when the model wants to skip ahead.)
+7. **Demonstrate the federal refusal.** Type "Who are Ted Cruz's biggest
    donors?" — the agent emits a `missing` chunk pointing at the FEC and
    stops. No fabrication.
-7. **Land the close on the MCP surface.** Open `mcp/src/tools/` in a
+8. **Land the close on the MCP surface.** Open `mcp/src/tools/` in a
    terminal: one file per tool, every result row carries a
    `reportInfoIdent`. The agent's narrative is grounded by construction.
 
 ## Pass-rate snapshot
 
-Recorded 2026-05-09 against the post-disambiguation-deletion flow
-(no user-facing modal; the agent auto-merges with a methods chunk).
+Recorded 2026-05-09 after the rabbit-hole funnel rework (common-man home
+tile copy, headline narrative role, templated read-next).
 
 | Suite              | Result | Floor    |
 | ------------------ | ------ | -------- |
 | Regression (CI)    | 3/3    | 3/3      |
-| Exploratory (demo) | 90/90  | >= 86/90 |
+| Exploratory (demo) | 88/90  | >= 86/90 |
 | Web smoke          | 15/15  | 15/15    |
+
+The two exploratory failures are both pre-existing model-non-determinism
+patterns documented in `agent/src/eval/known_gaps.md`
+(`er-fair-play-cluster`, `fc-out-of-state`). The same fair-play question
+passes in the regression suite on the same run — pure sampling variance
+on whether GPT-5 with minimal effort decides the cluster step is
+needed.
 
 Per-category exploratory breakdown:
 

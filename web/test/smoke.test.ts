@@ -20,16 +20,20 @@ async function classifyOverHttp(query: string): Promise<ClassifierSuggestion[]> 
   const body = (await res.json()) as { suggestions: ClassifierSuggestion[] };
   return body.suggestions;
 }
-const HEADLINE_QUESTION =
-  "Who was the biggest individual political spender in Austin's 2018 ballot cycle?";
+// Headline question + the rest of the hero questions. The wording is the
+// common-man, basic-curiosity copy (see the rabbit-hole funnel rework);
+// the underlying scripted/recorded answers are unchanged. Each entry
+// must be kept in sync with the matching hero registry entry — replay
+// routing keys on normalized question text.
+const HEADLINE_QUESTION = "Can one rich person buy an Austin election?";
 
 const HERO_QUESTIONS = [
   HEADLINE_QUESTION,
-  "Where did Kirk Watson's biggest political spending in 2022 actually go?",
-  "What's the relationship between Endeavor Real Estate Group and Mayor Watson?",
-  "Which Austin city lobbyists also lobby the Texas state legislature?",
-  "Who funded Save Austin Now PAC for the 2021 Prop B campaign?",
-  "Who funded Ridesharing Works for Austin in 2016?",
+  "What happens to politicians' leftover campaign money?",
+  "Are real-estate developers paying Austin politicians?",
+  "Who quietly works both Austin City Hall and the Texas Capitol?",
+  "Which tech-founder money reshaped Austin's homelessness policy in 2021?",
+  "Which Silicon Valley giant tried to buy an Austin election?",
 ];
 
 type Event = { type: string; [k: string]: unknown };
@@ -165,7 +169,10 @@ test("home page renders trending strip and officials roster", async () => {
   const body = await html("/");
   assert.match(body, /Trending investigations/i);
   assert.match(body, /Public officials/i);
-  assert.match(body, /Kirk Watson/);
+  // Trending tile #2 — the Senate-to-mayor pivot. Stable kicker copy
+  // anchors the assertion without binding it to any specific official's
+  // name (the reframed tiles intentionally don't lead with names).
+  assert.match(body, /Senate-to-mayor pivot/);
   assert.match(body, /Greg Abbott/);
   assert.match(body, /Looking for a federal official\?/);
 });
@@ -199,14 +206,14 @@ test("/investigate?q=<hero question> sends the question to the client", async ()
   // as initial state; the agent stream itself is started client-side. We only
   // assert the page renders with the question bound, not the stream.
   const q = encodeURIComponent(
-    "Where did Kirk Watson's biggest political spending in 2022 actually go?",
+    "What happens to politicians' leftover campaign money?",
   );
   const body = await html(`/investigate?q=${q}`);
   // The QuestionInput's `defaultValue` is the bound question, so it must
   // appear somewhere in the HTML payload.
   assert.match(
     body,
-    /Where did Kirk Watson's biggest political spending in 2022 actually go\?/,
+    /What happens to politicians' leftover campaign money\?/,
   );
 });
 

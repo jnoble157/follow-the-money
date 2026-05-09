@@ -10,7 +10,10 @@ import {
   writerToolsForOpenAI,
   type WriterToolName,
 } from "./writer_tools.ts";
-import { generateReadNext } from "./read_next.ts";
+import {
+  generateReadNext,
+  type ReadNextEntity,
+} from "./read_next/index.ts";
 import type { InvestigationEvent } from "@txmoney/mcp/events";
 import { isExemptCitation } from "@txmoney/mcp/citations";
 
@@ -107,7 +110,7 @@ export async function* runInvestigation(
   // the read-next prompt short — we feed it the lede + body chunks plus a
   // short list of graph nodes, not the whole event log.
   const narrativeForReadNext: Array<{ role: string; text: string }> = [];
-  const graphNodesForReadNext: Array<{ kind: string; label: string }> = [];
+  const graphNodesForReadNext: ReadNextEntity[] = [];
 
   try {
     for (let turn = 0; turn < MAX_AGENT_TURNS && !completed; turn++) {
@@ -190,7 +193,7 @@ export async function* runInvestigation(
         const rn = await generateReadNext(client, READ_NEXT_MODEL, {
           question,
           narrative: narrativeForReadNext,
-          graphNodes: graphNodesForReadNext,
+          entities: graphNodesForReadNext,
         });
         if (rn) yield rn;
       } catch (err) {
@@ -228,7 +231,7 @@ async function* streamTurn(opts: {
   getStepId: () => string;
   setStepId: (id: string) => void;
   narrativeForReadNext: Array<{ role: string; text: string }>;
-  graphNodesForReadNext: Array<{ kind: string; label: string }>;
+  graphNodesForReadNext: ReadNextEntity[];
   outcome: TurnOutcome;
 }): AsyncGenerator<InvestigationEvent> {
   const stream = await opts.client.responses.create({
@@ -274,7 +277,7 @@ async function* streamTurn(opts: {
       block: { callId, name, args },
       currentStepId: opts.getStepId(),
       citationRegistry: opts.citationRegistry,
-      narrativeCount: opts.narrativeForReadNext.length,
+      narrativeRolesSoFar: opts.narrativeForReadNext.map((n) => n.role),
     });
     for (const e of handled.events) {
       // Mirror narrative + graph_node into the read-next buffers as we go.
@@ -284,7 +287,11 @@ async function* streamTurn(opts: {
           text: e.text,
         });
       } else if (e.type === "graph_node") {
-        opts.graphNodesForReadNext.push({ kind: e.kind, label: e.label });
+        opts.graphNodesForReadNext.push({
+          kind: e.kind,
+          label: e.label,
+          sublabel: e.sublabel,
+        });
       }
       yield e;
     }
@@ -436,13 +443,13 @@ async function handleToolUse(args: {
   block: Block;
   currentStepId: string;
   citationRegistry: CitationRegistry;
-  narrativeCount: number;
+  narrativeRolesSoFar: readonly string[];
 }): Promise<Handled> {
-  const { block, currentStepId, citationRegistry, narrativeCount } = args;
+  const { block, currentStepId, citationRegistry, narrativeRolesSoFar } = args;
   const events: InvestigationEvent[] = [];
 
   if (isWriterTool(block.name)) {
-    return handleWriterTool(block, currentStepId, citationRegistry, narrativeCount);
+    return handleWriterTool(block, currentStepId, citationRegistry, narrativeRolesSoFar);
   }
 
   const tool = getTool(block.name);
@@ -520,8 +527,10 @@ function handleWriterTool(
   block: Block,
   currentStepId: string,
   citationRegistry: CitationRegistry,
-  narrativeCount: number,
+  narrativeRolesSoFar: readonly string[],
 ): Handled {
+  const narrativeCount = narrativeRolesSoFar.length;
+  const hasHeadline = narrativeRolesSoFar.includes("headline");
   const events: InvestigationEvent[] = [];
   const name = block.name as WriterToolName;
   const schema = WRITER_TOOL_SCHEMAS[name];
@@ -555,7 +564,13 @@ function handleWriterTool(
     }
     case "emit_narrative": {
       const a = parsed as {
-        role: "lede" | "body" | "methods" | "reading_note" | "missing";
+        role:
+          | "headline"
+          | "lede"
+          | "body"
+          | "methods"
+          | "reading_note"
+          | "missing";
         text: string;
         citations: Array<{
           reportInfoIdent: string;
@@ -638,6 +653,26 @@ function handleWriterTool(
               "explaining what's not in this view, then call complete_investigation again. " +
               "If a tool returned 0 rows for a filer that has filerActivity (lifetime data exists outside your cycle), " +
               "consider widening the cycle and trying once more before narrating the gap.",
+          },
+          complete: false,
+        };
+      }
+      // Headlines are mandatory and the model occasionally drifts off the
+      // system-prompt rule. If it tries to complete with chunks but no
+      // headline among them, bounce it back. The model corrects and emits
+      // emit_narrative({role:"headline"}) on the next turn; the renderer
+      // groups by role so the headline still lands above the lede in the
+      // report panel even though it arrived on the wire later.
+      if (!hasHeadline) {
+        return {
+          events: [],
+          toolOutput: {
+            type: "function_call_output",
+            call_id: block.callId,
+            output:
+              "REJECTED: complete_investigation requires a headline chunk. Emit emit_narrative " +
+              "with role:'headline' (5-18 words, the single number a casual reader takes away, " +
+              "one citation, no em dashes, plain commas) before calling complete_investigation again.",
           },
           complete: false,
         };

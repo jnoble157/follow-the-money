@@ -2,27 +2,28 @@ import Link from "next/link";
 import type { Route } from "next";
 import { HERO_INVESTIGATIONS } from "@/lib/investigations/registry";
 
-// Hand-curated copy for the trending strip. Headlines come from the
-// investigations themselves; the kicker / why-it-matters lines are
-// editorial and are intentionally short.
+// Hand-curated copy for the trending strip. Each tile pairs a basic-
+// curiosity question with a concrete answer the underlying scripted run
+// will deliver. Editorial copy stays short and casual; the technical
+// shape of the investigation lands inside the report, not on the tile.
 const TRENDING = [
   {
     id: "s1-epstein",
     rank: 1,
-    kicker: "ATX → statewide pipeline",
-    why: "How a small Austin PAC fed three statewide PACs, and what the cluster of donor employer variants actually meant.",
+    kicker: "One man, four PACs",
+    why: "In 2018, one Austin man wrote nine checks under three different employer names. Add them up and he outspent every other donor that year.",
   },
   {
     id: "a1-watson",
     rank: 2,
-    kicker: "Senate → mayor transfer",
-    why: "Watson's largest 2022 expenditure was a $1.18M transfer from his old Senate account into a new Austin committee.",
+    kicker: "Old money, new race",
+    why: "When a Texas senator ran for mayor, $1.18M of leftover state-Senate cash quietly moved with him.",
   },
   {
     id: "a2-endeavor",
     rank: 3,
-    kicker: "One firm, three slices",
-    why: "Endeavor Real Estate Group shows up as donors, lobby clients, and PAC funders — all three hidden behind employer-name variants.",
+    kicker: "Twenty years of $2,500 checks",
+    why: "One Austin real-estate firm has been writing $1,000 to $2,500 checks to the same politician since 2002. Small enough to escape notice, frequent enough to add up.",
   },
 ] as const;
 

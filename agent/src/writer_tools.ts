@@ -28,9 +28,9 @@ export const WRITER_TOOL_SCHEMAS = {
 
   emit_narrative: z.object({
     role: z
-      .enum(["lede", "body", "methods", "reading_note", "missing"])
+      .enum(["headline", "lede", "body", "methods", "reading_note", "missing"])
       .describe(
-        "report section: 'lede' is the single-paragraph answer at the top, 'body' is normal reporting paragraphs, 'methods' is a callout that explains entity-resolution work, 'reading_note' is the 'we describe, we don't characterize' disclaimer, 'missing' is the 'what's not in this view' note for federal-only entities or absent data",
+        "report section: 'headline' is the one-phrase takeaway with the single number a casual reader takes away (renders BIG, must come first, max one per investigation), 'lede' is the single-paragraph answer below the headline, 'body' is normal reporting paragraphs, 'methods' is a callout that explains entity-resolution work, 'reading_note' is the 'we describe, we don't characterize' disclaimer, 'missing' is the 'what's not in this view' note for federal-only entities or absent data",
       ),
     text: z.string(),
     citations: z

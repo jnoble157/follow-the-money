@@ -47,7 +47,13 @@ export type RecipientRow = {
 // Sections of the report a narrative chunk lives in. The Report component
 // switches on this to apply the right typography and ordering. Default is
 // "body" so old scripts without the field render unchanged.
+//
+// Render order is fixed: headline -> lede -> body -> methods -> reading_note
+// -> missing. The agent emits at most one "headline" per investigation and
+// it must come before the lede; the renderer promotes it visually so a
+// glancing reader gets the takeaway in the first second.
 export type NarrativeRole =
+  | "headline"      // at-a-glance takeaway: one phrase + the headline number
   | "lede"          // single answer paragraph at the top
   | "body"          // standard reporting paragraphs
   | "methods"       // boxed callout: how the agent earned its keep

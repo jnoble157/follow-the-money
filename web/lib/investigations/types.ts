@@ -32,5 +32,11 @@ export type HeroInvestigation = {
   // hand-curated for the hand-scripted heroes; recorded fixtures inherit them
   // from a header row in the JSONL file.
   tags: string[];
+  // Additional search terms the classifier matches against. Use this when
+  // a hero's *user-facing* question is reframed away from a literal entity
+  // name a user might still type into the search bar (e.g. b1's question
+  // no longer contains "Save Austin Now PAC", but searching that name
+  // should still surface b1).
+  searchAliases?: string[];
   steps: ScriptStep[];
 };

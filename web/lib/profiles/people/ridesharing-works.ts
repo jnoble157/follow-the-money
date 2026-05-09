@@ -80,5 +80,6 @@ export const ridesharingWorks: Profile = {
     ],
   },
   related: [],
-  defaultQuestion: "Who funded Ridesharing Works for Austin in 2016?",
+  defaultQuestion:
+    "Which Silicon Valley giant tried to buy an Austin election?",
 };

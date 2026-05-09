@@ -87,5 +87,6 @@ export const saveAustinNow: Profile = {
     })),
   },
   related: [],
-  defaultQuestion: "Who funded Save Austin Now PAC for the 2021 Prop B campaign?",
+  defaultQuestion:
+    "Which tech-founder money reshaped Austin's homelessness policy in 2021?",
 };

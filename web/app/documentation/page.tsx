@@ -1,5 +1,6 @@
 import type { Metadata, Route } from "next";
 import Link from "next/link";
+import { DataRelationDiagram } from "@/components/DataRelationDiagram";
 
 export const metadata: Metadata = {
   title: "Documentation — Texas Money Investigator",
@@ -512,58 +513,7 @@ export default function DocumentationPage() {
           not facts.
         </p>
 
-        <div className="rounded-md border border-rule bg-white p-6 font-mono text-[11px] leading-relaxed text-ink overflow-x-auto">
-          <pre className="text-[11px] leading-[1.65] text-ink">{`
-   STATE LEVEL (TEC)                                CITY LEVEL (Austin)
-   ─────────────────                                ───────────────────
-
-   ┌──────────────────┐   filerIdent   ┌─────────┐  Recipient    ┌──────────────────┐
-   │   TEC CF filers  │◀───────────────│ contribs│               │ Austin contribs  │
-   │  (filers.csv)    │                │ expend  │               │  (Donor →        │
-   │                  │   filerIdent   │ loans   │               │   Recipient)     │
-   │  filerIdent ──▶  │───────────────▶│ pledges │               │                  │
-   │                  │                │ debts   │               │  TRANSACTION_ID  │
-   │                  │   reportInfo   │ travel  │               │                  │
-   │                  │     Ident      │ cover   │               │ Austin expend    │
-   └──────────────────┘                └────┬────┘               │  (Payee ←        │
-            │                               │                    │   Paid_By)       │
-            │ fuzzy name match              │                    └────────┬─────────┘
-            │ (only candidate link          │                             │
-            │  across jurisdictions)        │                             │
-            ▼                               │                             ▼
-   ┌──────────────────┐                     │                    ┌──────────────────┐
-   │ TEC Lobby        │                     │                    │ Austin lobby     │
-   │ (RegisteredLob)  │  FilerID            │                    │ (registrants)    │
-   │                  │◀──────────┐         │                    │                  │
-   │ FilerID ──▶      │           │         │                    │ REGISTRANT_ID ──▶│
-   │                  │           │         │                    │                  │
-   └────────┬─────────┘           │         │                    └────────┬─────────┘
-            │                     │         │                             │
-            │ FilerID + ClientName│         │ payee/contributor name      │ REGISTRANT_ID
-            ▼                     │         │ (free text, fuzzy)          ▼
-   ┌──────────────────┐           │         ▼                    ┌──────────────────┐
-   │ LobbyGroupBy-    │           │   ┌───────────────┐          │ clients,         │
-   │ Lobbyist         │           │   │ Cross-source  │          │ reports,         │
-   │  (engagements)   │           │   │ donor lookup  │          │ municipal_       │
-   │                  │           │   │  (name fuzzy) │          │ questions,       │
-   │ ClientName ─┐    │           │   └───────────────┘          │ expenditures,    │
-   └─────────────┼────┘           │                              │ employees,       │
-                 │                │                              │ real_property    │
-                 ▼                │                              │                  │
-   ┌──────────────────┐           │                              │  REPORT_ID,      │
-   │ LobbySubjMatter  │           │                              │  TRANSACTION_ID, │
-   │  (subject codes  │           │                              │  CO_ID,          │
-   │   per engagement)│           │                              │  MQ_ID,          │
-   └──────────────────┘           │                              │  EMP_ID, RP_ID   │
-                                  │                              └────────┬─────────┘
-   ┌──────────────────┐           │                                       │ CO_ID
-   │ Pol_FundsBy-     │           │                                       ▼
-   │ Lobbyists        │───────────┘                              ┌──────────────────┐
-   │  (lobbyist ←──   │  FilerID                                 │ city_officials   │
-   │   political fund)│                                          │  (named targets) │
-   └──────────────────┘                                          └──────────────────┘
-`}</pre>
-        </div>
+        <DataRelationDiagram />
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <RelationCard

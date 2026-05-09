@@ -1,6 +1,7 @@
 import { Avatar } from "./Avatar";
 import { Footnote } from "./Footnote";
 import { OfficialDonorLinks } from "./OfficialDonorLinks";
+import { PartyBadge } from "./PartyBadge";
 import { formatMoney } from "@/lib/formatMoney";
 import type { OfficialDetail } from "@/lib/profiles/types";
 
@@ -28,6 +29,12 @@ export function OfficialProfile({ official }: Props) {
               {official.name}
             </h1>
             <p className="text-[15px] text-muted">{official.role}</p>
+            {official.partyAffiliation ? (
+              <div className="flex items-center gap-1.5">
+                <PartyBadge party={official.partyAffiliation} />
+                <Footnote index={5} citation={official.partyAffiliation.source} />
+              </div>
+            ) : null}
           </div>
         </div>
       </header>

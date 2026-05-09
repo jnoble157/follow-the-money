@@ -29,6 +29,7 @@ import {
 } from "@/lib/profiles/registry";
 import { Avatar } from "./Avatar";
 import { Footnote } from "./Footnote";
+import { PartyBadge } from "./PartyBadge";
 
 const JURISDICTION_LABEL: Record<Jurisdiction, string> = {
   austin: "Austin",
@@ -392,8 +393,13 @@ function OfficialRow({
               className="group inline-block min-w-0"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="truncate text-[14px] text-ink group-hover:underline decoration-accent decoration-1 underline-offset-4">
-                {official.name}
+              <div className="flex min-w-0 items-center gap-1.5">
+                <div className="truncate text-[14px] text-ink group-hover:underline decoration-accent decoration-1 underline-offset-4">
+                  {official.name}
+                </div>
+                {official.partyAffiliation ? (
+                  <PartyBadge party={official.partyAffiliation} compact />
+                ) : null}
               </div>
               <div className="mt-0.5 line-clamp-2 text-[12px] text-muted leading-tight">
                 {official.role}
@@ -401,7 +407,12 @@ function OfficialRow({
             </Link>
           ) : (
             <div className="inline-block min-w-0">
-              <div className="truncate text-[14px] text-ink">{official.name}</div>
+              <div className="flex min-w-0 items-center gap-1.5">
+                <div className="truncate text-[14px] text-ink">{official.name}</div>
+                {official.partyAffiliation ? (
+                  <PartyBadge party={official.partyAffiliation} compact />
+                ) : null}
+              </div>
               <div className="mt-0.5 line-clamp-2 text-[12px] text-muted leading-tight">
                 {official.role}
               </div>

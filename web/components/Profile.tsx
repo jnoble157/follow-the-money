@@ -6,6 +6,7 @@ import { EntityChip } from "./EntityChip";
 import { EvidenceGraph } from "./EvidenceGraph";
 import { Footnote, FootnoteGroup } from "./Footnote";
 import { OfficialDonorLinks } from "./OfficialDonorLinks";
+import { PartyBadge } from "./PartyBadge";
 import { formatMoney } from "@/lib/formatMoney";
 import { formatDate } from "@/lib/formatDate";
 import type { OfficialDetail, Profile as ProfileType } from "@/lib/profiles/types";
@@ -39,13 +40,16 @@ export function Profile({ profile, officialDetail }: Props) {
 
   return (
     <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-6 py-8">
-      <ProfileHeader profile={profile} />
+      <ProfileHeader profile={profile} officialDetail={officialDetail} />
 
       {profile.stats.length > 0 ? <StatsRow profile={profile} /> : null}
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-8">
-          <BioBlock profile={profile} />
+          <BioBlock
+            profile={profile}
+            startIndex={profile.stats.length + (officialDetail?.partyAffiliation ? 2 : 1)}
+          />
           {profile.sections.map((section, i) => (
             <SectionRenderer key={i} section={section} />
           ))}
@@ -72,7 +76,14 @@ export function Profile({ profile, officialDetail }: Props) {
   );
 }
 
-function ProfileHeader({ profile }: { profile: ProfileType }) {
+function ProfileHeader({
+  profile,
+  officialDetail,
+}: {
+  profile: ProfileType;
+  officialDetail?: OfficialDetail | null;
+}) {
+  const party = officialDetail?.partyAffiliation;
   return (
     <header className="flex flex-col gap-4 border-b border-rule pb-6 md:flex-row md:items-start md:justify-between">
       <div className="flex items-start gap-4">
@@ -91,6 +102,12 @@ function ProfileHeader({ profile }: { profile: ProfileType }) {
           </h1>
           {profile.role ? (
             <p className="text-[15px] text-muted">{profile.role}</p>
+          ) : null}
+          {party ? (
+            <div className="flex items-center gap-1.5">
+              <PartyBadge party={party} />
+              <Footnote index={profile.stats.length + 1} citation={party.source} />
+            </div>
           ) : null}
         </div>
       </div>
@@ -132,7 +149,13 @@ function StatsRow({ profile }: { profile: ProfileType }) {
   );
 }
 
-function BioBlock({ profile }: { profile: ProfileType }) {
+function BioBlock({
+  profile,
+  startIndex,
+}: {
+  profile: ProfileType;
+  startIndex: number;
+}) {
   return (
     <section aria-labelledby="bio-heading">
       <h2
@@ -145,7 +168,7 @@ function BioBlock({ profile }: { profile: ProfileType }) {
         {profile.bio.text}
         {profile.bio.citations.length > 0 ? (
           <FootnoteGroup
-            startIndex={profile.stats.length + 1}
+            startIndex={startIndex}
             citations={profile.bio.citations}
           />
         ) : null}

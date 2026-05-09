@@ -29,12 +29,19 @@ export type OfficialWithStats = {
   name: string;
   role: string;
   jurisdiction: Jurisdiction;
+  partyAffiliation?: PartyAffiliation;
   donationCount: number;
   totalRaised: number;
   avgDonation: number;
   yearsActive: number;
   source: Citation;
   topOrganizationDonors: OfficialDonorLink[];
+};
+
+export type PartyAffiliation = {
+  label: string;
+  shortLabel: string;
+  source: Citation;
 };
 
 export type OfficialDonorLink = {

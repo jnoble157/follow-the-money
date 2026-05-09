@@ -2,67 +2,80 @@
   {
     "slug": "kirk-watson",
     "austinRecipients": ["Watson, Kirk P."],
-    "tecFilerNames": ["Watson, Kirk P.", "Watson, Kirk", "Watson, Kirk P. (The Honorable)"]
+    "tecFilerNames": ["Watson, Kirk P.", "Watson, Kirk", "Watson, Kirk P. (The Honorable)"],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "greg-abbott",
     "austinRecipients": ["Greg Abbott Campaign"],
-    "tecFilerNames": ["Texans for Greg Abbott", "Abbott, Greg (The Honorable)", "Greg Abbott Campaign"]
+    "tecFilerNames": ["Texans for Greg Abbott", "Abbott, Greg (The Honorable)", "Greg Abbott Campaign"],
+    "partyAffiliation": "sos_statewide_republican"
   },
   {
     "slug": "carmen-llanes-pulido",
     "austinRecipients": ["Llanes-Pulido, Carmen D."],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "kathie-tovo",
     "austinRecipients": ["Tovo, Kathryne Beth"],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "jeffrey-greco",
     "austinRecipients": ["Greco, Douglas"],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "celia-israel",
     "austinRecipients": ["Israel, Celia M."],
-    "tecFilerNames": ["Israel, Celia M. (The Honorable)", "Israel, Celia M. (Ms.)", "Israel, Celia"]
+    "tecFilerNames": ["Israel, Celia M. (The Honorable)", "Israel, Celia M. (Ms.)", "Israel, Celia"],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "steve-adler",
     "austinRecipients": ["Adler, Stephen"],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "jennifer-virden",
     "austinRecipients": ["Virden, Jennifer M"],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "mike-siegel",
     "austinRecipients": ["Siegel, Mike"],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "jimmy-flannigan",
     "austinRecipients": ["Flannigan, James T. \"Jimmy\""],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "zohaib-qadri",
     "austinRecipients": ["Qadri, Zohaib"],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "alison-alter",
     "austinRecipients": ["Alter, Alison B."],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "mackenzie-kelly",
     "austinRecipients": ["Kelly, Mackenzie"],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "greg-casar",
@@ -72,66 +85,79 @@
   {
     "slug": "paige-ellis",
     "austinRecipients": ["Ellis, Paige"],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "vanessa-fuentes",
     "austinRecipients": ["Fuentes, Vanessa"],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "natasha-harper-madison",
     "austinRecipients": ["Harper-Madison, Natasha N."],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "beto-orourke",
     "austinRecipients": [],
-    "tecFilerNames": ["Beto for Texas", "Texans for Beto"]
+    "tecFilerNames": ["Beto for Texas", "Texans for Beto"],
+    "partyAffiliation": "sos_2018_general_democratic"
   },
   {
     "slug": "linda-guerrero",
     "austinRecipients": ["Guerrero, Linda H."],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "sheri-gallo",
     "austinRecipients": ["Gallo, Sheri P."],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "laura-morrison",
     "austinRecipients": ["Morrison, Laura"],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "leslie-pool",
     "austinRecipients": ["Pool, Leslie"],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "jose-velasquez",
     "austinRecipients": ["Velasquez, Jose"],
-    "tecFilerNames": []
+    "tecFilerNames": [],
+    "partyAffiliation": "municipal_nonpartisan"
   },
   {
     "slug": "ken-paxton",
     "austinRecipients": [],
-    "tecFilerNames": ["Paxton Jr., W. Kenneth (The Honorable)", "Paxton, W. Kenneth (Mr.)", "Paxton Jr., W. Kenneth (Mr.)"]
+    "tecFilerNames": ["Paxton Jr., W. Kenneth (The Honorable)", "Paxton, W. Kenneth (Mr.)", "Paxton Jr., W. Kenneth (Mr.)"],
+    "partyAffiliation": "sos_statewide_republican"
   },
   {
     "slug": "wendy-davis",
     "austinRecipients": [],
-    "tecFilerNames": ["Davis, Wendy R.", "Wendy R Davis for Governor Inc", "Wendy R. Davis for Governor Inc.", "Wendy R. Davis for Governor, Inc."]
+    "tecFilerNames": ["Davis, Wendy R.", "Wendy R Davis for Governor Inc", "Wendy R. Davis for Governor Inc.", "Wendy R. Davis for Governor, Inc."],
+    "partyAffiliation": "sos_2014_general_democratic"
   },
   {
     "slug": "dan-patrick",
     "austinRecipients": [],
-    "tecFilerNames": ["Texans for Dan Patrick"]
+    "tecFilerNames": ["Texans for Dan Patrick"],
+    "partyAffiliation": "sos_statewide_republican"
   },
   {
     "slug": "james-talarico",
     "austinRecipients": [],
-    "tecFilerNames": ["Talarico, James (The Honorable)", "Talarico, James (Mr.)"]
+    "tecFilerNames": ["Talarico, James (The Honorable)", "Talarico, James (Mr.)"],
+    "partyAffiliation": "talarico_legdir_democratic"
   }
 ]

@@ -4,6 +4,7 @@ import argparse
 import json
 import re
 import sys
+import unicodedata
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from urllib.parse import quote, urlencode
@@ -71,6 +72,365 @@ STATE_OFFICE_LABELS = {
     "CRIMINAL_JUDGEDIST_JEF": "Criminal District Court Judge",
     "CRIMINAL_JUDGEDIST_TAR": "Criminal District Court Judge",
 }
+
+PARTY_LABELS = {
+    "DEM": ("Democratic", "D"),
+    "REP": ("Republican", "R"),
+    "LIB": ("Libertarian", "L"),
+    "OTHER": ("Other", "O"),
+}
+
+SOS_STATEWIDE_URL = "https://www.sos.state.tx.us/elections/voter/elected.shtml"
+LRL_89_PARTY_URL = "https://www.lrl.texas.gov/legeleaders/members/partyListSession.cfm?leg=89"
+
+PARTY_AFFILIATIONS = {
+    "municipal_nonpartisan": {
+        "label": "Nonpartisan municipal office",
+        "shortLabel": "NP",
+        "source": {
+            "reportInfoIdent": "SOS-LOCAL-CANDIDACY",
+            "url": "https://www.sos.texas.gov/elections/laws/candidacy.shtml",
+            "rowSummary": (
+                "Texas Secretary of State local-candidacy guidance says a "
+                "candidate for local office generally appears on the ballot "
+                "only as an independent candidate unless a home-rule city "
+                "charter authorizes partisan candidacy."
+            ),
+        },
+    },
+    "sos_statewide_republican": {
+        "label": "Republican",
+        "shortLabel": "R",
+        "source": {
+            "reportInfoIdent": "SOS-STATEWIDE-ELECTED",
+            "url": "https://www.sos.state.tx.us/elections/voter/elected.shtml",
+            "rowSummary": (
+                "Texas Secretary of State statewide elected officials table "
+                "lists the matched officeholder with party R."
+            ),
+        },
+    },
+    "sos_2018_general_democratic": {
+        "label": "Democratic",
+        "shortLabel": "D",
+        "source": {
+            "reportInfoIdent": "SOS-2018-GENERAL-USSEN-DEM",
+            "url": "https://www.sos.state.tx.us/elections/forms/enrrpts/2018-general.pdf",
+            "rowSummary": (
+                "Texas Secretary of State 2018 General Election report "
+                "lists Beto O'Rourke in the U.S. Senate race with party DEM."
+            ),
+        },
+    },
+    "sos_2014_general_democratic": {
+        "label": "Democratic",
+        "shortLabel": "D",
+        "source": {
+            "reportInfoIdent": "SOS-2014-GENERAL-GOV-DEM",
+            "url": "https://www.sos.state.tx.us/elections/forms/enrrpts/2014-general.pdf",
+            "rowSummary": (
+                "Texas Secretary of State 2014 General Election report "
+                "lists Wendy R. Davis in the Governor race with party DEM."
+            ),
+        },
+    },
+    "sos_2014_general_republican_land": {
+        "label": "Republican",
+        "shortLabel": "R",
+        "source": {
+            "reportInfoIdent": "SOS-2014-GENERAL-LAND-REP",
+            "url": "https://www.sos.state.tx.us/elections/forms/enrrpts/2014-general.pdf",
+            "rowSummary": (
+                "Texas Secretary of State 2014 General Election report "
+                "lists George P. Bush in the Land Commissioner race with "
+                "party REP."
+            ),
+        },
+    },
+    "sos_2010_general_democratic": {
+        "label": "Democratic",
+        "shortLabel": "D",
+        "source": {
+            "reportInfoIdent": "SOS-2010-GENERAL-GOV-DEM",
+            "url": "https://elections.sos.state.tx.us/elchist154_race833.htm",
+            "rowSummary": (
+                "Texas Secretary of State 2010 General Election Governor "
+                "race report lists Bill White under the DEM column."
+            ),
+        },
+    },
+    "lrl_whitmire_democratic": {
+        "label": "Democratic",
+        "shortLabel": "D",
+        "source": {
+            "reportInfoIdent": "LRL-MEMBER-38",
+            "url": "https://lrl.texas.gov/legeleaders/members/memberdisplay.cfm?memberID=38",
+            "rowSummary": (
+                "Legislative Reference Library member profile for John "
+                "Whitmire lists Senate District 15 service with party "
+                "Democrat."
+            ),
+        },
+    },
+    "lrl_huffines_republican": {
+        "label": "Republican",
+        "shortLabel": "R",
+        "source": {
+            "reportInfoIdent": "LRL-MEMBER-5766",
+            "url": "https://lrl.texas.gov/legeleaders/members/memberdisplay.cfm?memberID=5766",
+            "rowSummary": (
+                "Legislative Reference Library member profile for Don "
+                "Huffines lists Senate District 16 service with party "
+                "Republican."
+            ),
+        },
+    },
+    "lrl_seliger_republican": {
+        "label": "Republican",
+        "shortLabel": "R",
+        "source": {
+            "reportInfoIdent": "LRL-MEMBER-5589",
+            "url": "https://lrl.texas.gov/legeleaders/members/memberdisplay.cfm?memberID=5589",
+            "rowSummary": (
+                "Legislative Reference Library member profile for Kel "
+                "Seliger lists Senate District 31 service with party "
+                "Republican."
+            ),
+        },
+    },
+    "talarico_legdir_democratic": {
+        "label": "Democratic",
+        "shortLabel": "D",
+        "source": {
+            "reportInfoIdent": "TLC-LEGDIR-A3685",
+            "url": "https://legdir.capitol.texas.gov/memberInfo.aspx?Chamber=H&Code=A3685",
+            "rowSummary": (
+                "Texas Legislative Directory profile for Representative "
+                "James Talarico lists District 50 and D-Round Rock."
+            ),
+        },
+    },
+}
+
+NAMED_PARTY_AFFILIATIONS = [
+    ("William H. White", "sos_2010_general_democratic"),
+    ("George P. Bush", "sos_2014_general_republican_land"),
+    ("Donald B. Huffines", "lrl_huffines_republican"),
+    ("John Whitmire", "lrl_whitmire_democratic"),
+    ("Kelton G. Seliger", "lrl_seliger_republican"),
+]
+
+LRL_89_ALIASES = [
+    ("REP", "Matthew M. Phelan", "Dade Phelan"),
+    ("REP", "David M. Middleton II", "Mayes Middleton"),
+    ("REP", "Charles L. Geren", "Charlie Geren"),
+    ("REP", "Trenton E. Ashby", "Trent Ashby"),
+    ("REP", "Nathaniel W. Parker IV", "Tan Parker"),
+    ("REP", "Peter P. Flores", "Pete Flores"),
+    ("REP", "Phillip S. Phil King", "Phil King"),
+    ("REP", "Kenneth P. King", "Ken King"),
+    ("DEM", "Christopher G. Turner", "Chris Turner"),
+]
+
+SOS_STATEWIDE_REPUBLICANS = [
+    "Greg Abbott",
+    "Dan Patrick",
+    "Ken Paxton",
+    "Glenn Hegar",
+    "Dawn Buckingham",
+    "Sid Miller",
+    "Wayne Christian",
+    "Walter Wayne Christian",
+    "Christi Craddick",
+    "James Wright",
+]
+
+LRL_89_DEMOCRATS = [
+    "Alma Allen",
+    "Rafael Anchia",
+    "Diego Bernal",
+    "Salman Bhojani",
+    "Rhetta Bowers",
+    "John Bryant",
+    "John H. Bucy III",
+    "Liz Campos",
+    "Terry Canales",
+    "Sheryl Cole",
+    "Nicole Collier",
+    "Philip Cortez",
+    "Aicha Davis",
+    "Yvonne Davis",
+    "Harold V. Dutton, Jr.",
+    "Lulu Flores",
+    "Erin Elizabeth Gamez",
+    "Josey Garcia",
+    "Linda Garcia",
+    "Cassandra Garcia Hernandez",
+    "Barbara Gervin-Hawkins",
+    "Jessica Gonzalez",
+    "Mary Gonzalez",
+    "Vikki Goodwin",
+    "R.D. Bobby Guerra",
+    "Ana Hernandez",
+    "Gina Hinojosa",
+    "Donna Howard",
+    "Ann Johnson",
+    "Jolanda Jo Jones",
+    "Venton Jones",
+    "Suleman Lalani",
+    "Oscar Longoria",
+    "Ray Lopez",
+    "Christian Manuel",
+    "Armando Martinez",
+    "Trey Martinez Fischer",
+    "Terry Meza",
+    "Joe Moody",
+    "Christina Morales",
+    "Eddie Morales",
+    "Penny Morales Shaw",
+    "Sergio Munoz, Jr.",
+    "Claudia Ordaz",
+    "Mary Ann Perez",
+    "Vince Perez",
+    "Mihaela Plesa",
+    "Richard Pena Raymond",
+    "Ron Reynolds",
+    "Ana-Maria Rodriguez Ramos",
+    "Ramon Romero, Jr.",
+    "Toni Rose",
+    "Jon Rosenthal",
+    "Lauren A. Simmons",
+    "James Talarico",
+    "Senfronia Thompson",
+    "Chris Turner",
+    "Hubert Vo",
+    "Armando Walle",
+    "Charlene Ward Johnson",
+    "Gene Wu",
+    "Erin Zwiener",
+    "Carol Alvarado",
+    "Cesar Blanco",
+    "Molly Cook",
+    "Sarah Eckhardt",
+    "Roland Gutierrez",
+    "Juan Chuy Hinojosa",
+    "Nathan Johnson",
+    "Jose Menendez",
+    "Borris Miles",
+    "Royce West",
+    "Judith Zaffirini",
+]
+
+LRL_89_REPUBLICANS = [
+    "Daniel Alders",
+    "Trent Ashby",
+    "Jeff Barry",
+    "Cecil Bell, Jr.",
+    "Keith Bell",
+    "Greg Bonnen",
+    "Brad Buckley",
+    "Benjamin Bumgarner",
+    "Dustin Burrows",
+    "Angie Chen Button",
+    "Briscoe Cain",
+    "Giovanni Capriglione",
+    "David Cook",
+    "Tom Craddick",
+    "Charles Cunningham",
+    "Pat Curry",
+    "Drew Darby",
+    "Jay Dean",
+    "Mano DeAyala",
+    "Mark Dorazio",
+    "Paul Dyson",
+    "Caroline Fairly",
+    "James Frank",
+    "Gary Gates",
+    "Stan Gerdes",
+    "Charlie Geren",
+    "Ryan Guillen",
+    "Sam Harless",
+    "Cody Harris",
+    "Caroline Harris Davila",
+    "Brian Harrison",
+    "Richard Hayes",
+    "Cole Hefner",
+    "Hillary Hickland",
+    "Janis Holt",
+    "Andy Hopper",
+    "Lacey Hull",
+    "Todd Hunter",
+    "Carrie Isaac",
+    "Helen Kerwin",
+    "Ken King",
+    "Stan Kitzman",
+    "Marc LaHood",
+    "Stan Lambert",
+    "Brooks Landgraf",
+    "Jeff Leach",
+    "Terri Leo Wilson",
+    "Mitch Little",
+    "Janie Lopez",
+    "AJ Louderback",
+    "David Lowe",
+    "J.M. Lozano",
+    "John Lujan",
+    "Shelley Luther",
+    "Don McLaughlin, Jr.",
+    "John McQueeney",
+    "Will Metcalf",
+    "Morgan Meyer",
+    "Brent Money",
+    "Matt Morgan",
+    "Candy Noble",
+    "Mike Olcott",
+    "Tom Oliverson",
+    "Angelia Orr",
+    "Jared Patterson",
+    "Dennis Paul",
+    "Dade Phelan",
+    "Katrina Pierson",
+    "Keresa Richardson",
+    "Nate Schatzline",
+    "Mike Schofield",
+    "Alan Schoolcraft",
+    "Matt Shaheen",
+    "Joanne Shofner",
+    "Shelby Slawson",
+    "John Smithee",
+    "David Spiller",
+    "Valoree Swanson",
+    "Carl H. Tepper",
+    "Tony Tinderholt",
+    "Steve Toth",
+    "Ellen Troxclair",
+    "Gary VanDeaver",
+    "Cody Vasut",
+    "Denise Villalobos",
+    "Wes Virdell",
+    "Trey Wharton",
+    "Terry M. Wilson",
+    "Paul Bettencourt",
+    "Brian Birdwell",
+    "Donna Campbell",
+    "Brandon Creighton",
+    "Pete Flores",
+    "Brent Hagenbuch",
+    "Bob Hall",
+    "Kelly Hancock",
+    "Adam Hinojosa",
+    "Joan Huffman",
+    "Bryan Hughes",
+    "Phil King",
+    "Lois W. Kolkhorst",
+    "Mayes Middleton",
+    "Robert Nichols",
+    "Tan Parker",
+    "Angela Paxton",
+    "Charles Perry",
+    "Charles Schwertner",
+    "Kevin Sparks",
+]
 
 
 def main() -> int:
@@ -191,6 +551,11 @@ def build_officials(
     con: duckdb.DuckDBPyConnection,
     mapping: list[dict],
 ) -> tuple[list[dict], dict[str, dict]]:
+    party_by_slug = {
+        entry["slug"]: party_affiliation(entry.get("partyAffiliation"))
+        for entry in mapping
+        if entry.get("slug")
+    }
     con.execute(
         """
         CREATE TEMP TABLE official_target (
@@ -403,6 +768,13 @@ def build_officials(
         total_money = money_number(total)
         avg = money_number(Decimal(total) / Decimal(count)) if count else 0.0
         years_active = int(max_year - min_year + 1) if min_year is not None else 0
+        role = official_role(
+            role_source,
+            hold_office,
+            hold_district,
+            seek_office,
+            seek_district,
+        )
         source = contribution_citation(
             dataset=dataset,
             row_id=source_row_id,
@@ -414,13 +786,7 @@ def build_officials(
         official = {
             "slug": slug,
             "name": display_name,
-            "role": official_role(
-                role_source,
-                hold_office,
-                hold_district,
-                seek_office,
-                seek_district,
-            ),
+            "role": role,
             "jurisdiction": "tx_state" if has_tec else "austin",
             "donationCount": int(count),
             "totalRaised": total_money,
@@ -429,6 +795,9 @@ def build_officials(
             "source": source,
             "topOrganizationDonors": [],
         }
+        party = party_by_slug.get(slug) or sourced_party_affiliation(display_name, role)
+        if party:
+            official["partyAffiliation"] = party
         results.append(official)
         results_by_cluster[cluster_key] = official
 
@@ -1331,6 +1700,206 @@ def donor_slug(name: str, zip_code: str | None) -> str:
         stem = "donor"
     zip_part = re.sub(r"[^0-9a-z]+", "", (zip_code or "unknown").lower()) or "unknown"
     return f"{stem}-{zip_part}"
+
+
+PARTY_LOOKUPS: tuple[dict[str, tuple[str, str]], dict[str, tuple[str, str]]] | None = None
+
+
+def sourced_party_affiliation(name: str, role: str) -> dict | None:
+    named = named_party_affiliation(name)
+    if named:
+        return named
+
+    statewide, legislators = party_lookups()
+    match = match_party_name(name, statewide)
+    if match:
+        code, source_name = match
+        return party_from_code(
+            code,
+            report_info_ident="SOS-STATEWIDE-ELECTED",
+            url=SOS_STATEWIDE_URL,
+            row_summary=(
+                "Texas Secretary of State statewide elected officials table "
+                f"lists {source_name} with party {code}."
+            ),
+        )
+
+    if not role.startswith(("State Representative", "State Senator")):
+        return None
+    match = match_party_name(name, legislators)
+    if not match:
+        return None
+    code, source_name = match
+    return party_from_code(
+        code,
+        report_info_ident="LRL-PARTY-89",
+        url=LRL_89_PARTY_URL,
+        row_summary=(
+            "Legislative Reference Library party affiliation page for the "
+            f"89th Legislature lists {source_name} with party {code}."
+        ),
+    )
+
+
+def named_party_affiliation(name: str) -> dict | None:
+    keys = {person_key(name), first_last_key(name)}
+    for source_name, party_key in NAMED_PARTY_AFFILIATIONS:
+        if person_key(source_name) in keys or first_last_key(source_name) in keys:
+            return PARTY_AFFILIATIONS.get(party_key)
+    for code, match_name, source_name in LRL_89_ALIASES:
+        if person_key(match_name) in keys or first_last_key(match_name) in keys:
+            return party_from_code(
+                code,
+                report_info_ident="LRL-PARTY-89",
+                url=LRL_89_PARTY_URL,
+                row_summary=(
+                    "Legislative Reference Library party affiliation page "
+                    "for the 89th Legislature lists "
+                    f"{source_name} with party {code}."
+                ),
+            )
+    return None
+
+
+def party_lookups() -> tuple[dict[str, tuple[str, str]], dict[str, tuple[str, str]]]:
+    global PARTY_LOOKUPS
+    if PARTY_LOOKUPS is None:
+        statewide = party_name_index({"REP": SOS_STATEWIDE_REPUBLICANS}, use_unique_last=False)
+        legislators = party_name_index(
+            {"DEM": LRL_89_DEMOCRATS, "REP": LRL_89_REPUBLICANS},
+            use_unique_last=False,
+        )
+        PARTY_LOOKUPS = (statewide, legislators)
+    return PARTY_LOOKUPS
+
+
+def party_name_index(
+    names_by_code: dict[str, list[str]],
+    *,
+    use_unique_last: bool,
+) -> dict[str, tuple[str, str]]:
+    index: dict[str, tuple[str, str] | None] = {}
+    last_names: dict[str, list[tuple[str, str]]] = {}
+    for code, names in names_by_code.items():
+        for name in names:
+            value = (code, name)
+            for key in (person_key(name), first_last_key(name)):
+                if key:
+                    add_unique(index, key, value)
+            last = last_name_key(name)
+            if last:
+                last_names.setdefault(last, []).append(value)
+
+    if use_unique_last:
+        for last, values in last_names.items():
+            unique = set(values)
+            if len(unique) == 1:
+                add_unique(index, last, values[0])
+
+    return {k: v for k, v in index.items() if v is not None}
+
+
+def add_unique(
+    index: dict[str, tuple[str, str] | None],
+    key: str,
+    value: tuple[str, str],
+) -> None:
+    old = index.get(key)
+    if old is None and key in index:
+        return
+    if old is None:
+        index[key] = value
+    elif old != value:
+        index[key] = None
+
+
+def match_party_name(
+    name: str,
+    index: dict[str, tuple[str, str]],
+) -> tuple[str, str] | None:
+    for key in (person_key(name), first_last_key(name), last_name_key(name)):
+        if key and key in index:
+            return index[key]
+    return None
+
+
+def person_key(name: str) -> str:
+    text = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    text = re.sub(r"\([^)]*\)", " ", text)
+    text = text.replace("&", " and ")
+    text = re.sub(r"[^A-Za-z0-9]+", " ", text).lower()
+    stop = {"the", "honorable", "mr", "mrs", "ms", "dr", "jr", "sr", "ii", "iii", "iv"}
+    parts = [part for part in text.split() if part not in stop and len(part) > 1]
+    return " ".join(parts)
+
+
+def first_last_key(name: str) -> str | None:
+    parts = person_key(name).split()
+    if len(parts) < 2:
+        return None
+    return f"{parts[0]} {parts[-1]}"
+
+
+def last_name_key(name: str) -> str | None:
+    parts = person_key(name).split()
+    return parts[-1] if parts else None
+
+
+def party_from_code(
+    code: str,
+    *,
+    report_info_ident: str,
+    url: str,
+    row_summary: str,
+) -> dict | None:
+    labels = PARTY_LABELS.get(code)
+    if not labels:
+        return None
+    label, short_label = labels
+    return {
+        "label": label,
+        "shortLabel": short_label,
+        "source": {
+            "reportInfoIdent": report_info_ident,
+            "url": url,
+            "rowSummary": row_summary,
+        },
+    }
+
+
+def party_affiliation(raw: object) -> dict | None:
+    if isinstance(raw, str):
+        return PARTY_AFFILIATIONS.get(raw)
+    if not isinstance(raw, dict):
+        return None
+
+    label = text_value(raw.get("label"))
+    short_label = text_value(raw.get("shortLabel"))
+    source = raw.get("source")
+    if not label or not short_label or not isinstance(source, dict):
+        return None
+
+    report_info_ident = text_value(source.get("reportInfoIdent"))
+    url = text_value(source.get("url"))
+    row_summary = text_value(source.get("rowSummary"))
+    if not report_info_ident or not url or not row_summary:
+        return None
+    return {
+        "label": label,
+        "shortLabel": short_label,
+        "source": {
+            "reportInfoIdent": report_info_ident,
+            "url": url,
+            "rowSummary": row_summary,
+        },
+    }
+
+
+def text_value(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    return text or None
 
 
 def summarize_donors(donors: list[dict]) -> list[dict]:

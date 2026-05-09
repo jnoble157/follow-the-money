@@ -310,5 +310,37 @@
     "grounding": "model_knowledge",
     "sources": [],
     "generatedAt": "2026-05-09T23:52:59.630Z"
+  },
+  {
+    "slug": "carlos-i-uresti-35921",
+    "text": "Carlos I. Uresti is an American attorney and former member of the Texas State Senate. He served as a Texas state legislator and has practiced law in Texas.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:53:03.204Z"
+  },
+  {
+    "slug": "drew-darby-51651",
+    "text": "Drew Darby is a State Representative in the Texas House of Representatives. He serves as a Republican legislator representing constituents in the Texas state legislature and participates in crafting and voting on state laws.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:53:18.459Z"
+  },
+  {
+    "slug": "nathaniel-w-parker-iv-58399",
+    "text": "Nathaniel W. Parker IV, known as Tan Parker, is a Republican State Senator in the Texas state legislature. He previously served in the Texas House of Representatives and has been active on matters related to business and local governance.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:53:37.088Z"
+  },
+  {
+    "slug": "konni-l-burton-69199",
+    "text": "Konni L. Burton is a former Texas state senator who served in the Texas Legislature representing parts of the Fort Worth area. During her time in office she participated in legislative committees and authored and sponsored bills on state policy matters.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:53:43.765Z"
   }
 ]

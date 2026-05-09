@@ -128,9 +128,14 @@ export async function loadRecorded(
 }
 
 // Ad-hoc cache, keyed by sha1(normalized question). Lives outside the repo
-// at data/cache/investigations/ and is gitignored.
-export async function cachedFilePath(question: string): Promise<string> {
-  await fs.promises.mkdir(CACHE_DIR, { recursive: true });
+// at data/cache/investigations/ and is gitignored. Returns null when the
+// filesystem is read-only (e.g. Vercel functions outside /tmp).
+export async function cachedFilePath(question: string): Promise<string | null> {
+  try {
+    await fs.promises.mkdir(CACHE_DIR, { recursive: true });
+  } catch {
+    return null;
+  }
   const sha = await sha1(normalizeQuestion(question));
   return path.join(CACHE_DIR, `${sha}.jsonl`);
 }
@@ -139,6 +144,7 @@ export async function loadCached(
   question: string,
 ): Promise<string | null> {
   const fp = await cachedFilePath(question);
+  if (!fp) return null;
   try {
     const stat = await fs.promises.stat(fp);
     if (stat.size > 0) return fp;
@@ -156,6 +162,11 @@ export async function* streamAndRecord(
   question: string,
 ): AsyncGenerator<InvestigationEvent> {
   const fp = await cachedFilePath(question);
+  if (!fp) {
+    // Read-only filesystem — pass through without caching.
+    for await (const ev of source) yield ev;
+    return;
+  }
   const tmp = `${fp}.partial`;
   await fs.promises.mkdir(path.dirname(tmp), { recursive: true });
   const handle = await fs.promises.open(tmp, "w");

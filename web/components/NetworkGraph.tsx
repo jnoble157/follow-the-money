@@ -478,7 +478,13 @@ function toVisNode(n: NetworkNode, size: number): VisNode {
   // deterministic initials avatar — same colored disc as a `dot`-shape
   // node, but with the entity's initials drawn on top so each node still
   // carries a unique mark.
-  const image = n.image ?? initialsAvatar(n.label, c.solid);
+  // brokenImage points at the same avatar so any blocked or 404 enrichment
+  // URL degrades silently instead of leaving an empty disc and emitting
+  // vis-network's "No broken url image defined" warning. Mostly bites users
+  // running uBlock / Brave shields when an enrichment URL happens to live
+  // on a CDN those lists block.
+  const fallback = initialsAvatar(n.label, c.solid);
+  const image = n.image ?? fallback;
   return {
     id: n.id,
     label: n.label,
@@ -487,6 +493,7 @@ function toVisNode(n: NetworkNode, size: number): VisNode {
     size,
     shape: "circularImage",
     image,
+    brokenImage: fallback,
     color: { background: c.solid, border: c.border },
     opacity: 1,
     borderWidth: n.image ? 3 : 2,

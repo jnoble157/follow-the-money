@@ -60,23 +60,6 @@ export const WRITER_TOOL_SCHEMAS = {
     weight: z.number().optional(),
   }),
 
-  request_disambiguation: z.object({
-    id: z.string().describe("stable id; use 'employer-merge' or '<topic>-merge' style"),
-    title: z.string(),
-    explanation: z.string(),
-    variants: z
-      .array(
-        z.object({
-          variant: z.string(),
-          contributions: z.number().int(),
-          total: z.number(),
-          sampleContributors: z.array(z.string()),
-          sampleCitation: CitationParam,
-        }),
-      )
-      .min(2),
-  }),
-
   complete_investigation: z.object({
     // Inflow: rank donors *to* a filer. Use this for inflow questions —
     // "who funded X", "biggest donors to Y", "PACs that contributed to Z".
@@ -128,8 +111,6 @@ export const WRITER_TOOL_DESCRIPTIONS: Record<WriterToolName, string> = {
     "Place a node on the evidence graph. Stable ids let you connect edges to it later.",
   emit_graph_edge:
     "Connect two graph nodes you've already emitted. Use a dollar amount as the label when the edge represents a money flow.",
-  request_disambiguation:
-    "Pause the run and ask the user whether to merge a fuzzy cluster. Only call this when (a) confidence < 0.85 and (b) the merge would change the headline number. After the user answers, you'll receive { merged: true | false } as the tool result; continue accordingly.",
   complete_investigation:
     "End the run. Optionally emit the final top-donors table. Once you call this, no further events are emitted.",
 };

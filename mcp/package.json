@@ -10,7 +10,8 @@
     "./tools": "./src/tools/index.ts",
     "./db": "./src/db/connect.ts",
     "./events": "./src/events.ts",
-    "./schemas": "./src/schemas/index.ts"
+    "./schemas": "./src/schemas/index.ts",
+    "./citations": "./src/citations.ts"
   },
   "scripts": {
     "mcp:stdio": "tsx src/index.ts",

@@ -139,6 +139,40 @@ export function tecExpenditureCitation(args: {
   };
 }
 
+// Citations the model is allowed to emit even when they don't appear in
+// any tool_result.sourceRows. Two callers depend on this: the runtime
+// guard in agent/src/runner.ts that strips fabricated citations before
+// they reach the user, and the eval grounding check in
+// agent/src/eval/run.ts that fails a test when an ungrounded ident slips
+// through. Keeping the rule in one place avoids the two surfaces drifting.
+//
+// What we exempt:
+//   - Hand-scripted hero idents (AUSTIN-PROP-*, ATX-CF-*) that point at
+//     ballot-question or context references rather than a single row.
+//   - Filer-summary citations (ATX-FILER-*, TEC-FILER-*) emitted by
+//     find_filer / find_state_filer, which describe the filer index entry
+//     not a contribution row.
+//   - web_search results, identified by an external URL.
+export function isExemptCitation(ident: string, url?: string): boolean {
+  if (ident.startsWith("AUSTIN-PROP-")) return true;
+  if (ident.startsWith("ATX-CF-")) return true;
+  if (ident.startsWith("ATX-FILER-")) return true;
+  if (ident.startsWith("TEC-FILER-")) return true;
+  if (typeof url === "string" && url.includes("austintexas.gov/department")) {
+    return true;
+  }
+  if (
+    typeof url === "string" &&
+    url.startsWith("https://www.") &&
+    !url.includes("ethics.state.tx.us") &&
+    !url.includes("data.austintexas.gov") &&
+    !url.includes("jasper.ethics.state.tx.us")
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function tecReportUrl(reportInfoIdent: string): string {
   const params = new URLSearchParams({
     "tec-pp": TEC_PUBLIC_TOKEN,

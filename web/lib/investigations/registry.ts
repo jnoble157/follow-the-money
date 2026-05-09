@@ -7,11 +7,11 @@ import { b1SaveAustin } from "./hero/b1-save-austin";
 // The hero registry has two layers.
 //
 // HAND_SCRIPTED is what the stub engine drives directly — each entry carries
-// the full step-by-step script, including any await_disambiguation pause
-// point. S1 is the headline (the live disambiguation moment we rehearse for
-// stage); the other three are scripted because they're tightly choreographed
-// off the docs/investigations.md walkthroughs and the live agent's natural
-// pacing on those questions stretches a 30-second story into 5 minutes of
+// the full step-by-step script. S1 is the headline (the most visible plan
+// trace, with a live employer-cluster auto-merge); the other three are
+// scripted because they're tightly choreographed off the
+// docs/investigations.md walkthroughs and the live agent's natural pacing
+// on those questions stretches a 30-second story into 5 minutes of
 // per-event API round-trips.
 //
 // RECORDED_FIXTURES are heroes the live agent ran end-to-end against the

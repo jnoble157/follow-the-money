@@ -1,7 +1,6 @@
 import type {
   Citation,
   DonorRow,
-  EmployerVariant,
   GraphNodeKind,
   InvestigationEvent,
   NarrativeRole,
@@ -9,13 +8,13 @@ import type {
 } from "./types";
 
 // State the UI renders. The reducer is pure; effects (SSE, fetch) live in the
-// hook. Keeping these separate makes the disambiguation flow testable without
-// a browser.
+// hook. Keeping these separate makes the event stream testable without a
+// browser.
 
 export type PlanStepView = {
   id: string;
   description: string;
-  status: "running" | "done" | "blocked";
+  status: "running" | "done";
   toolCall?: { tool: string; args: Record<string, unknown> };
   toolResult?: {
     rowCount: number;
@@ -34,7 +33,6 @@ export type PlanStepView = {
     // resolution was thin.
     confidence?: number;
   };
-  blockedOn?: string;
   // Wall-clock timestamps for the step's life on the client. startedAt
   // is set when the plan_step event lands; endedAt is set when the *next*
   // plan_step lands or when the investigation completes / blocks. These
@@ -68,18 +66,9 @@ export type GraphEdgeView = {
   weight?: number;
 };
 
-export type DisambiguationView = {
-  id: string;
-  stepId: string;
-  title: string;
-  explanation: string;
-  variants: EmployerVariant[];
-};
-
 export type InvestigationStatus =
   | "idle"
   | "running"
-  | "blocked"
   | "complete"
   | "failed";
 
@@ -93,8 +82,6 @@ export type InvestigationState = {
   graphEdges: GraphEdgeView[];
   topDonors: DonorRow[];
   topRecipients: RecipientRow[];
-  pendingDisambiguation: DisambiguationView | null;
-  resolvedDisambiguations: Record<string, boolean>;
   // Receipts for the status strip. startedAt comes from the server's
   // investigation_started event so cached replays show their original elapsed
   // budget rather than the replay's wall time.
@@ -107,10 +94,6 @@ export type InvestigationState = {
   // shows both as separate pills so the labels stop lying — old code
   // conflated them under "rows cited."
   citedSourceRows: string[];
-  // Number of times the user confirmed a merge in a disambiguation modal.
-  // The count is what the strip shows; the boolean values live in
-  // resolvedDisambiguations for the script branches.
-  variantsMergedCount: number;
   // Post-run "follow the money" suggestion. Populated by a read_next event
   // when the live runner generated one; otherwise null and RelatedRail
   // falls back to its static tag-overlap pick.
@@ -126,11 +109,8 @@ export const initialState: InvestigationState = {
   graphEdges: [],
   topDonors: [],
   topRecipients: [],
-  pendingDisambiguation: null,
-  resolvedDisambiguations: {},
   scannedSourceRows: [],
   citedSourceRows: [],
-  variantsMergedCount: 0,
 };
 
 let chunkCounter = 0;
@@ -194,46 +174,6 @@ export function reduce(
             : s,
         ),
         scannedSourceRows: mergeIdents(state.scannedSourceRows, ev.sourceRows),
-      };
-    case "disambiguation_required":
-      return {
-        ...state,
-        status: "blocked",
-        planSteps: state.planSteps.map((s) =>
-          s.id === ev.stepId
-            ? {
-                ...s,
-                status: "blocked",
-                blockedOn: ev.id,
-                endedAt: s.endedAt ?? Date.now(),
-              }
-            : s,
-        ),
-        pendingDisambiguation: {
-          id: ev.id,
-          stepId: ev.stepId,
-          title: ev.title,
-          explanation: ev.explanation,
-          variants: ev.variants,
-        },
-      };
-    case "disambiguation_resolved":
-      return {
-        ...state,
-        status: "running",
-        pendingDisambiguation: null,
-        resolvedDisambiguations: {
-          ...state.resolvedDisambiguations,
-          [ev.id]: ev.merged,
-        },
-        variantsMergedCount: ev.merged
-          ? state.variantsMergedCount + 1
-          : state.variantsMergedCount,
-        planSteps: state.planSteps.map((s) =>
-          s.blockedOn === ev.id
-            ? { ...s, status: "done", blockedOn: undefined }
-            : s,
-        ),
       };
     case "narrative_chunk": {
       const newCitations = ev.citations.map((c) => c.reportInfoIdent);

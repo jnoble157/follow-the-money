@@ -62,7 +62,7 @@ export function Report({ state, fallbackQuestion }: Props) {
       {grouped.missing.map((c) => (
         <MissingDataNote key={c.id} chunk={c} indexer={indexer} />
       ))}
-      {status === "running" || status === "blocked" ? (
+      {status === "running" ? (
         <span
           aria-hidden
           className="inline-block h-4 w-1.5 animate-cursorBlink bg-ink"
@@ -234,16 +234,15 @@ function ReportStatusStrip({ state }: { state: InvestigationState }) {
     finishedAt,
     scannedSourceRows,
     citedSourceRows,
-    variantsMergedCount,
   } = state;
   const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {
-    if (status !== "running" && status !== "blocked") return;
+    if (status !== "running") return;
     const id = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(id);
   }, [status]);
 
-  const endpoint = finishedAt ?? (status === "running" || status === "blocked" ? now : startedAt);
+  const endpoint = finishedAt ?? (status === "running" ? now : startedAt);
   const elapsedMs = startedAt && endpoint ? Math.max(0, endpoint - startedAt) : 0;
 
   const items: string[] = [statusLabel(status)];
@@ -253,11 +252,6 @@ function ReportStatusStrip({ state }: { state: InvestigationState }) {
   }
   if (citedSourceRows.length > 0) {
     items.push(`${citedSourceRows.length} cited`);
-  }
-  if (variantsMergedCount > 0) {
-    items.push(
-      `${variantsMergedCount} variant${variantsMergedCount === 1 ? "" : "s"} merged`,
-    );
   }
 
   return (
@@ -280,8 +274,6 @@ function statusLabel(s: InvestigationState["status"]): string {
       return "Idle";
     case "running":
       return "Running";
-    case "blocked":
-      return "Waiting on you";
     case "complete":
       return "Complete";
     case "failed":
@@ -290,7 +282,7 @@ function statusLabel(s: InvestigationState["status"]): string {
 }
 
 function statusToneClass(s: InvestigationState["status"]): string {
-  if (s === "running" || s === "blocked") return "text-accent";
+  if (s === "running") return "text-accent";
   if (s === "failed") return "text-accent";
   if (s === "complete") return "text-evidence";
   return "text-muted";

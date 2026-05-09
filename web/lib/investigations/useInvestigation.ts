@@ -150,28 +150,13 @@ export function useInvestigation() {
     }
   }, [safeDispatch]);
 
-  const resolveDisambiguation = useCallback(
-    async (disambiguationId: string, merged: boolean) => {
-      await fetch("/api/investigate/resume", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          sessionId: sessionIdRef.current,
-          disambiguationId,
-          merged,
-        }),
-      });
-    },
-    [],
-  );
-
   const cancel = useCallback(() => {
     abortRef.current?.abort();
   }, []);
 
   return useMemo(
-    () => ({ state, ask, resolveDisambiguation, cancel }),
-    [state, ask, resolveDisambiguation, cancel],
+    () => ({ state, ask, cancel }),
+    [state, ask, cancel],
   );
 }
 

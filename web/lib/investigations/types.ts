@@ -6,7 +6,6 @@
 export type {
   Citation,
   DonorRow,
-  EmployerVariant,
   GraphNodeKind,
   InvestigationEvent,
   InvestigationEventType,
@@ -16,18 +15,14 @@ export type {
 
 import type { InvestigationEvent } from "@txmoney/mcp/events";
 
-// A scripted hero investigation is a sequence of (event, delay-after-ms) pairs
-// with an optional pause point (the disambiguation moment) where the script
-// blocks until a user decision arrives. The stub engine consumes this shape
-// directly; in live mode the agent loop produces the same event stream.
-export type ScriptStep =
-  | { kind: "emit"; event: InvestigationEvent; delayAfterMs: number }
-  | {
-      kind: "await_disambiguation";
-      id: string;
-      ifMerged: ScriptStep[];
-      ifKept: ScriptStep[];
-    };
+// A scripted hero investigation is a flat sequence of (event, delay-after-ms)
+// pairs. The stub engine consumes this shape directly; in live mode the
+// agent loop produces the same event stream.
+export type ScriptStep = {
+  kind: "emit";
+  event: InvestigationEvent;
+  delayAfterMs: number;
+};
 
 export type HeroInvestigation = {
   id: string;

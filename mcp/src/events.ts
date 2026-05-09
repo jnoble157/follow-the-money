@@ -22,14 +22,6 @@ export type Citation = {
   rowSummary: string;
 };
 
-export type EmployerVariant = {
-  variant: string;
-  contributions: number;
-  total: number;
-  sampleContributors: string[];
-  sampleCitation: Citation;
-};
-
 export type DonorRow = {
   rank: number;
   donor: string;
@@ -86,15 +78,6 @@ export type InvestigationEvent =
       // entity-resolution work as opposed to a straight lookup.
       confidence?: number;
     }
-  | {
-      type: "disambiguation_required";
-      id: string;
-      stepId: string;
-      title: string;
-      explanation: string;
-      variants: EmployerVariant[];
-    }
-  | { type: "disambiguation_resolved"; id: string; merged: boolean }
   | {
       type: "narrative_chunk";
       text: string;

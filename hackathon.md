@@ -172,7 +172,7 @@ Current project: **Texas Money Investigator** — see `AGENTS.md` §0. Targeting
 A short checklist to apply when scoping:
 - For Open Data track: at least one primary dataset must come from data.austintexas.gov / dallasopendata.com / data.sanantonio.gov / data.houstontx.gov / tryopendata.ai. State-level TEC data is supplementary, not primary, for that track.
 - For Open Data track: an MCP server and/or agent skill is non-negotiable. We're shipping both. See `AGENTS.md` §12.
-- For Agents track: defend the live disambiguation moment. See `AGENTS.md` §7.
+- For Agents track: defend the live plan trace — visible MCP tool calls, web_search, and silent auto-merge of fuzzy clusters with a methods chunk. See `AGENTS.md` §7.
 - We submit by **11:00 AM Sunday May 10**. Code freeze is hard.
 - The submission needs a working demo a judge can use. See `AGENTS.md` §7 (demo discipline).
 - If our project is plausibly patentable or a science project, we should also submit to DeepInvent — it's a parallel free swing.

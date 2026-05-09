@@ -7,14 +7,12 @@ import { PlanTrace } from "./PlanTrace";
 import { Report } from "./Report";
 import { EvidenceGraph } from "./EvidenceGraph";
 import { DonorTable } from "./DonorTable";
-import { DisambiguationModal } from "./DisambiguationModal";
 
 const CYCLE_MS = 45_000;
 const COOLDOWN_MS = 6_000;
-const AUTO_CONFIRM_MS = 3_000;
 
 export function AmbientConsole() {
-  const { state, ask, resolveDisambiguation } = useInvestigation();
+  const { state, ask } = useInvestigation();
   const [index, setIndex] = useState(0);
   const indexRef = useRef(index);
   indexRef.current = index;
@@ -87,15 +85,6 @@ export function AmbientConsole() {
           </div>
         </aside>
       </div>
-      <DisambiguationModal
-        prompt={state.pendingDisambiguation}
-        autoConfirm={{
-          merged: true,
-          delayMs: AUTO_CONFIRM_MS,
-          caption: "in interactive mode, you make this call yourself",
-        }}
-        onResolve={resolveDisambiguation}
-      />
     </main>
   );
 }

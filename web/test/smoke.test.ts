@@ -69,21 +69,6 @@ async function* streamEvents(
   }
 }
 
-async function resolve(
-  sessionId: string,
-  disambiguationId: string,
-  merged: boolean,
-) {
-  const res = await fetch(`${BASE_URL}/api/investigate/resume`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ sessionId, disambiguationId, merged }),
-  });
-  if (!res.ok) {
-    throw new Error(`resume failed: ${res.status}`);
-  }
-}
-
 test("server is reachable", async () => {
   const res = await fetch(BASE_URL);
   assert.ok(
@@ -92,17 +77,16 @@ test("server is reachable", async () => {
   );
 });
 
-test("S1 hero completes under 12s with merge=true", async () => {
+test("S1 hero completes under 12s and emits a methods chunk", async () => {
   const sessionId = "smoke-s1";
   const start = Date.now();
   let firstEventAt = 0;
-  let saw = { complete: false, failed: false, disambiguation: false };
+  let saw = { complete: false, failed: false, methods: false };
 
   for await (const ev of streamEvents(HEADLINE_QUESTION, sessionId, 0.05)) {
     if (firstEventAt === 0) firstEventAt = Date.now();
-    if (ev.type === "disambiguation_required") {
-      saw.disambiguation = true;
-      await resolve(sessionId, ev.id as string, true);
+    if (ev.type === "narrative_chunk" && (ev as { role?: string }).role === "methods") {
+      saw.methods = true;
     }
     if (ev.type === "investigation_complete") saw.complete = true;
     if (ev.type === "investigation_failed") saw.failed = true;
@@ -114,20 +98,16 @@ test("S1 hero completes under 12s with merge=true", async () => {
     `first event should arrive promptly, got ${firstEventAt - start}ms`,
   );
   assert.ok(elapsed < 12_000, `S1 should complete in <12s, took ${elapsed}ms`);
-  assert.ok(saw.disambiguation, "S1 must hit the disambiguation moment");
+  assert.ok(saw.methods, "S1 must emit a methods chunk for the auto-merge");
   assert.ok(saw.complete, "S1 must complete");
   assert.ok(!saw.failed, "S1 must not fail");
 });
 
-test("ambient cycle: every hero investigation completes when auto-merged", async () => {
+test("ambient cycle: every hero investigation completes", async () => {
   for (const question of HERO_QUESTIONS) {
     const sessionId = `ambient-${Math.random().toString(36).slice(2)}`;
     let saw = { complete: false, failed: false };
     for await (const ev of streamEvents(question, sessionId, 0.01)) {
-      if (ev.type === "disambiguation_required") {
-        // Same auto-confirm path the ambient console uses.
-        await resolve(sessionId, ev.id as string, true);
-      }
       if (ev.type === "investigation_complete") saw.complete = true;
       if (ev.type === "investigation_failed") saw.failed = true;
     }
@@ -136,8 +116,16 @@ test("ambient cycle: every hero investigation completes when auto-merged", async
   }
 });
 
-test("unknown question returns a friendly failure event", async () => {
+test("unknown question returns either a friendly failure or a missing chunk", async () => {
+  // Two valid paths depending on whether OPENAI_API_KEY is set on the
+  // server: (a) no key -> route returns the stub `investigation_failed`
+  // event, or (b) live agent runs and the runner's silent-stall guard
+  // synthesizes a `missing` chunk before completing. Both are fine; the
+  // failure mode is a silent stream that ends with no narrative and no
+  // failure event.
   let failed: { reason?: string } | undefined;
+  let sawMissingChunk = false;
+  let complete = false;
   for await (const ev of streamEvents(
     "what is the meaning of life?",
     "smoke-unknown",
@@ -146,12 +134,20 @@ test("unknown question returns a friendly failure event", async () => {
     if (ev.type === "investigation_failed") {
       failed = ev as { reason?: string };
     }
+    if (
+      ev.type === "narrative_chunk" &&
+      (ev as { role?: string }).role === "missing"
+    ) {
+      sawMissingChunk = true;
+    }
+    if (ev.type === "investigation_complete") complete = true;
   }
-  assert.ok(failed, "unknown question should yield a failure event");
-  assert.match(
-    String(failed!.reason ?? ""),
-    /stub/i,
-    "failure should explain it's a stub demo",
+  const tookFailurePath =
+    failed !== undefined && /stub/i.test(String(failed.reason ?? ""));
+  const tookMissingPath = sawMissingChunk && complete;
+  assert.ok(
+    tookFailurePath || tookMissingPath,
+    "unknown question should yield either a stub-demo failure event or a missing chunk + complete",
   );
 });
 

@@ -70,7 +70,7 @@ The interesting moments live at the joins:
 - **Austin lobbyist ↔ Texas state lobbyist.** Different ID namespaces. We fuzzy-match on names; the join already returns 12+ confirmed matches in 2025 alone — people like Demetrius McDaniel and Kathleen Mitchell who lobby both Austin City Hall and the Texas State Capitol.
 - **Donor in city campaign finance ↔ donor in state campaign finance.** Same fuzzy-match approach; the cross-jurisdiction view is what nobody else can show.
 
-When the match confidence drops below threshold the agent stops, narrates the ambiguity, and asks the user. That's the agent-iest moment in the demo and where the Agents-track score is won.
+When the match is fuzzy the agent merges the cluster, names the variants and the cluster confidence in a methods note in the report, and exposes the full sequence of tool calls — `find_filer`, `top_donors`, `cluster_employer_variants`, `cross_reference_lobby`, optional `web_search` for context — in the live plan trace on the left rail. That visible reasoning trail is the agent-iest moment of the demo and where the Agents-track score is won.
 
 Everything respects the data's contract: we use public data only, we name public officials and registered lobbyists, we aggregate when discussing private individuals, and every number in the narrative carries the source row's report ID so you can verify it against the original filing PDF.
 

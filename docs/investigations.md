@@ -48,9 +48,9 @@ Schema reference: `docs/tec-schema/CFS-ReadMe.txt`, `docs/tec-schema/CFS-Codes.t
 | 2019 | Fair Play Austin PAC | Prophet Capital | monetary | 25,000 |
 | (plus smaller gifts to multiple Austin candidates and Austin Leadership PAC, 2020–2025) | | | | |
 
-**Why this lands:** This is *the* live disambiguation moment the pitch advertises. Without entity resolution, a journalist or a judge looking at TEC's own search tool sees seven separate-looking transactions and misses the picture. With our agent's roll-up of `Prophet Capital` / `Prophet Capital Management` / `Prophet Capital Asset Management LP` / `PCM` / `PCM LLC`, the actual scale becomes visible in one screen.
+**Why this lands:** This is the most visible plan trace in the demo. Without entity resolution, a journalist or a judge looking at TEC's own search tool sees seven separate-looking transactions and misses the picture. With our agent's roll-up of `Prophet Capital` / `Prophet Capital Management` / `Prophet Capital Asset Management LP` / `PCM` / `PCM LLC`, the actual scale becomes visible in one screen — and the left-rail trace shows every tool call that got us there.
 
-**Demo question:** *"Who was the biggest individual political spender in Austin's 2018 ballot cycle?"* — agent narrates a plan, runs `top_individual_donors`, hits low-confidence employer-name variants, says "I'm 92% confident these are the same person and firm — should I merge?", merges on user confirmation, prints the rolled-up total + network graph + footnoted narrative.
+**Demo question:** *"Who was the biggest individual political spender in Austin's 2018 ballot cycle?"* — agent narrates a plan, runs `top_pacs` then `get_contributions`, sees three employer-name variants for the same donor, calls `cluster_employer_variants`, auto-merges at 92% match confidence, emits a `methods` narrative chunk that names the variants and confidence, then prints the rolled-up total + network graph + footnoted narrative. No modal, no user input.
 
 **Source query (DuckDB):**
 ```sql
@@ -206,7 +206,7 @@ LIMIT 20;
 
 These are not yet decisions, just options for `DEMO.md`.
 
-- **Hero (the live disambiguation moment):** S1 (Robert Epstein / McKalla Place) — agent merges Prophet Capital / PCM / PCM LLC variants live on stage.
+- **Hero (the live plan trace):** S1 (Robert Epstein / McKalla Place) — agent runs `top_pacs` -> `get_contributions` -> `cluster_employer_variants`, auto-merges Prophet Capital / PCM / PCM LLC at 92% confidence, and shows the whole sequence in the plan trace.
 - **Second hero (visceral number):** A1 (the $1.18M Senate-to-mayor transfer) — single biggest line item in the dataset.
 - **Pre-baked tiles on the home page (judge clicks one):** A2 (Endeavor / Watson), A3 (cross-tier lobbyists), B4 (land-use lobbying chart).
 - **Quick follow-ups for after the hero:** B1 (Save Austin Now donors), B3 (Uber 2016).

@@ -11,15 +11,9 @@ import { findHeroByQuestion } from "./registry";
 // production we'd swap to a Redis-backed store; for the hackathon demo this
 // machine is the production environment.
 
-type PendingDisambiguation = {
-  id: string;
-  resolve: (merged: boolean) => void;
-};
-
 type Session = {
   sessionId: string;
   investigation: HeroInvestigation;
-  pending?: PendingDisambiguation;
 };
 
 const SESSIONS = new Map<string, Session>();
@@ -50,11 +44,7 @@ export async function* runInvestigation(
   SESSIONS.set(sessionId, session);
 
   try {
-    for await (const ev of executeSteps(
-      session,
-      investigation.steps,
-      delays,
-    )) {
+    for await (const ev of executeSteps(investigation.steps, delays)) {
       yield ev;
     }
   } finally {
@@ -63,49 +53,22 @@ export async function* runInvestigation(
 }
 
 async function* executeSteps(
-  session: Session,
   steps: ScriptStep[],
   delays: EngineDelays,
 ): AsyncGenerator<InvestigationEvent> {
   const speed = delays.speed ?? 1;
   for (const step of steps) {
-    if (step.kind === "emit") {
-      yield step.event;
-      // Hand-scripted heroes don't carry a wall-clock timestamp; inject one
-      // right after plan_started so the status strip can show elapsed. The
-      // live agent emits this event itself.
-      if (step.event.type === "plan_started") {
-        yield { type: "investigation_started", startedAt: Date.now() };
-      }
-      if (step.delayAfterMs > 0) {
-        await sleep(step.delayAfterMs * speed);
-      }
-      continue;
+    yield step.event;
+    // Hand-scripted heroes don't carry a wall-clock timestamp; inject one
+    // right after plan_started so the status strip can show elapsed. The
+    // live agent emits this event itself.
+    if (step.event.type === "plan_started") {
+      yield { type: "investigation_started", startedAt: Date.now() };
     }
-
-    // await_disambiguation: park the session until /resume is called for this
-    // disambiguation id, then walk the appropriate branch.
-    const merged = await new Promise<boolean>((resolve) => {
-      session.pending = { id: step.id, resolve };
-    });
-    session.pending = undefined;
-    const branch = merged ? step.ifMerged : step.ifKept;
-    for await (const ev of executeSteps(session, branch, delays)) {
-      yield ev;
+    if (step.delayAfterMs > 0) {
+      await sleep(step.delayAfterMs * speed);
     }
   }
-}
-
-export function resolveDisambiguation(
-  sessionId: string,
-  disambiguationId: string,
-  merged: boolean,
-): boolean {
-  const session = SESSIONS.get(sessionId);
-  if (!session?.pending) return false;
-  if (session.pending.id !== disambiguationId) return false;
-  session.pending.resolve(merged);
-  return true;
 }
 
 function sleep(ms: number): Promise<void> {

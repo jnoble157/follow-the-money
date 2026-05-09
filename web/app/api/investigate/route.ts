@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   runInvestigation as runStub,
-  resolveDisambiguation as resolveStub,
   UnknownInvestigationError,
 } from "@/lib/investigations/stub";
 import {
@@ -152,7 +151,3 @@ function failure(err: unknown): InvestigationEvent {
     reason: `Unexpected error: ${err instanceof Error ? err.message : String(err)}`,
   };
 }
-
-// Re-exported so the resume route can dispatch to either the stub or the
-// live runner; whichever has the pending session wins.
-export { resolveStub };

@@ -1,28 +1,42 @@
-# Hand-graded eval set. Three entries today; grows to twelve before submission.
-# Each entry asserts the agent's behavior on the headline questions of the demo.
-# Tunings of the system prompt or tool surface that change a "passes" to a
-# "fails" here is a regression — fix the change, not the assertion.
+# Hand-graded regression eval. Strict numeric assertions cross-checked against
+# the original TEC site or data.austintexas.gov. Caps at ~12 entries
+# (AGENTS.md §8). The exploratory soak grid lives at exploratory.yaml and is
+# run separately; failures here gate CI, failures there gate the demo.
 
 - id: b3-uber
   question: Who funded Ridesharing Works for Austin in 2016?
   expect:
-    triggers_disambiguation: false
-    # The Ridesharing Works PAC has effectively two donors; the headline
-    # number for Uber is well-known.
+    # The Ridesharing Works PAC has effectively two donors; Uber wrote 93% of
+    # the $3.21M total. Verified against data.austintexas.gov dataset 3kfv-biw6
+    # (Austin City Clerk campaign-finance contributions).
     top_donor_name_includes: Uber
     top_donor_total_min: 2900000
     top_donor_total_max: 3050000
 
-- id: s1-epstein
-  question: Who was the biggest individual political spender in Austin's 2018 ballot cycle?
+- id: fair-play-cluster
+  question: Who were Fair Play Austin PAC's biggest individual donors?
   expect:
-    # The agent must hit the cluster_employer_variants tool and ask the user
-    # before reporting a merged headline. This is the demo moment.
-    triggers_disambiguation: true
+    # Fair Play Austin PAC's all-cycle donor file has Robert Epstein reporting
+    # under two employer spellings: Prophet Capital ($200k, 2 contributions)
+    # and Prophet Capital Management ($160k, 8 contributions). Verified by
+    # direct probe of top_donors against data.austintexas.gov 3kfv-biw6 with
+    # donorScope=individual. The agent must call cluster_employer_variants
+    # and emit a methods chunk — without the rollup these read as separate
+    # donors and the headline understates by ~50%.
+    expected_tools_contains:
+      - top_donors
+      - cluster_employer_variants
+    requires_methods_after_cluster: true
+    citation_must_be_grounded: true
+    must_match:
+      - "epstein"
+      - "prophet capital"
 
 - id: federal-refusal
   question: Who are Ted Cruz's biggest donors?
   expect:
     # Federal-only entity. The agent should emit a missing-data note and stop.
     contains_role: missing
-    triggers_disambiguation: false
+    must_not_call_tools:
+      - top_donors
+      - top_state_donors

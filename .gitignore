@@ -29,6 +29,8 @@ data/cache/
 
 web/lib/profiles/*_manifest.json
 
+agent/src/eval/reports/
+
 scratch.md
 *.pdf
 !docs/**/*.pdf

@@ -10,14 +10,9 @@ import {
   writerToolsForOpenAI,
   type WriterToolName,
 } from "./writer_tools.ts";
-import {
-  createSession,
-  destroySession,
-  setPending,
-  clearPending,
-} from "./sessions.ts";
 import { generateReadNext } from "./read_next.ts";
 import type { InvestigationEvent } from "@txmoney/mcp/events";
+import { isExemptCitation } from "@txmoney/mcp/citations";
 
 export type { InvestigationEvent } from "@txmoney/mcp/events";
 
@@ -84,7 +79,6 @@ export async function* runInvestigation(
   const client = new OpenAI({ apiKey });
   const tools = buildOpenAITools();
   const model = options.model ?? MODEL;
-  createSession(sessionId);
 
   yield { type: "plan_started", question };
   yield { type: "investigation_started", startedAt: Date.now() };
@@ -128,7 +122,6 @@ export async function* runInvestigation(
         model,
         tools,
         messages,
-        sessionId,
         citationRegistry,
         getStepId: () => currentStepId,
         setStepId: (id) => {
@@ -152,22 +145,30 @@ export async function* runInvestigation(
         break;
       }
 
-      if (outcome.pendingDisambiguation) {
-        const { id, callId } = outcome.pendingDisambiguation;
-        const merged = await new Promise<boolean>((resolve) => {
-          setPending(sessionId, { id, resolve });
-        });
-        clearPending(sessionId);
-        yield { type: "disambiguation_resolved", id, merged };
-        outcome.toolOutputs.push({
-          type: "function_call_output",
-          call_id: callId,
-          output: JSON.stringify({ merged }),
-        });
-      }
-
       if (outcome.toolOutputs.length === 0) {
-        // Model ended the turn without calling any tool. Close gracefully.
+        // Model ended the turn without calling any tool. If we never got a
+        // narrative chunk, we'd close the investigation with a blank report
+        // — a silent stall on the user's screen. Synthesize a missing chunk
+        // so the UI always has *something* to render before the read-next.
+        if (narrativeForReadNext.length === 0) {
+          const fallback = {
+            type: "narrative_chunk" as const,
+            role: "missing" as const,
+            text:
+              "The agent stopped without producing a written answer. " +
+              "Possible causes: the question is outside our data (federal-only " +
+              "filings, non-Austin municipalities, school-board races) or the " +
+              "available tools returned no rows. Try a Texas state or City of " +
+              "Austin filer, or rephrase the question to point at a specific " +
+              "candidate, PAC, or contributor.",
+            citations: [],
+          };
+          narrativeForReadNext.push({
+            role: fallback.role,
+            text: fallback.text,
+          });
+          yield fallback;
+        }
         yield { type: "investigation_complete" };
         completed = true;
         break;
@@ -200,8 +201,6 @@ export async function* runInvestigation(
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     yield { type: "investigation_failed", reason };
-  } finally {
-    destroySession(sessionId);
   }
 }
 
@@ -212,7 +211,6 @@ type TurnOutcome = {
   assistantItems: ResponseInputItem[];
   toolOutputs: ResponseInputItem[];
   completed: boolean;
-  pendingDisambiguation?: { id: string; callId: string };
 };
 
 type CitationRegistry = Map<string, { url: string; rowSummary: string }>;
@@ -226,7 +224,6 @@ async function* streamTurn(opts: {
   model: string;
   tools: Tool[];
   messages: ResponseInputItem[];
-  sessionId: string;
   citationRegistry: CitationRegistry;
   getStepId: () => string;
   setStepId: (id: string) => void;
@@ -273,28 +270,9 @@ async function* streamTurn(opts: {
 
     const args = parseJson(argsJson);
 
-    if (name === "request_disambiguation") {
-      const handled = handleDisambigRequest(
-        { callId, name, args },
-        opts.getStepId(),
-        opts.citationRegistry,
-      );
-      for (const e of handled.events) yield e;
-      if (handled.toolOutputError) {
-        opts.outcome.toolOutputs.push(handled.toolOutputError);
-      } else if (handled.disambiguationId) {
-        opts.outcome.pendingDisambiguation = {
-          id: handled.disambiguationId,
-          callId,
-        };
-      }
-      continue;
-    }
-
     const handled = await handleToolUse({
       block: { callId, name, args },
       currentStepId: opts.getStepId(),
-      sessionId: opts.sessionId,
       citationRegistry: opts.citationRegistry,
       narrativeCount: opts.narrativeForReadNext.length,
     });
@@ -414,6 +392,21 @@ function compactRow(row: Record<string, unknown>): Record<string, unknown> {
       continue;
     }
     if (
+      (k === "austinSource" || k === "stateSource") &&
+      typeof v === "object" &&
+      v !== null
+    ) {
+      // cross_reference_lobby returns one citation per side of the join.
+      // Without these the model fabricates "crossref-0" style IDs because
+      // it has nothing real to cite. Pass the idents through so the
+      // narrative can ground both sides.
+      const src = v as Record<string, unknown>;
+      if (typeof src.reportInfoIdent === "string") {
+        out[k] = { reportInfoIdent: src.reportInfoIdent };
+      }
+      continue;
+    }
+    if (
       Array.isArray(v) &&
       v.length > 0 &&
       typeof v[0] === "object"
@@ -442,7 +435,6 @@ type Block = { callId: string; name: string; args: unknown };
 async function handleToolUse(args: {
   block: Block;
   currentStepId: string;
-  sessionId: string;
   citationRegistry: CitationRegistry;
   narrativeCount: number;
 }): Promise<Handled> {
@@ -571,10 +563,22 @@ function handleWriterTool(
           rowSummary?: string;
         }>;
       };
+      // Drop fabricated citations before they reach the user. The model
+      // occasionally splices two real reportInfoIdents into one
+      // (R-prefix from row A + -F-suffix from row B) and the resulting
+      // string is not in the citation registry. Letting that through
+      // violates Hard Rule 1 ("every numeric claim cites a source row").
+      // Exempt the same prefixes the eval grounding check exempts so
+      // hand-scripted heroes and web_search results aren't stripped.
+      const cleanCitations = a.citations.filter((c) => {
+        if (!c.reportInfoIdent) return false;
+        if (citationRegistry.has(c.reportInfoIdent)) return true;
+        return isExemptCitation(c.reportInfoIdent, c.url);
+      });
       events.push({
         type: "narrative_chunk",
         text: a.text,
-        citations: a.citations.map((c) => enrichCitation(c, citationRegistry)),
+        citations: cleanCitations.map((c) => enrichCitation(c, citationRegistry)),
         role: a.role,
       });
       return { events, toolOutput: ack(block.callId), complete: false };
@@ -611,11 +615,6 @@ function handleWriterTool(
         label: a.label,
         weight: a.weight,
       });
-      return { events, toolOutput: ack(block.callId), complete: false };
-    }
-    case "request_disambiguation": {
-      // Handled in streamTurn so the event yields before the runner parks
-      // the loop. This case is unreachable; keep it for exhaustiveness.
       return { events, toolOutput: ack(block.callId), complete: false };
     }
     case "complete_investigation": {
@@ -701,63 +700,6 @@ function ack(callId: string): ResponseInputItem {
     type: "function_call_output",
     call_id: callId,
     output: "ok",
-  };
-}
-
-function handleDisambigRequest(
-  block: Block,
-  currentStepId: string,
-  citationRegistry: CitationRegistry,
-): {
-  events: InvestigationEvent[];
-  disambiguationId?: string;
-  toolOutputError?: ResponseInputItem;
-} {
-  const schema = WRITER_TOOL_SCHEMAS["request_disambiguation"];
-  let parsed: {
-    id: string;
-    title: string;
-    explanation: string;
-    variants: Array<{
-      variant: string;
-      contributions: number;
-      total: number;
-      sampleContributors: string[];
-      sampleCitation: {
-        reportInfoIdent: string;
-        url?: string;
-        rowSummary?: string;
-      };
-    }>;
-  };
-  try {
-    parsed = schema.parse(block.args ?? {}) as typeof parsed;
-  } catch (err) {
-    const reason = err instanceof Error ? err.message : String(err);
-    return {
-      events: [],
-      toolOutputError: {
-        type: "function_call_output",
-        call_id: block.callId,
-        output: `invalid request_disambiguation args: ${reason}`,
-      },
-    };
-  }
-  return {
-    events: [
-      {
-        type: "disambiguation_required",
-        id: parsed.id,
-        stepId: currentStepId,
-        title: parsed.title,
-        explanation: parsed.explanation,
-        variants: parsed.variants.map((v) => ({
-          ...v,
-          sampleCitation: enrichCitation(v.sampleCitation, citationRegistry),
-        })),
-      },
-    ],
-    disambiguationId: parsed.id,
   };
 }
 
@@ -861,5 +803,3 @@ function collectSources(row: Record<string, unknown>): string[] {
   }
   return out;
 }
-
-export { resolveDisambiguation } from "./sessions.ts";

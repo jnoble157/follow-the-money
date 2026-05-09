@@ -73,8 +73,6 @@ const CADENCE_MS: Record<InvestigationEvent["type"], number> = {
   narrative_chunk: 380,
   graph_node: 80,
   graph_edge: 80,
-  disambiguation_required: 0,
-  disambiguation_resolved: 0,
   investigation_complete: 200,
   read_next: 240,
   investigation_failed: 0,

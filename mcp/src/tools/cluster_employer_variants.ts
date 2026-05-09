@@ -8,9 +8,9 @@ import type { Tool } from "./types.ts";
 
 // Group reported `Donor_Reported_Employer` values by surface-form similarity.
 // Returns one row per cluster of variants seen for the (donor, recipient)
-// pair, with a confidence score for the merge. The agent calls
-// request_disambiguation if confidence is below 0.85 and the merge would
-// change the headline number — see the system prompt.
+// pair, with a confidence score for the merge. The agent always proceeds with
+// the cluster and emits a `methods` narrative chunk citing the variants and
+// the returned confidence — see the system prompt.
 
 const Args = z
   .object({
@@ -226,7 +226,7 @@ function similar(a: string, b: string, threshold: number): boolean {
 export const clusterEmployerVariants: Tool<typeof Args, typeof Result> = {
   name: "cluster_employer_variants",
   description:
-    "Cluster reported employer variants by surface-form similarity. Use after top_donors / get_contributions surfaces multiple spellings of the same firm. Returns clusters with confidence; the agent should call request_disambiguation when confidence < 0.85 and merging would change the headline number.",
+    "Cluster reported employer variants by surface-form similarity. Use after top_donors / get_contributions surfaces multiple spellings of the same firm. Returns clusters with a confidence score in [0,1]. Always proceed with the cluster and emit one `emit_narrative` chunk with role:'methods' that names the variants and cites the returned confidence — never invent that number, never ask the user.",
   argsSchema: Args,
   resultSchema: Result,
   run,

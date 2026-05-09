@@ -7,15 +7,16 @@ import { Report } from "./Report";
 import { EvidenceGraph } from "./EvidenceGraph";
 import { DonorTable } from "./DonorTable";
 import { RecipientTable } from "./RecipientTable";
-import { DisambiguationModal } from "./DisambiguationModal";
 import { RelatedRail } from "./RelatedRail";
 
 type Props = {
   initialQuestion: string;
 };
 
+const RANKING_LIMIT = 5;
+
 export function InvestigationConsole({ initialQuestion }: Props) {
-  const { state, ask, resolveDisambiguation } = useInvestigation();
+  const { state, ask } = useInvestigation();
 
   // Re-run when the URL's q changes. The ref guards against React strict
   // mode double-invoke firing two streams in dev. The investigate page
@@ -28,6 +29,9 @@ export function InvestigationConsole({ initialQuestion }: Props) {
     ask(q);
   }, [initialQuestion, ask]);
 
+  const topDonors = state.topDonors.slice(0, RANKING_LIMIT);
+  const topRecipients = state.topRecipients.slice(0, RANKING_LIMIT);
+
   return (
     <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-6 py-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_minmax(0,1fr)_480px]">
@@ -38,14 +42,6 @@ export function InvestigationConsole({ initialQuestion }: Props) {
           <Report state={state} fallbackQuestion={initialQuestion} />
         </section>
         <aside className="space-y-6">
-          <div className="rounded-md border border-rule bg-white p-4">
-            <EvidenceGraph
-              nodes={state.graphNodes}
-              edges={state.graphEdges}
-            />
-          </div>
-          <DonorTable donors={state.topDonors} />
-          <RecipientTable recipients={state.topRecipients} />
           {state.status === "complete" ? (
             <RelatedRail
               currentQuestion={state.question}
@@ -53,12 +49,16 @@ export function InvestigationConsole({ initialQuestion }: Props) {
               readNext={state.readNext}
             />
           ) : null}
+          <div className="rounded-md border border-rule bg-white p-4">
+            <EvidenceGraph
+              nodes={state.graphNodes}
+              edges={state.graphEdges}
+            />
+          </div>
+          <DonorTable donors={topDonors} />
+          <RecipientTable recipients={topRecipients} />
         </aside>
       </div>
-      <DisambiguationModal
-        prompt={state.pendingDisambiguation}
-        onResolve={resolveDisambiguation}
-      />
     </main>
   );
 }

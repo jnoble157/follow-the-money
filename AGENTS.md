@@ -120,9 +120,9 @@ skill/                  Open Data track deliverable
 
 The hackathon's only deliverable is a working demo. Treat it as a feature, not a task at the end.
 
-- Maintain `DEMO.md` with three pre-baked hero investigations (one short and visceral, one sophisticated, one investigative) and the exact happy-path script: what to type, what to expect, where the live disambiguation moment lands. Update it whenever the path changes. If the script doesn't work end-to-end on a fresh `data/duckdb/money.duckdb` 30 minutes before submission, that's a sev-1.
+- Maintain `DEMO.md` with three pre-baked hero investigations (one short and visceral, one sophisticated, one investigative) and the exact happy-path script: what to type, what to expect, what shows up in the plan trace as it runs. Update it whenever the path changes. If the script doesn't work end-to-end on a fresh `data/duckdb/money.duckdb` 30 minutes before submission, that's a sev-1.
 - Pre-load demo questions in the search bar of the web UI. Judge attention is a scarce resource.
-- The disambiguation moment is the agent-iest moment we have. At least one pre-baked demo question must trigger it live. If entity-resolution accuracy drifts and the moment stops triggering, fix the trigger, not the accuracy.
+- The agent-iest moment is the **live plan trace** — the agent narrating each `plan_step`, calling MCP tools (`find_filer`, `top_donors`, `cluster_employer_variants`, `cross_reference_lobby`), optionally hitting `web_search` for context, and rendering that whole sequence in the left rail in real time. At least one pre-baked demo question must exercise multi-tool sequencing visibly (the Epstein hero: filer lookup -> top donors -> employer cluster -> auto-merge methods chunk). If a system-prompt or tool change makes the plan trace less visible — fewer steps, silent jumps, no methods chunk after a fuzzy merge — fix the change, not the trace.
 - Failure modes that can hit on stage (model rate limits, slow first-token, model refusals, venue wifi flake) get explicit handling — a cached fallback for the three hero questions, a clear error message, or a "demo mode" toggle. Silent stalls are the worst outcome on a stage.
 - Latency budget for the headline interaction: under 10 seconds for the visible plan trace, under 30 seconds for the full investigation. If it's longer, show progress. DuckDB on Parquet is sub-second on this dataset; if a query takes more than 1 second the SQL is wrong, not the data.
 
@@ -130,10 +130,13 @@ The hackathon's only deliverable is a working demo. Treat it as a feature, not a
 
 Hackathon-pragmatic, not enterprise.
 
-- The eval set lives at `agent/eval/questions.yaml` — exactly 12 hero questions with hand-graded reference answers from the original TEC site. Every PR that changes the agent runtime, a tool, or entity resolution runs the eval and reports the delta. A regression of more than 1 of 12 fails the change.
+The eval rig has two suites. They share one runner (`agent/src/eval/run.ts`) and one entry schema; they differ in what they assert and what gates what.
+
+- `agent/src/eval/questions.yaml` is the **regression** suite — up to 12 hand-graded entries with strict numeric assertions (top-donor name, totals bands cross-checked against the original TEC or `data.austintexas.gov` row). Every PR that touches the agent runtime, a tool, or entity resolution runs `npm run eval` (defaults to this suite) and reports the delta. A regression of more than 1 of N fails the change. Numbers come from the source site; never widen a band to make a flaky run pass.
+- `agent/src/eval/exploratory.yaml` is the **soak** grid — ~100 prompts across jurisdiction routing, refusals, prompt-injection resistance, citation grounding, employer rollups, lobby cross-reference, and fair-day chaos. Behavioral assertions backed by automatic checks the runner executes against the event stream: `expected_tools_contains`, `must_not_call_tools`, `max_calls_per_tool`, `max_citations_per_chunk`, `requires_methods_after_cluster`, `citation_must_be_grounded` (every cited `reportInfoIdent` must trace to a preceding `tool_result.sourceRows`), `must_not_match` / `must_match` regex over narrative. Run with `npm run eval -- --suite exploratory` before each demo and after any system-prompt edit. Pass-rate floor before submission is **95%**; remaining failures are documented in `agent/src/eval/known_gaps.md` with category and reason.
 - Unit tests on parsing, scoring, name normalization, and any code with non-obvious math. Don't waste tokens unit-testing glue code.
 - Smoke test the demo path. One test that runs the headline interaction end-to-end against the deterministic stub LLM. If this test breaks, the demo is broken.
-- Fuzzy-match thresholds are constants with a comment citing the empirical confusion observed at that threshold. `# threshold 0.78 = no false merges in the 2024 House donor sample` is gold. Tuning a threshold without rerunning the eval is a sev-2.
+- Fuzzy-match thresholds are constants with a comment citing the empirical confusion observed at that threshold. `# threshold 0.78 = no false merges in the 2024 House donor sample` is gold. Tuning a threshold without rerunning both suites is a sev-2.
 - No mocks of our own modules. Mock the LLM call and nothing else.
 
 ## 9. Dependencies
@@ -172,7 +175,7 @@ Hackathon-pragmatic, not enterprise.
 
 - We're scored on Impact & Clarity, Technical Execution, Innovation, User Experience, and Track Fit (see `hackathon.md`). When making a tradeoff, ask which axis the change moves and whether it's the axis we're behind on.
 - The Open Data track's hard gate is "custom MCP server and/or proper agent skill." We ship both. Anything that erodes the MCP surface or the skill doc is erosion of our track-fit score.
-- The Agents-track money shot is the live disambiguation moment — agent narrates plan, hits ambiguity, asks the user, resolves, continues. Defend that path.
+- The Agents-track money shot is the live plan trace — agent narrates each step, calls MCP tools and `web_search`, auto-merges fuzzy clusters with a visible methods chunk, and renders the full sequence in the left rail. The user never has to make a disambiguation decision; the agent owns ambiguity. Defend that path.
 - "Working demo over slides" is in the criteria verbatim. A polished but stubbed feature beats a working but invisible one. A working and visible feature beats both.
 - DeepInvent and Miro bounties are listed in `hackathon.md`. If something we build is plausibly eligible, surface it; don't silently optimize for a bounty without consensus.
 
@@ -181,7 +184,7 @@ Hackathon-pragmatic, not enterprise.
 The single most valuable thing an agent can do here is decline gracefully.
 
 - If a TEC field's meaning is unclear, the answer is in `docs/tec-schema/CFS-ReadMe.txt` or `docs/tec-schema/CFS-Codes.txt`. Read those first; ask the user only if the docs disagree with the data.
-- If entity resolution is uncertain at the user-facing layer, the agent must ask the user — that's the demo moment, not a bug.
+- Entity-resolution ambiguity is the agent's job, not the user's. When `cluster_employer_variants` returns a cluster, always merge and emit a methods chunk citing the variants and confidence. When `find_filer` / `find_state_filer` returns multiple candidates with comparable confidence, pick the highest-confidence row, then narrate the alternatives in the body so the reader can verify; never block on a modal.
 - If a refactor would touch the demo path, propose first; do not edit and break the script.
 - If a change would shift the eval pass rate, run the eval and report the delta in the same commit.
 - If you are uncertain whether a piece of code is correct under a hard rule above, leave it untouched and flag it.

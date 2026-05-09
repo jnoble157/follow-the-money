@@ -5,7 +5,7 @@
 //   line 2..N: { ts: number, event: InvestigationEvent }
 //
 // Usage:
-//   npm run record-hero -- a1-watson [--out path] [--auto-merge]
+//   npm run record-hero -- a1-watson [--out path]
 //
 // We hand-inspect each output before committing. The hand-scripted .ts
 // versions get deleted in the same commit.
@@ -14,7 +14,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadDotEnv } from "./env.ts";
 import { runInvestigation } from "./runner.ts";
-import { resolveDisambiguation } from "./sessions.ts";
 
 type HeroMeta = {
   id: string;
@@ -82,21 +81,17 @@ const DEFAULT_OUT_DIR = path.join(
 type CliArgs = {
   ids: string[];
   outDir: string;
-  autoMerge: boolean;
 };
 
 function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {
     ids: [],
     outDir: DEFAULT_OUT_DIR,
-    autoMerge: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--out") {
       args.outDir = argv[++i] ?? DEFAULT_OUT_DIR;
-    } else if (a === "--auto-merge") {
-      args.autoMerge = true;
     } else if (a === "--all") {
       args.ids = Object.keys(HEROES);
     } else if (a.startsWith("--")) {
@@ -111,7 +106,6 @@ function parseArgs(argv: string[]): CliArgs {
 async function recordOne(
   hero: HeroMeta,
   outDir: string,
-  autoMerge: boolean,
 ): Promise<{ outPath: string; eventCount: number; durationMs: number }> {
   await fs.promises.mkdir(outDir, { recursive: true });
   const outPath = path.join(outDir, `${hero.id}.jsonl`);
@@ -131,16 +125,6 @@ async function recordOne(
       const line = JSON.stringify({ ts: Date.now(), event: ev });
       await handle.write(line + "\n");
       count++;
-      if (ev.type === "disambiguation_required") {
-        if (autoMerge) {
-          resolveDisambiguation(sessionId, ev.id, true);
-        } else {
-          // We can't read stdin here in any simple way during the run;
-          // default the recording behavior to "merge" since that's the
-          // path with the methods chunk and the fuller story.
-          resolveDisambiguation(sessionId, ev.id, true);
-        }
-      }
       if (ev.type === "investigation_failed") {
         throw new Error(`agent failed: ${ev.reason}`);
       }
@@ -170,7 +154,7 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   if (args.ids.length === 0) {
     console.error(
-      `usage: record-hero <id...> [--out path] [--auto-merge]\n` +
+      `usage: record-hero <id...> [--out path]\n` +
         `       record-hero --all\n` +
         `known: ${Object.keys(HEROES).join(", ")}`,
     );
@@ -189,7 +173,7 @@ async function main(): Promise<void> {
     const hero = HEROES[id];
     process.stderr.write(`record ${hero.id}: ${hero.question}\n`);
     try {
-      const r = await recordOne(hero, args.outDir, args.autoMerge);
+      const r = await recordOne(hero, args.outDir);
       process.stderr.write(
         `wrote ${r.outPath} (${r.eventCount} events, ${r.durationMs}ms)\n`,
       );

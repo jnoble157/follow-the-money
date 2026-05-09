@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
+import { fileURLToPath } from "node:url";
 import type { InvestigationEvent } from "./types";
 
 // JSONL replay engine. Recorded heroes (committed) and ad-hoc cached runs
@@ -104,35 +105,18 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// Path resolution. Under `next dev` and `next start`, process.cwd() is the
-// web/ workspace; under direct `tsx` invocation from the repo root it's the
-// repo root. Either layout has the recorded fixtures next to *this* file
-// and the ad-hoc cache directory at <repo>/data/cache/investigations.
-const RECORDED_DIRS = [
-  path.resolve(process.cwd(), "lib", "investigations", "recorded"),
-  path.resolve(process.cwd(), "web", "lib", "investigations", "recorded"),
-];
-const CACHE_DIRS = [
-  path.resolve(process.cwd(), "data", "cache", "investigations"),
-  path.resolve(process.cwd(), "..", "data", "cache", "investigations"),
-];
-
-async function firstExisting(candidates: string[]): Promise<string | null> {
-  for (const c of candidates) {
-    if (await tryDir(c)) return c;
-  }
-  return null;
-}
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(HERE, "..", "..", "..");
+const RECORDED_DIR = path.join(HERE, "recorded");
+const CACHE_DIR = path.join(REPO_ROOT, "data", "cache", "investigations");
 
 export async function loadRecorded(
   question: string,
 ): Promise<RecordedFile | null> {
-  const dir = await firstExisting(RECORDED_DIRS);
-  if (!dir) return null;
   const norm = normalizeQuestion(question);
-  for (const file of await readdir(dir)) {
+  for (const file of await readdir(RECORDED_DIR)) {
     if (!file.endsWith(".jsonl")) continue;
-    const fp = path.join(dir, file);
+    const fp = path.join(RECORDED_DIR, file);
     const meta = await readRecordedMeta(fp);
     if (!meta) continue;
     if (normalizeQuestion(meta.question) === norm) {
@@ -145,10 +129,9 @@ export async function loadRecorded(
 // Ad-hoc cache, keyed by sha1(normalized question). Lives outside the repo
 // at data/cache/investigations/ and is gitignored.
 export async function cachedFilePath(question: string): Promise<string> {
-  const dir = (await firstExisting(CACHE_DIRS)) ?? CACHE_DIRS[0];
-  await fs.promises.mkdir(dir, { recursive: true });
+  await fs.promises.mkdir(CACHE_DIR, { recursive: true });
   const sha = await sha1(normalizeQuestion(question));
-  return path.join(dir, `${sha}.jsonl`);
+  return path.join(CACHE_DIR, `${sha}.jsonl`);
 }
 
 export async function loadCached(
@@ -215,16 +198,6 @@ async function sha1(s: string): Promise<string> {
   return [...new Uint8Array(buf)]
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-}
-
-async function tryDir(p: string): Promise<string | null> {
-  try {
-    const stat = await fs.promises.stat(p);
-    if (stat.isDirectory()) return p;
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 async function readdir(p: string): Promise<string[]> {

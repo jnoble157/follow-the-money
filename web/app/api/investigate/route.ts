@@ -82,8 +82,10 @@ async function* selectStream(
   // Tee to ad-hoc cache so the next time anyone asks the same question,
   // we replay rather than re-spend tokens.
   if (isAgentServiceConfigured()) {
-    const live = runRemote(question, sessionId);
-    for await (const ev of streamAndRecord(live, question)) {
+    // Don't tee to disk in production — Vercel functions are read-only
+    // outside /tmp, and the canonical recording lives next to the agent
+    // anyway (the Railway service can cache by question if we want).
+    for await (const ev of runRemote(question, sessionId)) {
       yield ev;
     }
     return;

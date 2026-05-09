@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "texas-money": {
+      "command": "npx",
+      "args": ["-y", "tsx", "mcp/src/index.ts"]
+    }
+  }
+}

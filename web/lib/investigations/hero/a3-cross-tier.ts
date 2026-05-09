@@ -223,16 +223,19 @@ export const a3CrossTier: HeroInvestigation = {
       delayAfterMs: 600,
     },
     // Read-next pick: the natural follow-up to a register-overlap is the
-    // donor side of the same names. Do any of these dual-tier lobbyists
-    // also write checks to the officials they're paid to influence?
+    // donor side. Question must be SELF-CONTAINED (no "these lobbyists",
+    // no pronoun back-reference) — it kicks a fresh agent run that has no
+    // memory of this report. Naming the densest cluster (Drenner Group,
+    // four registrants here) anchors the next investigation in a single
+    // tool call against TEC contributions filtered by employer.
     {
       kind: "emit",
       event: {
         type: "read_next",
-        question: "Do any of these lobbyists also donate to the officials they lobby?",
+        question: "Does Drenner Group money also flow to Texas politicians?",
         kicker: "FROM REGISTER TO DONOR",
         rationale:
-          "Twelve names appear on both city and state lobby registers. The next step joins the donor file: a registrant who also gives to the people they're paid to influence is a different story from one who doesn't.",
+          "The Drenner Group has four lobbyists on both registers. The next step is the donor file: do Drenner-affiliated contributions show up in the campaigns of the officials they lobby?",
       },
       delayAfterMs: 0,
     },

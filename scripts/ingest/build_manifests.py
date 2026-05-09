@@ -6,7 +6,7 @@ import re
 import sys
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 import duckdb
 
@@ -22,7 +22,14 @@ DONORS_JSON = REPO_ROOT / "web/lib/profiles/donors_manifest.json"
 DONOR_DETAILS_JSON = REPO_ROOT / "web/lib/profiles/donor_details_manifest.json"
 
 AUSTIN_CONTRIBS_DATASET = "https://data.austintexas.gov/d/3kfv-biw6"
-TEC_REPORT_DOC = "https://www.ethics.state.tx.us/dfs/loadDoc.cfm"
+TEC_REPORT_VIEWER = "https://jasper.ethics.state.tx.us/jasperserver-pro/flow.html"
+TEC_REPORT_UNIT = "/public/publicData/datasource/CFS/By_Report_Number"
+# TEC's public search page generates this same pre-auth shape in
+# SimpleVisual.js. It carries only the PUBLIC2 viewer account; without it,
+# direct report-number links land on Jasper's login page.
+TEC_PUBLIC_TOKEN = (
+    "u=PUBLIC2|expireTime=Thu Jan 01 2099 00:00:00 GMT-0600 (Central Standard Time)"
+)
 OFFICIAL_LIMIT = 1200
 OFFICIAL_DONOR_LIMIT = 10
 
@@ -978,7 +985,7 @@ def donor_recipient_rows(con: duckdb.DuckDBPyConnection) -> list[tuple]:
           ON l.donorKey = r.donorKey
          AND l.recipientGroup = r.recipientGroup
          AND l.rn = 1
-        WHERE r.rn <= 5
+        WHERE r.rn <= 8
         ORDER BY r.donorKey, r.rn
         """
     ).fetchall()
@@ -1349,12 +1356,24 @@ def contribution_citation(
     date = f", {date_text}" if date_text else ""
     return {
         "reportInfoIdent": str(row_id),
-        "url": f"{TEC_REPORT_DOC}?documentID={quote(doc_id)}",
+        "url": tec_report_url(doc_id),
         "rowSummary": (
             f"TEC campaign-finance report {row_id}, contribution to "
             f"{recipient} from {donor}: {amount_text}{date}."
         ),
     }
+
+
+def tec_report_url(report_info_ident: str) -> str:
+    params = urlencode(
+        {
+            "tec-pp": TEC_PUBLIC_TOKEN,
+            "_flowId": "viewReportFlow",
+            "reportUnit": TEC_REPORT_UNIT,
+            "Report_ident": report_info_ident,
+        }
+    )
+    return f"{TEC_REPORT_VIEWER}?{params}"
 
 
 def money_number(value: Decimal) -> float:

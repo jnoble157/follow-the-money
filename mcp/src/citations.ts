@@ -1,19 +1,22 @@
 import type { Citation } from "./schemas/index.ts";
 
 // Source-row identifiers and their resolution to public-records URLs. We
-// don't store full URLs in the Parquet files — the citation helper builds
-// them from the row's TRANSACTION_ID (Austin) or FilerID (TEC) so the rule
-// "every numeric claim is one click from the original filing" stays cheap.
+// don't store full URLs in the Parquet files; the citation helper builds
+// them from the row's TRANSACTION_ID (Austin) or reportInfoIdent (TEC).
 
 const AUSTIN_CONTRIBS_DATASET = "https://data.austintexas.gov/d/3kfv-biw6";
 const AUSTIN_EXPEND_DATASET = "https://data.austintexas.gov/d/gd3e-xut2";
 const AUSTIN_LOBBY_REGISTRANTS = "https://data.austintexas.gov/d/58ix-34ma";
 const AUSTIN_LOBBY_CLIENTS = "https://data.austintexas.gov/d/7ena-g23u";
 const TEC_LOBBY_LANDING = "https://www.ethics.state.tx.us/search/lobby/";
-// TEC's per-report PDF deep link. reportInfoIdent is the documentID in their
-// CFIS system. The page renders the original report PDF; our citation hands
-// the user straight to the source filing.
-const TEC_REPORT_DOC = "https://www.ethics.state.tx.us/dfs/loadDoc.cfm";
+const TEC_REPORT_VIEWER =
+  "https://jasper.ethics.state.tx.us/jasperserver-pro/flow.html";
+const TEC_REPORT_UNIT = "/public/publicData/datasource/CFS/By_Report_Number";
+// TEC's public search page generates this same pre-auth shape in
+// SimpleVisual.js. It carries only the PUBLIC2 viewer account; without it,
+// direct report-number links land on Jasper's login page.
+const TEC_PUBLIC_TOKEN =
+  "u=PUBLIC2|expireTime=Thu Jan 01 2099 00:00:00 GMT-0600 (Central Standard Time)";
 const TEC_CF_SEARCH = "https://www.ethics.state.tx.us/search/cf/";
 
 export function austinContributionCitation(args: {
@@ -102,14 +105,10 @@ export function tecContributionCitation(args: {
   amount: number;
   date?: string | null;
 }): Citation {
-  // reportInfoIdent left-pads to 11 digits per the TEC schema. We strip
-  // padding before the URL because the dfs/loadDoc.cfm endpoint accepts the
-  // unpadded numeric form, but we keep the padded value on
-  // reportInfoIdent so it round-trips to the citation registry verbatim.
   const docId = String(args.reportInfoIdent).replace(/^0+/, "") || "0";
   return {
     reportInfoIdent: String(args.reportInfoIdent),
-    url: `${TEC_REPORT_DOC}?documentID=${encodeURIComponent(docId)}`,
+    url: tecReportUrl(docId),
     rowSummary:
       `TEC campaign-finance report ${args.reportInfoIdent}, contribution to ${args.filerName} from ${args.contributor}: ` +
       `$${args.amount.toLocaleString("en-US")}` +
@@ -130,7 +129,7 @@ export function tecExpenditureCitation(args: {
   const desc = args.description ? ` (${args.description})` : "";
   return {
     reportInfoIdent: String(args.reportInfoIdent),
-    url: `${TEC_REPORT_DOC}?documentID=${encodeURIComponent(docId)}`,
+    url: tecReportUrl(docId),
     rowSummary:
       `TEC campaign-finance report ${args.reportInfoIdent}, expenditure by ${args.filerName} to ${args.payee}: ` +
       `$${args.amount.toLocaleString("en-US")}` +
@@ -138,6 +137,16 @@ export function tecExpenditureCitation(args: {
       desc +
       ".",
   };
+}
+
+function tecReportUrl(reportInfoIdent: string): string {
+  const params = new URLSearchParams({
+    "tec-pp": TEC_PUBLIC_TOKEN,
+    _flowId: "viewReportFlow",
+    reportUnit: TEC_REPORT_UNIT,
+    Report_ident: reportInfoIdent,
+  });
+  return `${TEC_REPORT_VIEWER}?${params.toString()}`;
 }
 
 export function tecFilerCitation(args: {

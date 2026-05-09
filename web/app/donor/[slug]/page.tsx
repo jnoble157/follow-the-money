@@ -87,6 +87,9 @@ function OrganizationDonor({ donor }: { donor: DonorWithStats }) {
           >
             Employer variants
           </h2>
+          <p className="mb-3 max-w-2xl text-[13px] leading-snug text-muted">
+            Raw employer strings from source rows; spelling varies across filings.
+          </p>
           <details className="rounded-md border border-rule bg-white p-4">
             <summary className="cursor-pointer font-mono text-[12px] uppercase tracking-wider text-ink">
               Raw reported values

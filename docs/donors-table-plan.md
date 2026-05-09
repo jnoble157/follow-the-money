@@ -41,7 +41,7 @@
   - `primaryCity` — most frequent `contributorStreetCity`.
   - `primaryZip` — most frequent `contributorStreetPostalCode`.
   - `donorType` — `'individual'` or `'organization'`.
-  - `topRecipients` — array of top 5 `{ recipient, total }`.
+  - `topRecipients` — array of top 8 `{ recipient, total }`.
   - `yearlyTotals` — array of `{ year, total }`.
   - `employerVariants` — array of distinct raw employer strings.
   - `displayName` — most frequent original-casing variant.
@@ -121,7 +121,7 @@ Add:
 2. **Summary cards** — Total given, contributions, avg, years active.
 3. **Top recipients table** — Ranked list with bar/amount.
 4. **Yearly totals** — Simple bar chart or table.
-5. **Employer variants** — Expandable list of raw strings.
+5. **Employer variants** — Expandable list of raw employer strings.
 
 ### 8. Manifest JSON
 

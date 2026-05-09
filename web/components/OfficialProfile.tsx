@@ -1,5 +1,3 @@
-import Link from "next/link";
-import type { Route } from "next";
 import { Avatar } from "./Avatar";
 import { Footnote } from "./Footnote";
 import { OfficialDonorLinks } from "./OfficialDonorLinks";
@@ -32,12 +30,6 @@ export function OfficialProfile({ official }: Props) {
             <p className="text-[15px] text-muted">{official.role}</p>
           </div>
         </div>
-        <Link
-          href={"/officials" as Route}
-          className="self-start rounded-sm border border-rule bg-white px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-ink hover:border-ink"
-        >
-          Officials
-        </Link>
       </header>
 
       <section
@@ -80,7 +72,7 @@ export function OfficialProfile({ official }: Props) {
             >
               Filing aliases
             </h2>
-            <details className="rounded-md border border-rule bg-white p-4">
+            <details open className="rounded-md border border-rule bg-white p-4">
               <summary className="cursor-pointer font-mono text-[12px] uppercase tracking-wider text-ink">
                 Raw recipient names
               </summary>

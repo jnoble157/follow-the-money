@@ -64,6 +64,7 @@ export type DonorRecipient = {
   recipientSlug?: string;
   recipientRole?: string;
   recipientJurisdiction?: Jurisdiction;
+  recipientFilerType?: string;
 };
 
 export type DonorYearlyTotal = {
@@ -127,7 +128,8 @@ export type ProfileSection =
 
 export type ProfileNetwork = {
   // Same shape as the investigation graph so we can reuse the renderer.
-  // Nodes whose `profileSlug` is set become click-throughs to other profiles.
+  // `profileSlug` targets profile pages; `href` is for donor pages and other
+  // non-profile routes the static graph knows exactly.
   nodes: GraphNodeView[];
   edges: GraphEdgeView[];
 };

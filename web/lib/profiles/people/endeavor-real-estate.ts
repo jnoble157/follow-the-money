@@ -116,10 +116,10 @@ export const endeavorRealEstate: Profile = {
       { id: "mfa", label: "Mobility for All PAC", kind: "pac" },
     ],
     edges: [
-      { from: "endeavor-firm", to: "endeavor-employees", label: "employs", weight: 1 },
-      { from: "endeavor-employees", to: "watson-mayor", label: `$${ROLLED_TOTAL.toLocaleString("en-US")}`, weight: ROLLED_TOTAL },
-      { from: "endeavor-firm", to: "lobbyists", label: "retains", weight: 1 },
-      { from: "endeavor-firm", to: "mfa", label: "$200,000", weight: 200_000 },
+      { from: "endeavor-firm", to: "endeavor-employees", label: "employs", weight: 1, citation: canonicalCite },
+      { from: "endeavor-employees", to: "watson-mayor", label: `$${ROLLED_TOTAL.toLocaleString("en-US")}`, weight: ROLLED_TOTAL, citation: canonicalCite },
+      { from: "endeavor-firm", to: "lobbyists", label: "retains", weight: 1, citation: lobbyCite },
+      { from: "endeavor-firm", to: "mfa", label: "$200,000", weight: 200_000, citation: mfaCite },
     ],
   },
   related: [

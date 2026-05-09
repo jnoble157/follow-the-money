@@ -14,12 +14,12 @@ export function Wordmark({ right, href = "/" as Route }: Props) {
       <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-3">
         <Link href={href} className="group flex items-center gap-2">
           <Image
-            src="/logo.png"
-            alt="TX Money"
+            src="/icon.svg"
+            alt="Texas Money Investigator"
             width={32}
             height={32}
             priority
-            className="h-8 w-8 rounded-sm object-cover"
+            className="h-8 w-8 object-contain"
           />
           <span className="font-serif text-[22px] leading-none tracking-tight transition-colors duration-200">
             <span className="text-accent">TX</span>

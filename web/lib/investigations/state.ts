@@ -57,6 +57,8 @@ export type GraphNodeView = {
   kind: GraphNodeKind;
   sublabel?: string;
   profileSlug?: string;
+  href?: string;
+  hrefLabel?: string;
 };
 
 export type GraphEdgeView = {
@@ -64,6 +66,7 @@ export type GraphEdgeView = {
   to: string;
   label?: string;
   weight?: number;
+  citation?: Citation;
 };
 
 export type InvestigationStatus =

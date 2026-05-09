@@ -1,8 +1,10 @@
 import { Avatar } from "./Avatar";
+import { EvidenceGraph } from "./EvidenceGraph";
 import { Footnote } from "./Footnote";
 import { OfficialDonorLinks } from "./OfficialDonorLinks";
 import { PartyBadge } from "./PartyBadge";
 import { formatMoney } from "@/lib/formatMoney";
+import { officialDonorGraph } from "@/lib/profiles/evidenceGraph";
 import type { OfficialDetail } from "@/lib/profiles/types";
 
 type Props = {
@@ -16,6 +18,8 @@ const JURISDICTION_LABEL: Record<string, string> = {
 };
 
 export function OfficialProfile({ official }: Props) {
+  const graph = officialDonorGraph(official);
+
   return (
     <main className="mx-auto flex w-full max-w-[1120px] flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-4 border-b border-rule pb-6 md:flex-row md:items-start md:justify-between">
@@ -69,8 +73,10 @@ export function OfficialProfile({ official }: Props) {
         />
       </section>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <OfficialDonorLinks donors={official.topOrganizationDonors} />
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.82fr)]">
+        <div className="space-y-8">
+          <OfficialDonorLinks donors={official.topOrganizationDonors} />
+        </div>
         {official.aliases.length > 0 ? (
           <section aria-labelledby="official-aliases-heading">
             <h2
@@ -94,6 +100,12 @@ export function OfficialProfile({ official }: Props) {
           </section>
         ) : null}
       </div>
+
+      {graph.nodes.length > 0 ? (
+        <section aria-label="Evidence graph">
+          <EvidenceGraph nodes={graph.nodes} edges={graph.edges} />
+        </section>
+      ) : null}
     </main>
   );
 }

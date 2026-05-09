@@ -83,6 +83,7 @@ export const saveAustinNow: Profile = {
       to: "san",
       label: `$${d.amt.toLocaleString("en-US")}`,
       weight: d.amt,
+      citation: donorRows[d.rank - 1].citation,
     })),
   },
   related: [],

@@ -2,9 +2,11 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { Route } from "next";
 import { notFound } from "next/navigation";
+import { EvidenceGraph } from "@/components/EvidenceGraph";
 import { Footnote } from "@/components/Footnote";
 import { formatMoney } from "@/lib/formatMoney";
 import { getDonorDetailBySlug } from "@/lib/profiles/donors";
+import { donorRecipientGraph } from "@/lib/profiles/evidenceGraph";
 import {
   getDonorBySlug,
   listDonorsWithStats,
@@ -48,6 +50,8 @@ export default async function DonorPage({
 }
 
 function OrganizationDonor({ donor }: { donor: DonorWithStats }) {
+  const graph = donorRecipientGraph(donor);
+
   return (
     <main className="mx-auto flex w-full max-w-[1120px] flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-3 border-b border-rule pb-6">
@@ -78,6 +82,12 @@ function OrganizationDonor({ donor }: { donor: DonorWithStats }) {
         <TopRecipients donor={donor} />
         <YearlyTotals donor={donor} />
       </section>
+
+      {graph.nodes.length > 0 ? (
+        <section aria-label="Evidence graph">
+          <EvidenceGraph nodes={graph.nodes} edges={graph.edges} />
+        </section>
+      ) : null}
 
       {donor.employerVariants.length > 0 ? (
         <section aria-labelledby="employer-variants-heading">
@@ -176,7 +186,6 @@ function TopRecipients({ donor }: { donor: DonorWithStats }) {
                   <AmountBar
                     amount={row.total}
                     max={max}
-                    sourceCount={row.contributionCount}
                     citation={row.source}
                     citationIndex={10 + i}
                   />
@@ -219,7 +228,6 @@ function YearlyTotals({ donor }: { donor: DonorWithStats }) {
                   <AmountBar
                     amount={row.total}
                     max={max}
-                    sourceCount={row.contributionCount}
                     citation={row.source}
                     citationIndex={20 + i}
                   />
@@ -244,7 +252,6 @@ function YearlyTotals({ donor }: { donor: DonorWithStats }) {
                       <AmountBar
                         amount={row.total}
                         max={max}
-                        sourceCount={row.contributionCount}
                         citation={row.source}
                         citationIndex={28 + i}
                       />
@@ -263,13 +270,11 @@ function YearlyTotals({ donor }: { donor: DonorWithStats }) {
 function AmountBar({
   amount,
   max,
-  sourceCount,
   citation,
   citationIndex,
 }: {
   amount: number;
   max: number;
-  sourceCount: number;
   citation: DonorWithStats["source"];
   citationIndex: number;
 }) {
@@ -278,9 +283,7 @@ function AmountBar({
     <div className="space-y-1">
       <div className="flex items-baseline justify-end gap-1 font-mono tnum text-ink">
         {formatMoney(amount, { cents: true })}
-        {sourceCount === 1 ? (
-          <Footnote index={citationIndex} citation={citation} />
-        ) : null}
+        <Footnote index={citationIndex} citation={citation} />
       </div>
       <div className="ml-auto h-1.5 w-full rounded-sm bg-page">
         <div

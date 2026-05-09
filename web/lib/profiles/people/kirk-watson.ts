@@ -131,9 +131,9 @@ export const kirkWatson: Profile = {
       { id: "endeavor-firm", label: "Endeavor Real Estate Group", kind: "employer", profileSlug: "endeavor-real-estate" },
     ],
     edges: [
-      { from: "watson-senate", to: "kpw-pac", label: "$1,186,764", weight: 1_186_764 },
-      { from: "kpw-pac", to: "watson-mayor", label: "supports", weight: 1 },
-      { from: "endeavor-firm", to: "watson-mayor", label: "33 employees, $39,439", weight: 39_439 },
+      { from: "watson-senate", to: "kpw-pac", label: "$1,186,764", weight: 1_186_764, citation: transferCitation },
+      { from: "kpw-pac", to: "watson-mayor", label: "supports", weight: 1, citation: transferCitation },
+      { from: "endeavor-firm", to: "watson-mayor", label: "33 employees, $39,439", weight: 39_439, citation: endeavorCanonical },
     ],
   },
   related: [

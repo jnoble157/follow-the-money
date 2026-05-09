@@ -19,7 +19,7 @@ import type {
   GraphEdgeView,
   GraphNodeView,
 } from "@/lib/investigations/state";
-import type { GraphNodeKind } from "@/lib/investigations/types";
+import type { Citation, GraphNodeKind } from "@/lib/investigations/types";
 
 type Props = {
   nodes: GraphNodeView[];
@@ -27,6 +27,11 @@ type Props = {
   // Map of node id → profile slug for click-through. Merged with any
   // `profileSlug` already on the node objects; the prop wins.
   nodeIdToProfileSlug?: Record<string, string>;
+};
+
+type NodeLink = {
+  href: string;
+  label: string;
 };
 
 // Color tokens kept inline because vis-network reads color strings, not CSS
@@ -55,37 +60,48 @@ const KIND_LABEL: Record<GraphNodeKind, string> = {
 // sparse graphs rendering at ~30% of the modal viewport (the "lost in
 // space" bug). We compute scale ourselves from node positions and a target
 // fill ratio instead. These clamps still bound the result so a 2-node
-// graph doesn't fill the entire modal and a 20-node graph doesn't go
-// microscopic.
-const MIN_FIT_ZOOM = 0.7;
+// graph doesn't fill the entire modal. Larger profile graphs may need a low
+// zoom to keep every table-derived relationship in frame.
+const MIN_FIT_ZOOM = 0.12;
 const MAX_FIT_ZOOM = 1.8;
-const TARGET_FILL_RATIO = 0.78;
+const TARGET_FILL_RATIO = 1.04;
 // Padding around the bounding box, in vis world units (~ pixels at 1×
 // scale). Accounts for node widths/heights since `getPositions` returns
 // node centers, not corners.
 const FIT_PAD_X = 160;
 const FIT_PAD_Y = 90;
 const ZOOM_STEP = 1.25;
-const GRAPH_NODE_LIMIT = 5;
+// Radial layout: hub at the origin, leaves evenly distributed on a circle
+// around it. Radius scales with leaf count so adjacent labels don't crowd.
+const RADIAL_MIN_RADIUS = 280;
+const RADIAL_PER_LEAF = 38;
 
 export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
-  const visibleNodes = useMemo(
-    () => nodes.slice(0, GRAPH_NODE_LIMIT),
-    [nodes],
-  );
   const visibleEdges = useMemo(() => {
-    const ids = new Set(visibleNodes.map((n) => n.id));
+    const ids = new Set(nodes.map((n) => n.id));
     return edges.filter((e) => ids.has(e.from) && ids.has(e.to));
-  }, [edges, visibleNodes]);
+  }, [edges, nodes]);
 
-  const slugMap = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const n of visibleNodes) if (n.profileSlug) m[n.id] = n.profileSlug;
-    if (nodeIdToProfileSlug) Object.assign(m, nodeIdToProfileSlug);
+  const linkMap = useMemo(() => {
+    const m: Record<string, NodeLink> = {};
+    for (const n of nodes) {
+      if (n.profileSlug) {
+        m[n.id] = { href: `/profile/${n.profileSlug}`, label: "Open profile" };
+      }
+      if (n.href) {
+        m[n.id] = { href: n.href, label: n.hrefLabel ?? "Open profile" };
+      }
+    }
+    if (nodeIdToProfileSlug) {
+      for (const [id, slug] of Object.entries(nodeIdToProfileSlug)) {
+        m[id] = { href: `/profile/${slug}`, label: "Open profile" };
+      }
+    }
     return m;
-  }, [visibleNodes, nodeIdToProfileSlug]);
+  }, [nodes, nodeIdToProfileSlug]);
 
   const [expanded, setExpanded] = useState(false);
+  const frameHeight = inlineFrameHeight(nodes.length);
 
   // Trap ESC + restore body scroll while the modal is up.
   useEffect(() => {
@@ -108,7 +124,7 @@ export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
         <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted">
           Evidence graph
         </h2>
-        {visibleNodes.length > 0 ? (
+        {nodes.length > 0 ? (
           <button
             type="button"
             onClick={() => setExpanded(true)}
@@ -119,12 +135,13 @@ export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
         ) : null}
       </div>
       <GraphFrame
-        nodes={visibleNodes}
+        nodes={nodes}
         edges={visibleEdges}
-        slugMap={slugMap}
-        className="h-[320px] w-full rounded-md border border-rule bg-white"
+        linkMap={linkMap}
+        className="w-full rounded-md border border-rule bg-white"
+        style={{ height: frameHeight }}
       />
-      {visibleNodes.length === 0 ? (
+      {nodes.length === 0 ? (
         <p className="text-[12px] text-muted">
           Donors, filers, PACs, and lobbyists are added here as the agent
           discovers them.
@@ -132,9 +149,9 @@ export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
       ) : null}
       {expanded ? (
         <GraphModal
-          nodes={visibleNodes}
+          nodes={nodes}
           edges={visibleEdges}
-          slugMap={slugMap}
+          linkMap={linkMap}
           onClose={() => setExpanded(false)}
         />
       ) : null}
@@ -153,46 +170,85 @@ type CanvasHandle = {
 type FrameProps = {
   nodes: GraphNodeView[];
   edges: GraphEdgeView[];
-  slugMap: Record<string, string>;
+  linkMap: Record<string, NodeLink>;
   className: string;
+  style?: React.CSSProperties;
+};
+
+type GraphSelection =
+  | { type: "node"; id: string }
+  | { type: "edge"; id: string };
+
+type StarLayout = {
+  key: string;
+  positions: Record<string, { x: number; y: number }>;
 };
 
 // Holds the canvas, the zoom/recenter controls (bottom-right), and the
 // selection action card (bottom-left). Selection state lives here so the
 // card sits next to the canvas without re-rendering it on every selection.
-function GraphFrame({ nodes, edges, slugMap, className }: FrameProps) {
+function GraphFrame({ nodes, edges, linkMap, className, style }: FrameProps) {
   const canvasRef = useRef<CanvasHandle>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<GraphSelection | null>(null);
   const router = useRouter();
 
-  // Drop selection when the underlying node disappears (new investigation).
+  // Drop selection when the underlying graph item disappears.
   useEffect(() => {
-    if (selectedId && !nodes.some((n) => n.id === selectedId)) {
-      setSelectedId(null);
+    if (!selection) return;
+    if (
+      selection.type === "node" &&
+      !nodes.some((n) => n.id === selection.id)
+    ) {
+      setSelection(null);
     }
-  }, [nodes, selectedId]);
+    if (
+      selection.type === "edge" &&
+      !edges.some((e) => edgeId(e) === selection.id)
+    ) {
+      setSelection(null);
+    }
+  }, [edges, nodes, selection]);
 
-  const selected = selectedId
-    ? (nodes.find((n) => n.id === selectedId) ?? null)
+  const selectedNode =
+    selection?.type === "node"
+      ? (nodes.find((n) => n.id === selection.id) ?? null)
+      : null;
+  const selectedEdge =
+    selection?.type === "edge"
+      ? (edges.find((e) => edgeId(e) === selection.id) ?? null)
+      : null;
+  const selectedNodeLink = selectedNode ? linkMap[selectedNode.id] : undefined;
+  const selectedEdgeEnds = selectedEdge
+    ? {
+        from:
+          nodes.find((n) => n.id === selectedEdge.from)?.label ??
+          selectedEdge.from,
+        to:
+          nodes.find((n) => n.id === selectedEdge.to)?.label ??
+          selectedEdge.to,
+      }
     : null;
-  const selectedSlug = selectedId ? slugMap[selectedId] : undefined;
 
   const onNavigate = useCallback(
-    (slug: string) => {
-      router.push(`/profile/${slug}` as Route);
+    (href: string) => {
+      router.push(href as Route);
     },
     [router],
   );
 
   return (
-    <div className={`relative isolate overflow-hidden ${className}`}>
+    <div
+      className={`relative isolate overflow-hidden ${className}`}
+      style={style}
+    >
       <GraphCanvas
         ref={canvasRef}
         nodes={nodes}
         edges={edges}
-        slugMap={slugMap}
-        selectedId={selectedId}
-        onSelect={setSelectedId}
+        linkMap={linkMap}
+        selectedNodeId={selectedNode?.id ?? null}
+        selectedEdgeId={selectedEdge ? edgeId(selectedEdge) : null}
+        onSelect={setSelection}
         onNavigate={onNavigate}
         className="absolute inset-0 z-0 h-full w-full"
       />
@@ -201,17 +257,27 @@ function GraphFrame({ nodes, edges, slugMap, className }: FrameProps) {
           onZoomIn={() => canvasRef.current?.zoomIn()}
           onZoomOut={() => canvasRef.current?.zoomOut()}
           onFit={() => {
-            setSelectedId(null);
+            setSelection(null);
             canvasRef.current?.fit();
           }}
         />
       ) : null}
-      {selected ? (
+      {selectedNode ? (
         <NodeActionCard
-          node={selected}
-          slug={selectedSlug}
-          onOpenProfile={selectedSlug ? () => onNavigate(selectedSlug) : null}
-          onClose={() => setSelectedId(null)}
+          node={selectedNode}
+          link={selectedNodeLink}
+          onOpen={
+            selectedNodeLink ? () => onNavigate(selectedNodeLink.href) : null
+          }
+          onClose={() => setSelection(null)}
+        />
+      ) : null}
+      {selectedEdge?.citation && selectedEdgeEnds ? (
+        <EdgeActionCard
+          edge={selectedEdge}
+          fromLabel={selectedEdgeEnds.from}
+          toLabel={selectedEdgeEnds.to}
+          onClose={() => setSelection(null)}
         />
       ) : null}
     </div>
@@ -221,24 +287,35 @@ function GraphFrame({ nodes, edges, slugMap, className }: FrameProps) {
 type CanvasProps = {
   nodes: GraphNodeView[];
   edges: GraphEdgeView[];
-  slugMap: Record<string, string>;
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
-  onNavigate: (slug: string) => void;
+  linkMap: Record<string, NodeLink>;
+  selectedNodeId: string | null;
+  selectedEdgeId: string | null;
+  onSelect: (selection: GraphSelection | null) => void;
+  onNavigate: (href: string) => void;
   className: string;
 };
 
 // One vis-network instance and the effects that keep it in sync with
-// nodes / edges / slugMap / selection. The frame above owns layout chrome;
+// nodes / edges / links / selection. The frame above owns layout chrome;
 // this component owns the canvas and the imperative handle.
 const GraphCanvas = forwardRef<CanvasHandle, CanvasProps>(function GraphCanvas(
-  { nodes, edges, slugMap, selectedId, onSelect, onNavigate, className },
+  {
+    nodes,
+    edges,
+    linkMap,
+    selectedNodeId,
+    selectedEdgeId,
+    onSelect,
+    onNavigate,
+    className,
+  },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const networkRef = useRef<Network | null>(null);
   const nodesRef = useRef<DataSet<{ id: string }> | null>(null);
   const edgesRef = useRef<DataSet<{ id: string }> | null>(null);
+  const graphKeyRef = useRef("");
   // network.fit() reaches into network.view.fit(), and view doesn't exist
   // until the first frame has rendered. ResizeObserver fires immediately
   // on observe — before any nodes are added — so any fit before this flag
@@ -247,12 +324,26 @@ const GraphCanvas = forwardRef<CanvasHandle, CanvasProps>(function GraphCanvas(
 
   // Latest-prop refs so the network's event handlers — registered once at
   // mount — always see current values without re-binding.
-  const slugMapRef = useRef(slugMap);
-  slugMapRef.current = slugMap;
+  const linkMapRef = useRef(linkMap);
+  linkMapRef.current = linkMap;
+  const sourceEdgeIdsRef = useRef(new Set<string>());
+  sourceEdgeIdsRef.current = new Set(
+    edges.filter((edge) => edge.citation).map(edgeId),
+  );
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
   const onNavigateRef = useRef(onNavigate);
   onNavigateRef.current = onNavigate;
+  const starLayout = useMemo(() => starLayoutFor(nodes, edges), [nodes, edges]);
+  const graphKey = useMemo(
+    () =>
+      [
+        starLayout?.key ?? "hierarchical",
+        nodes.map((n) => n.id).join(","),
+        edges.map(edgeId).join(","),
+      ].join("|"),
+    [edges, nodes, starLayout],
+  );
 
   useImperativeHandle(
     ref,
@@ -308,26 +399,7 @@ const GraphCanvas = forwardRef<CanvasHandle, CanvasProps>(function GraphCanvas(
         // flows right. Edges sit between, no curve-cross-node overlap. Far
         // more readable than physics for our DAG-shaped investigations.
         layout: {
-          hierarchical: {
-            enabled: true,
-            direction: "LR",
-            sortMethod: "directed",
-            shakeTowards: "leaves",
-            // Generous spacing gives edge labels real room to sit above
-            // the arrow without overlapping the next node. The dollar
-            // amount is the headline; treat it as primary, not as an
-            // afterthought tucked between two boxes. The agent sometimes
-            // emits descriptive labels ("Austin PAC support") that are
-            // 18+ characters long; the wrapper below splits those over
-            // two lines, but the spacing also has to be wide enough that
-            // even the wrapped form has room.
-            levelSeparation: 320,
-            nodeSpacing: 180,
-            treeSpacing: 220,
-            blockShifting: true,
-            edgeMinimization: true,
-            parentCentralization: true,
-          },
+          hierarchical: hierarchicalLayout(),
         },
         // Physics off — hierarchical positions are deterministic and we
         // freeze them so panning doesn't drift the layout around.
@@ -390,27 +462,49 @@ const GraphCanvas = forwardRef<CanvasHandle, CanvasProps>(function GraphCanvas(
     );
     networkRef.current = network;
 
-    network.on("click", (params: { nodes: Array<string | number> }) => {
-      const id = params.nodes?.[0];
-      if (id == null) {
+    network.on(
+      "click",
+      (params: {
+        nodes: Array<string | number>;
+        edges: Array<string | number>;
+      }) => {
+        const nodeId = params.nodes?.[0];
+        if (nodeId != null) {
+          onSelectRef.current({ type: "node", id: String(nodeId) });
+          return;
+        }
+        const edge = params.edges?.[0];
+        if (edge != null) {
+          const edgeSelection = String(edge);
+          onSelectRef.current(
+            sourceEdgeIdsRef.current.has(edgeSelection)
+              ? { type: "edge", id: edgeSelection }
+              : null,
+          );
+          return;
+        }
         onSelectRef.current(null);
-        return;
-      }
-      onSelectRef.current(String(id));
-    });
+      },
+    );
     network.on("doubleClick", (params: { nodes: Array<string | number> }) => {
       const id = params.nodes?.[0];
       if (id == null) return;
-      const slug = slugMapRef.current[String(id)];
-      if (slug) onNavigateRef.current(slug);
+      const link = linkMapRef.current[String(id)];
+      if (link) onNavigateRef.current(link.href);
     });
     network.on("hoverNode", (params: { node: string | number }) => {
-      const slug = slugMapRef.current[String(params.node)];
+      const link = linkMapRef.current[String(params.node)];
       if (containerRef.current) {
-        containerRef.current.style.cursor = slug ? "pointer" : "grab";
+        containerRef.current.style.cursor = link ? "pointer" : "grab";
       }
     });
+    network.on("hoverEdge", () => {
+      if (containerRef.current) containerRef.current.style.cursor = "pointer";
+    });
     network.on("blurNode", () => {
+      if (containerRef.current) containerRef.current.style.cursor = "grab";
+    });
+    network.on("blurEdge", () => {
       if (containerRef.current) containerRef.current.style.cursor = "grab";
     });
     network.once("afterDrawing", () => {
@@ -437,6 +531,16 @@ const GraphCanvas = forwardRef<CanvasHandle, CanvasProps>(function GraphCanvas(
     };
   }, []);
 
+  useEffect(() => {
+    const network = networkRef.current;
+    if (!network) return;
+    network.setOptions({
+      layout: starLayout
+        ? { hierarchical: { enabled: false } }
+        : { hierarchical: hierarchicalLayout() },
+    });
+  }, [starLayout]);
+
   // Reconcile the DataSet with the React props on every change. Walk the
   // desired set, drop ids no longer wanted, then add or update the rest.
   // Cheap; the graph never has more than ~20 nodes.
@@ -451,8 +555,8 @@ const GraphCanvas = forwardRef<CanvasHandle, CanvasProps>(function GraphCanvas(
     const existing = new Set(existingIds.filter((id) => wanted.has(id)));
     for (const n of nodes) {
       const colors = NODE_COLORS[n.kind];
-      const linkable = !!slugMap[n.id];
-      const isSelected = n.id === selectedId;
+      const linkable = !!linkMap[n.id];
+      const isSelected = n.id === selectedNodeId;
       const update = {
         id: n.id,
         label: n.label,
@@ -469,6 +573,15 @@ const GraphCanvas = forwardRef<CanvasHandle, CanvasProps>(function GraphCanvas(
           size: 13,
         },
       } as Record<string, unknown>;
+      const pos = starLayout?.positions[n.id];
+      if (pos) {
+        update.x = pos.x;
+        update.y = pos.y;
+        update.fixed = { x: true, y: true };
+        update.physics = false;
+      } else {
+        update.fixed = false;
+      }
       if (existing.has(n.id)) {
         ds.update(update as never);
       } else {
@@ -480,34 +593,43 @@ const GraphCanvas = forwardRef<CanvasHandle, CanvasProps>(function GraphCanvas(
     const network = networkRef.current;
     if (network && readyRef.current && nodes.length > 0) {
       const sizeChanged = existingIds.length !== nodes.length;
-      if (sizeChanged) {
+      const graphChanged = graphKeyRef.current !== graphKey;
+      graphKeyRef.current = graphKey;
+      if (sizeChanged || graphChanged) {
         requestAnimationFrame(() =>
           fitWithClamp(network, containerRef.current),
         );
       }
     }
-  }, [nodes, slugMap, selectedId]);
+  }, [nodes, linkMap, selectedNodeId, starLayout, graphKey]);
 
   useEffect(() => {
     const ds = edgesRef.current;
     if (!ds) return;
-    const wanted = new Set(edges.map((e) => `${e.from}->${e.to}`));
+    const wanted = new Set(edges.map(edgeId));
     for (const id of ds.getIds().map(String)) {
       if (!wanted.has(id)) ds.remove(id);
     }
     const existing = new Set(ds.getIds().map(String));
     for (const e of edges) {
-      const id = `${e.from}->${e.to}`;
-      if (existing.has(id)) continue;
-      ds.add({
+      const id = edgeId(e);
+      const selected = id === selectedEdgeId;
+      const row = {
         id,
         from: e.from,
         to: e.to,
         label: wrapEdgeLabel(e.label ?? ""),
-        width: e.weight ? Math.max(1, Math.log10(e.weight) - 2) : 1,
-      } as never);
+        width: selected
+          ? Math.max(2, edgeWidth(e) + 1.25)
+          : edgeWidth(e),
+        color: selected
+          ? { color: "#8B1A1A", highlight: "#8B1A1A" }
+          : { color: "#5C5C58", highlight: "#8B1A1A" },
+      } as never;
+      if (existing.has(id)) ds.update(row);
+      else ds.add(row);
     }
-  }, [edges]);
+  }, [edges, selectedEdgeId]);
 
   return <div ref={containerRef} className={className} />;
 });
@@ -643,15 +765,15 @@ function FitGlyph() {
 
 type ActionCardProps = {
   node: GraphNodeView;
-  slug?: string;
-  onOpenProfile: (() => void) | null;
+  link?: NodeLink;
+  onOpen: (() => void) | null;
   onClose: () => void;
 };
 
 function NodeActionCard({
   node,
-  slug,
-  onOpenProfile,
+  link,
+  onOpen,
   onClose,
 }: ActionCardProps) {
   const colors = NODE_COLORS[node.kind];
@@ -711,13 +833,13 @@ function NodeActionCard({
         </button>
       </div>
       <div className="mt-3">
-        {onOpenProfile ? (
+        {onOpen ? (
           <button
             type="button"
-            onClick={onOpenProfile}
+            onClick={onOpen}
             className="rounded-sm bg-ink px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider text-white transition-colors hover:bg-accent"
           >
-            Open profile →
+            {link?.label ?? "Open profile"} →
           </button>
         ) : (
           <span
@@ -728,7 +850,7 @@ function NodeActionCard({
           </span>
         )}
       </div>
-      {slug && onOpenProfile ? (
+      {link && onOpen ? (
         <p className="mt-2 font-mono text-[10px] text-muted">
           Double-click the node to open.
         </p>
@@ -737,17 +859,99 @@ function NodeActionCard({
   );
 }
 
+function EdgeActionCard({
+  edge,
+  fromLabel,
+  toLabel,
+  onClose,
+}: {
+  edge: GraphEdgeView;
+  fromLabel: string;
+  toLabel: string;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-label={`${fromLabel} to ${toLabel} source`}
+      style={{
+        position: "absolute",
+        left: 12,
+        bottom: 12,
+        zIndex: 10,
+        width: 340,
+        maxWidth: "calc(100% - 1.5rem)",
+      }}
+      className="pointer-events-auto rounded-md border border-ink/15 bg-page p-3 shadow-lg"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 space-y-1">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
+            Source row
+          </p>
+          <p className="text-[13px] leading-snug text-ink">
+            <span className="font-medium">{fromLabel}</span>
+            <span className="text-muted"> {"->"} </span>
+            <span className="font-medium">{toLabel}</span>
+          </p>
+          {edge.label ? (
+            <p className="font-mono text-[12px] tnum text-accent">
+              {edge.label}
+            </p>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          aria-label="Close source"
+          onClick={onClose}
+          className="-mr-1 -mt-1 flex h-6 w-6 items-center justify-center rounded-sm font-mono text-[16px] leading-none text-muted hover:bg-white hover:text-ink"
+        >
+          ×
+        </button>
+      </div>
+      {edge.citation ? (
+        <CitationBlock citation={edge.citation} />
+      ) : (
+        <p className="mt-3 rounded-sm border border-dashed border-rule px-2.5 py-2 text-[12px] leading-snug text-muted">
+          This graph edge does not carry a source row.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function CitationBlock({ citation }: { citation: Citation }) {
+  return (
+    <div className="mt-3 space-y-1 rounded-sm border border-rule bg-white p-2.5">
+      <p className="font-mono text-[10px] uppercase tracking-wider text-accent">
+        {citation.reportInfoIdent}
+      </p>
+      <p className="text-[12px] leading-snug text-ink">
+        {citation.rowSummary}
+      </p>
+      <a
+        href={citation.url}
+        target="_blank"
+        rel="noreferrer"
+        className="font-mono text-[11px] text-evidence underline decoration-dotted hover:text-accent"
+      >
+        Open source filing →
+      </a>
+    </div>
+  );
+}
+
 type ModalProps = {
   nodes: GraphNodeView[];
   edges: GraphEdgeView[];
-  slugMap: Record<string, string>;
+  linkMap: Record<string, NodeLink>;
   onClose: () => void;
 };
 
 // Portal-mounted fullscreen variant. Same GraphFrame inside, just bigger,
 // wrapped in a dim backdrop that closes on click. Rendered to document.body
 // via a portal so the modal escapes the report's max-width column.
-function GraphModal({ nodes, edges, slugMap, onClose }: ModalProps) {
+function GraphModal({ nodes, edges, linkMap, onClose }: ModalProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const onBackdrop = useCallback(
@@ -781,7 +985,7 @@ function GraphModal({ nodes, edges, slugMap, onClose }: ModalProps) {
         <GraphFrame
           nodes={nodes}
           edges={edges}
-          slugMap={slugMap}
+          linkMap={linkMap}
           className="h-full w-full bg-white"
         />
       </div>
@@ -792,6 +996,79 @@ function GraphModal({ nodes, edges, slugMap, onClose }: ModalProps) {
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
+}
+
+function inlineFrameHeight(nodeCount: number): number {
+  if (nodeCount <= 1) return 280;
+  // Tall enough to render the radial layout's circle at a readable scale —
+  // a square-ish container keeps fit-zoom from collapsing labels.
+  return Math.min(720, 420 + nodeCount * 24);
+}
+
+function hierarchicalLayout() {
+  return {
+    enabled: true,
+    direction: "LR",
+    sortMethod: "directed",
+    shakeTowards: "leaves",
+    // Horizontal spacing gives edge labels room; vertical spacing is kept
+    // tighter because profile pages render all table-derived rows.
+    levelSeparation: 300,
+    nodeSpacing: 92,
+    treeSpacing: 180,
+    blockShifting: true,
+    edgeMinimization: true,
+    parentCentralization: true,
+  };
+}
+
+function edgeId(edge: GraphEdgeView): string {
+  return `${edge.from}->${edge.to}`;
+}
+
+function edgeWidth(edge: GraphEdgeView): number {
+  return edge.weight ? Math.max(1, Math.log10(edge.weight) - 2) : 1;
+}
+
+function starLayoutFor(
+  nodes: GraphNodeView[],
+  edges: GraphEdgeView[],
+): StarLayout | null {
+  if (nodes.length < 4 || edges.length < 3) return null;
+  const degree = new Map<string, number>();
+  for (const edge of edges) {
+    degree.set(edge.from, (degree.get(edge.from) ?? 0) + 1);
+    degree.set(edge.to, (degree.get(edge.to) ?? 0) + 1);
+  }
+  const hub = [...degree.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (!hub || hub[1] !== edges.length) return null;
+
+  const hubId = hub[0];
+  const outflow = edges.every((edge) => edge.from === hubId);
+  const inflow = edges.every((edge) => edge.to === hubId);
+  if (!outflow && !inflow) return null;
+
+  const leaves = nodes.filter((node) => node.id !== hubId);
+  const radius = Math.max(RADIAL_MIN_RADIUS, leaves.length * RADIAL_PER_LEAF);
+  const positions: StarLayout["positions"] = {
+    [hubId]: { x: 0, y: 0 },
+  };
+
+  // Start at the top (-π/2) and walk clockwise so the first leaf reads at
+  // 12 o'clock and the rest are evenly distributed around the hub.
+  const startAngle = -Math.PI / 2;
+  leaves.forEach((node, i) => {
+    const angle = startAngle + (2 * Math.PI * i) / leaves.length;
+    positions[node.id] = {
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius,
+    };
+  });
+
+  return {
+    key: `${hubId}:${outflow ? "out" : "in"}:${nodes.length}:${edges.length}`,
+    positions,
+  };
 }
 
 // Edge labels are usually short ("$3.2M", "supports", "registers") but the

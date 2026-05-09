@@ -1328,6 +1328,7 @@ def build_donors(con: duckdb.DuckDBPyConnection, limit: int) -> tuple[list[dict]
             recipient_slug,
             recipient_role,
             recipient_jurisdiction,
+            recipient_filer_type,
             dataset,
             row_id,
             donor,
@@ -1341,19 +1342,23 @@ def build_donors(con: duckdb.DuckDBPyConnection, limit: int) -> tuple[list[dict]
             "recipient": recipient,
             "total": money_number(total),
             "contributionCount": int(contribution_count),
-            "source": contribution_citation(
+            "source": contribution_rollup_citation(
                 dataset=dataset,
                 row_id=row_id,
                 donor=donor or entry["displayName"],
                 recipient=recipient,
                 amount=source_amount,
                 date_text=date_text,
+                total=total,
+                source_count=int(contribution_count),
             ),
         }
         if recipient_slug:
             item["recipientSlug"] = recipient_slug
             item["recipientRole"] = recipient_role
             item["recipientJurisdiction"] = recipient_jurisdiction
+        if recipient_filer_type:
+            item["recipientFilerType"] = recipient_filer_type
         entry["topRecipients"].append(item)
 
     for row in donor_yearly_rows(con):
@@ -1377,13 +1382,15 @@ def build_donors(con: duckdb.DuckDBPyConnection, limit: int) -> tuple[list[dict]
                 "year": int(year),
                 "total": money_number(total),
                 "contributionCount": int(contribution_count),
-                "source": contribution_citation(
+                "source": contribution_rollup_citation(
                     dataset=dataset,
                     row_id=row_id,
                     donor=donor or entry["displayName"],
                     recipient=recipient,
                     amount=source_amount,
                     date_text=date_text,
+                    total=total,
+                    source_count=int(contribution_count),
                 ),
             }
         )
@@ -1519,6 +1526,7 @@ def donor_recipient_rows(con: duckdb.DuckDBPyConnection) -> list[tuple]:
             MAX(recipientName) AS recipientName,
             MAX(recipientRole) AS recipientRole,
             MAX(recipientJurisdiction) AS recipientJurisdiction,
+            MAX(recipientFilerType) AS recipientFilerType,
             COUNT(*)::INTEGER AS contributionCount,
             SUM(amount) AS total
           FROM rows
@@ -1572,6 +1580,7 @@ def donor_recipient_rows(con: duckdb.DuckDBPyConnection) -> list[tuple]:
           r.recipientSlug,
           r.recipientRole,
           r.recipientJurisdiction,
+          r.recipientFilerType,
           l.dataset,
           l.sourceRowId,
           l.rawName,
@@ -1695,13 +1704,15 @@ def build_official_details(
             "displayName": donor["displayName"] if donor else display_name,
             "total": money_number(total),
             "contributionCount": int(count),
-            "source": contribution_citation(
+            "source": contribution_rollup_citation(
                 dataset=dataset,
                 row_id=row_id,
                 donor=source_donor or display_name,
                 recipient=recipient,
                 amount=source_amount,
                 date_text=date_text,
+                total=total,
+                source_count=int(count),
             ),
         }
         if donor and donor["donorType"] == "organization":
@@ -2170,6 +2181,53 @@ def contribution_citation(
         "rowSummary": (
             f"TEC campaign-finance report {row_id}, contribution to "
             f"{recipient} from {donor}: {amount_text}{date}."
+        ),
+    }
+
+
+def contribution_rollup_citation(
+    *,
+    dataset: str,
+    row_id: str,
+    donor: str,
+    recipient: str,
+    amount: Decimal,
+    date_text: str | None,
+    total: Decimal,
+    source_count: int,
+) -> dict:
+    if source_count <= 1:
+        return contribution_citation(
+            dataset=dataset,
+            row_id=row_id,
+            donor=donor,
+            recipient=recipient,
+            amount=amount,
+            date_text=date_text,
+        )
+
+    total_text = money_text(total)
+    amount_text = money_text(amount)
+    date = f", {date_text}" if date_text else ""
+    if dataset == "austin":
+        return {
+            "reportInfoIdent": f"ATX-CONTRIB-ROLLUP-{row_id}-{source_count}",
+            "url": f"{AUSTIN_CONTRIBS_DATASET}?row={quote(str(row_id))}",
+            "rowSummary": (
+                f"Austin City Clerk contribution rollup: {donor} -> "
+                f"{recipient}, {total_text} from {source_count:,} source rows. "
+                f"Largest source row {row_id} reports {amount_text}{date}."
+            ),
+        }
+
+    doc_id = str(row_id).lstrip("0") or "0"
+    return {
+        "reportInfoIdent": f"TEC-CONTRIB-ROLLUP-{row_id}-{source_count}",
+        "url": tec_report_url(doc_id),
+        "rowSummary": (
+            f"TEC campaign-finance contribution rollup for {recipient} from "
+            f"{donor}: {total_text} from {source_count:,} source rows. "
+            f"Largest source report {row_id} reports {amount_text}{date}."
         ),
     }
 

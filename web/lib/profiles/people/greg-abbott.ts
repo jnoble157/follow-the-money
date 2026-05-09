@@ -65,8 +65,8 @@ export const gregAbbott: Profile = {
       { id: "gac", label: "Greg Abbott Campaign", kind: "pac" },
     ],
     edges: [
-      { from: "tfga", to: "gac", label: "6× = $7,750,000", weight: 7_750_000 },
-      { from: "gac", to: "abbott", label: "supports", weight: 1 },
+      { from: "tfga", to: "gac", label: "6× = $7,750,000", weight: 7_750_000, citation: intraPacCitation },
+      { from: "gac", to: "abbott", label: "supports", weight: 1, citation: intraPacCitation },
     ],
   },
   related: [],

@@ -79,9 +79,9 @@ export const demetriusMcDaniel: Profile = {
       { id: "state", label: "Texas Capitol", kind: "client", sublabel: "TEC state lobby register" },
     ],
     edges: [
-      { from: "mcdaniel", to: "greenberg", label: "employed by", weight: 1 },
-      { from: "mcdaniel", to: "city", label: "registers", weight: 1 },
-      { from: "mcdaniel", to: "state", label: "registers", weight: 1 },
+      { from: "mcdaniel", to: "greenberg", label: "employed by", weight: 1, citation: austinCitation },
+      { from: "mcdaniel", to: "city", label: "registers", weight: 1, citation: austinCitation },
+      { from: "mcdaniel", to: "state", label: "registers", weight: 1, citation: tecCitation },
     ],
   },
   related: [

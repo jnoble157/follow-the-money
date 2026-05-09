@@ -183,9 +183,11 @@ test("donor and generated public official pages deep-link both ways", async () =
   const donor = await html("/donor/texans-for-lawsuit-reform-pac-78701");
   assert.match(donor, /href="\/profile\/fred-tate-87311"/);
   assert.match(donor, /Fred Tate/);
+  assert.match(donor, /Evidence graph/);
 
   const official = await html("/profile/fred-tate-87311");
   assert.match(official, /Top organization donors/);
+  assert.match(official, /Evidence graph/);
   assert.match(
     official,
     /href="\/donor\/texans-for-lawsuit-reform-pac-78701"/,

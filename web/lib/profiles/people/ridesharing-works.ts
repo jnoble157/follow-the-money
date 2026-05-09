@@ -75,8 +75,8 @@ export const ridesharingWorks: Profile = {
       { id: "lyft", label: "Lyft", kind: "donor" },
     ],
     edges: [
-      { from: "uber", to: "rwa", label: "$2,990,000", weight: 2_990_000 },
-      { from: "lyft", to: "rwa", label: "$226,000", weight: 226_000 },
+      { from: "uber", to: "rwa", label: "$2,990,000", weight: 2_990_000, citation: uberCite },
+      { from: "lyft", to: "rwa", label: "$226,000", weight: 226_000, citation: lyftCite },
     ],
   },
   related: [],

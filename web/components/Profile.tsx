@@ -9,6 +9,7 @@ import { OfficialDonorLinks } from "./OfficialDonorLinks";
 import { PartyBadge } from "./PartyBadge";
 import { formatMoney } from "@/lib/formatMoney";
 import { formatDate } from "@/lib/formatDate";
+import { officialDonorGraph } from "@/lib/profiles/evidenceGraph";
 import type { OfficialDetail, Profile as ProfileType } from "@/lib/profiles/types";
 
 type Props = {
@@ -29,14 +30,12 @@ export function Profile({ profile, officialDetail }: Props) {
     return <NoDataProfile profile={profile} />;
   }
 
-  // Slug map drives the EvidenceGraph's click-through: nodes whose id
-  // appears here become linkable, and double-click (or the action card's
-  // "Open profile" button) routes to /profile/<slug>.
-  const slugMap = Object.fromEntries(
-    profile.network.nodes
-      .filter((n) => n.profileSlug)
-      .map((n) => [n.id, n.profileSlug as string]),
-  );
+  const graph =
+    profile.network.nodes.length > 0
+      ? profile.network
+      : officialDetail
+        ? officialDonorGraph(officialDetail)
+        : profile.network;
 
   return (
     <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-8 px-6 py-8">
@@ -53,25 +52,22 @@ export function Profile({ profile, officialDetail }: Props) {
           {profile.sections.map((section, i) => (
             <SectionRenderer key={i} section={section} />
           ))}
-          {officialDetail ? (
-            <OfficialDonorLinks donors={officialDetail.topOrganizationDonors} />
-          ) : null}
         </div>
         <div className="space-y-6">
-          {profile.network.nodes.length > 0 ? (
-            <div className="rounded-md border border-rule bg-white p-4">
-              <EvidenceGraph
-                nodes={profile.network.nodes}
-                edges={profile.network.edges}
-                nodeIdToProfileSlug={slugMap}
-              />
-            </div>
+          {officialDetail ? (
+            <OfficialDonorLinks donors={officialDetail.topOrganizationDonors} />
           ) : null}
           {profile.related.length > 0 ? (
             <RelatedStrip profile={profile} />
           ) : null}
         </div>
       </div>
+
+      {graph.nodes.length > 0 ? (
+        <section aria-label="Evidence graph">
+          <EvidenceGraph nodes={graph.nodes} edges={graph.edges} />
+        </section>
+      ) : null}
     </main>
   );
 }

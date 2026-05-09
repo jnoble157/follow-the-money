@@ -599,5 +599,37 @@
     "grounding": "model_knowledge",
     "sources": [],
     "generatedAt": "2026-05-09T23:57:43.070Z"
+  },
+  {
+    "slug": "florence-shapiro-20966",
+    "text": "Florence Shapiro is a former Texas state senator who served in the state legislature. She previously served as mayor of Plano and has been active in local government and public service.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:57:48.107Z"
+  },
+  {
+    "slug": "jacey-r-jetton-81422",
+    "text": "Jacey R. Jetton is a State Representative in the Texas House of Representatives. He serves as a legislator in the Texas state government, participating in lawmaking and constituent services.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:57:58.044Z"
+  },
+  {
+    "slug": "matt-f-shaheen-69726",
+    "text": "Matt F. Shaheen is a Republican who serves as a State Representative in the Texas Legislature. He represents constituents in the state and participates in legislative committees and policymaking on state issues.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:58:02.123Z"
+  },
+  {
+    "slug": "robert-l-hall-iii-67980",
+    "text": "Robert L. Hall III is a State Senator in the Texas Legislature. He represents constituents in the state Senate and serves on legislative committees involved in state governance.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:58:14.718Z"
   }
 ]

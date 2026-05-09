@@ -195,9 +195,19 @@ function GraphCanvas({ nodes, edges, slugMap, className }: CanvasProps) {
     };
   }, [router]);
 
+  // Reconcile the DataSet with the React props on every change. Old code
+  // only added — never removed — which left a stale Watson + Endeavor
+  // graph visible after the user navigated to a fresh investigation,
+  // because `nodes` going from [...] → [] doesn't fire any add path. Now
+  // we walk the desired set, drop ids no longer wanted, then add or
+  // update the rest. Cheap; the graph never has more than ~20 nodes.
   useEffect(() => {
     const ds = nodesRef.current;
     if (!ds) return;
+    const wanted = new Set(nodes.map((n) => n.id));
+    for (const id of ds.getIds().map(String)) {
+      if (!wanted.has(id)) ds.remove(id);
+    }
     const existing = new Set(ds.getIds().map(String));
     for (const n of nodes) {
       const colors = NODE_COLORS[n.kind];
@@ -225,6 +235,10 @@ function GraphCanvas({ nodes, edges, slugMap, className }: CanvasProps) {
   useEffect(() => {
     const ds = edgesRef.current;
     if (!ds) return;
+    const wanted = new Set(edges.map((e) => `${e.from}->${e.to}`));
+    for (const id of ds.getIds().map(String)) {
+      if (!wanted.has(id)) ds.remove(id);
+    }
     const existing = new Set(ds.getIds().map(String));
     for (const e of edges) {
       const id = `${e.from}->${e.to}`;

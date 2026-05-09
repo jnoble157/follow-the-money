@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { distance } from "fastest-levenshtein";
 import { query } from "../db/connect.ts";
+import { confidence, nameWhere } from "../db/names.ts";
 import { Citation, Confidence } from "../schemas/index.ts";
 import { tecFilerCitation } from "../citations.ts";
 import type { Tool } from "./types.ts";
@@ -10,6 +10,11 @@ import type { Tool } from "./types.ts";
 // the filer index with contribution counts. The agent picks this when the
 // question names a Texas state official (Governor, Lt. Gov, AG, Comptroller,
 // state legislators) or a state PAC.
+//
+// Match is order-agnostic: "Kirk Watson" and "Watson, Kirk" both find
+// filerIdent 00023391. TEC stores filerName as "LAST, FIRST [TITLE]"
+// inside a single column, so a substring match against natural-order
+// input would otherwise miss every officeholder. See db/names.ts.
 
 const Args = z.object({
   name: z.string().min(2).max(120),
@@ -46,14 +51,15 @@ type Row = {
 
 async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result>> {
   const args = Args.parse(rawArgs);
-  const wildcard = `%${args.name.replace(/[%_]/g, "")}%`;
+  const match = nameWhere(["filerName"], args.name);
+  if (!match) return { matches: [] };
 
   // Single grouped query against tec_contributions: joining to tec_filers
   // would just add the same filerName/filerTypeCd we already have on the
   // contribution row. Empirically the contribution table is the source of
   // truth for which filers are actually active.
-  const where: string[] = ["filerName ILIKE ?"];
-  const params: Array<string | number> = [wildcard];
+  const where: string[] = [match.sql];
+  const params: Array<string | number> = [...match.params];
   if (args.filerTypeCd) {
     where.push("filerTypeCd = ?");
     params.push(args.filerTypeCd);
@@ -78,7 +84,6 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
     [...params, args.limit],
   );
 
-  const target = args.name.toLowerCase();
   const matches = rows.map((r) =>
     Match.parse({
       filerIdent: r.filerIdent,
@@ -88,7 +93,7 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
       totalRaised: Number(r.total ?? 0),
       firstSeen: r.firstSeen,
       lastSeen: r.lastSeen,
-      confidence: nameConfidence(target, r.filerName.toLowerCase()),
+      confidence: confidence(args.name, r.filerName),
       source: tecFilerCitation({
         filerIdent: r.filerIdent,
         filerName: r.filerName,
@@ -100,17 +105,10 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
   return { matches };
 }
 
-function nameConfidence(target: string, candidate: string): number {
-  if (!target || !candidate) return 0;
-  const d = distance(target, candidate);
-  const max = Math.max(target.length, candidate.length);
-  return Math.max(0, 1 - d / max);
-}
-
 export const findStateFiler: Tool<typeof Args, typeof Result> = {
   name: "find_state_filer",
   description:
-    "Resolve a free-text name to Texas Ethics Commission state-level filers (candidates, officeholders, PACs, SPACs). Returns ranked candidates with filerIdent, filer-type code, lifetime contribution counts, and confidence. Use this for state-level officials (Governor, AG, state legislators) and state PACs.",
+    "Resolve a free-text name to Texas Ethics Commission state-level filers (candidates, officeholders, PACs, SPACs). Match is order-agnostic: pass natural order ('Kirk Watson') or last-first ('Watson, Kirk') — both resolve to the same filerIdent. Returns ranked candidates with filerIdent, filer-type code, lifetime contribution counts, and confidence. Use this for state-level officials (Governor, AG, state legislators) and state PACs.",
   argsSchema: Args,
   resultSchema: Result,
   run,

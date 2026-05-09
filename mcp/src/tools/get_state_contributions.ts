@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { query } from "../db/connect.ts";
+import { nameWhere } from "../db/names.ts";
 import { Citation } from "../schemas/index.ts";
 import { tecContributionCitation } from "../citations.ts";
 import type { Tool } from "./types.ts";
@@ -65,19 +66,21 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
   const where: string[] = ["COALESCE(infoOnlyFlag, '') <> 'Y'"];
   const params: Array<string | number> = [];
   if (args.contributor) {
-    where.push(
-      "(contributorNameOrganization ILIKE ? OR contributorNameLast ILIKE ? OR contributorNameFirst ILIKE ?)",
+    const m = nameWhere(
+      ["contributorNameOrganization", "contributorNameLast", "contributorNameFirst"],
+      args.contributor,
     );
-    const pat = `%${args.contributor.replace(/[%_]/g, "")}%`;
-    params.push(pat, pat, pat);
+    if (m) { where.push(`(${m.sql})`); params.push(...m.params); }
+    else { where.push("1 = 0"); }
   }
   if (args.filerIdent) {
     where.push("filerIdent = ?");
     params.push(args.filerIdent);
   }
   if (args.filerName) {
-    where.push("filerName ILIKE ?");
-    params.push(`%${args.filerName.replace(/[%_]/g, "")}%`);
+    const m = nameWhere(["filerName"], args.filerName);
+    if (m) { where.push(m.sql); params.push(...m.params); }
+    else { where.push("1 = 0"); }
   }
   if (args.employerLike) {
     where.push("contributorEmployer ILIKE ?");

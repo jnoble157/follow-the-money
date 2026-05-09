@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { query } from "../db/connect.ts";
+import { nameWhere } from "../db/names.ts";
 import { Citation } from "../schemas/index.ts";
 import { austinExpenditureCitation } from "../citations.ts";
 import type { Tool } from "./types.ts";
@@ -53,12 +54,14 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
   const where: string[] = [];
   const params: Array<string | number> = [];
   if (args.paidBy) {
-    where.push("Paid_By ILIKE ?");
-    params.push(`%${args.paidBy.replace(/[%_]/g, "")}%`);
+    const m = nameWhere(["Paid_By"], args.paidBy);
+    if (m) { where.push(m.sql); params.push(...m.params); }
+    else { where.push("1 = 0"); }
   }
   if (args.payee) {
-    where.push("Payee ILIKE ?");
-    params.push(`%${args.payee.replace(/[%_]/g, "")}%`);
+    const m = nameWhere(["Payee"], args.payee);
+    if (m) { where.push(m.sql); params.push(...m.params); }
+    else { where.push("1 = 0"); }
   }
   if (args.descriptionLike) {
     where.push("Expense_Description ILIKE ?");

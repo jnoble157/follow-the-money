@@ -78,6 +78,8 @@ export const WRITER_TOOL_SCHEMAS = {
   }),
 
   complete_investigation: z.object({
+    // Inflow: rank donors *to* a filer. Use this for inflow questions —
+    // "who funded X", "biggest donors to Y", "PACs that contributed to Z".
     topDonors: z
       .array(
         z.object({
@@ -94,6 +96,22 @@ export const WRITER_TOOL_SCHEMAS = {
       // a longer table puts the wall-clock past the latency budget for no
       // additional reader value — the underlying ledger is already in the
       // plan trace.
+      .max(5)
+      .optional(),
+    // Outflow: rank recipients *from* a filer or contributor. Use this for
+    // outflow questions — "what is X funding", "who did X give to", "where
+    // does TLR PAC's money go". Mutually exclusive with topDonors in
+    // practice; emit at most one for a given question.
+    topRecipients: z
+      .array(
+        z.object({
+          rank: z.number().int().positive(),
+          recipient: z.string(),
+          contributions: z.number().int(),
+          total: z.number(),
+          citation: CitationParam,
+        }),
+      )
       .max(5)
       .optional(),
   }),

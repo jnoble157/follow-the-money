@@ -11,6 +11,7 @@ export type {
   InvestigationEvent,
   InvestigationEventType,
   NarrativeRole,
+  RecipientRow,
 } from "@txmoney/mcp/events";
 
 import type { InvestigationEvent } from "@txmoney/mcp/events";

@@ -5,6 +5,7 @@ import type {
   GraphNodeKind,
   InvestigationEvent,
   NarrativeRole,
+  RecipientRow,
 } from "./types";
 
 // State the UI renders. The reducer is pure; effects (SSE, fetch) live in the
@@ -91,6 +92,7 @@ export type InvestigationState = {
   graphNodes: GraphNodeView[];
   graphEdges: GraphEdgeView[];
   topDonors: DonorRow[];
+  topRecipients: RecipientRow[];
   pendingDisambiguation: DisambiguationView | null;
   resolvedDisambiguations: Record<string, boolean>;
   // Receipts for the status strip. startedAt comes from the server's
@@ -123,6 +125,7 @@ export const initialState: InvestigationState = {
   graphNodes: [],
   graphEdges: [],
   topDonors: [],
+  topRecipients: [],
   pendingDisambiguation: null,
   resolvedDisambiguations: {},
   scannedSourceRows: [],
@@ -307,6 +310,7 @@ export function reduce(
         finishedAt,
         planSteps: markPrevDone(state.planSteps, finishedAt),
         topDonors: ev.topDonors ?? state.topDonors,
+        topRecipients: ev.topRecipients ?? state.topRecipients,
       };
     }
     case "read_next":

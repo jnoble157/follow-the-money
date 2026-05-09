@@ -33,6 +33,53 @@ async function main(): Promise<void> {
     );
   }
 
+  // Regression guard for the natural-order name lookup. TEC stores
+  // filerName as "LAST, FIRST [TITLE]"; this used to return zero rows
+  // and produce "not in this view" on Watson PAC questions.
+  console.log("\n--- find_state_filer (natural-order: 'Kirk Watson') ---");
+  const w = await findStateFiler.run({ name: "Kirk Watson", limit: 3 });
+  if (w.matches.length === 0) throw new Error("FAIL: Kirk Watson should resolve");
+  for (const m of w.matches) {
+    console.log(
+      `  ${m.confidence.toFixed(2)}  ${m.contributionsCount.toString().padStart(6)}  $${m.totalRaised.toLocaleString("en-US").padStart(13)}  ${m.filerIdent}  ${m.filerName}`,
+    );
+  }
+
+  // Regression guard for the filerActivity signal. Watson's TEC activity
+  // ends in 2020 — a recent cycle returns zero donors, but the signal
+  // should still tell the agent that the filer has lifetime data outside
+  // the requested window. Without this signal the agent reads "no rows"
+  // as "not in this view" and ends the run with an empty body.
+  console.log("\n--- top_state_donors (Watson, 2024 cycle: empty + filerActivity) ---");
+  const watsonEmpty = await topStateDonors.run({
+    filerIdent: "00023391",
+    cycle: "2024",
+    limit: 5,
+  });
+  if (watsonEmpty.donors.length !== 0)
+    throw new Error("FAIL: Watson 2024 cycle should be empty");
+  if (!watsonEmpty.filerActivity)
+    throw new Error("FAIL: filerActivity should be populated when donors empty");
+  console.log(
+    `  donors: ${watsonEmpty.donors.length}  filerActivity: first=${watsonEmpty.filerActivity.firstYear} last=${watsonEmpty.filerActivity.lastYear} n=${watsonEmpty.filerActivity.totalContributions}`,
+  );
+
+  // And the lifetime call that the agent SHOULD fall back to: returns
+  // the actual top PAC donors, no filerActivity (because donors > 0).
+  console.log("\n--- top_state_donors (Watson, lifetime, organization scope) ---");
+  const watsonLifetime = await topStateDonors.run({
+    filerIdent: "00023391",
+    donorScope: "organization",
+    limit: 5,
+  });
+  if (watsonLifetime.donors.length === 0)
+    throw new Error("FAIL: Watson lifetime ENTITY donors should be non-empty");
+  for (const r of watsonLifetime.donors) {
+    console.log(
+      `  #${r.rank}  $${r.totalAmount.toLocaleString("en-US").padStart(11)}  ${r.donor}`,
+    );
+  }
+
   console.log("\n--- find_state_filer (Talarico) ---");
   const t = await findStateFiler.run({ name: "Talarico", limit: 3 });
   for (const m of t.matches) {

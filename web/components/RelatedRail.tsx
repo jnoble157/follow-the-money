@@ -43,7 +43,7 @@ export function RelatedRail({ currentQuestion, graphNodes, readNext }: Props) {
             <p className="mt-1 font-serif text-[14px] leading-snug text-ink group-hover:underline decoration-accent decoration-1 underline-offset-4">
               {readNext.question}
             </p>
-            <p className="mt-2 font-mono text-[10px] uppercase tracking-wide text-muted">
+            <p className="mt-2 text-[12px] leading-snug text-muted">
               {readNext.rationale}
             </p>
           </Link>

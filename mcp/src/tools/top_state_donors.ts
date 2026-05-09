@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { query } from "../db/connect.ts";
+import { nameWhere } from "../db/names.ts";
 import { Citation } from "../schemas/index.ts";
 import { tecContributionCitation } from "../citations.ts";
 import type { Tool } from "./types.ts";
@@ -37,10 +38,25 @@ const Donor = z.object({
   source: Citation,
 });
 
+// When donors comes back empty but the filer is real, this tells the
+// agent why: the filer is alive in the data, just outside the cycle the
+// agent asked for. Lets the agent decide whether to widen the window or
+// narrate the gap honestly instead of bailing with "not in this view."
+const FilerActivity = z.object({
+  firstYear: z.string().nullable(),
+  lastYear: z.string().nullable(),
+  totalContributions: z.number().int().nonnegative(),
+});
+
 const Result = z.object({
   filer: z.string(),
   cycle: z.string(),
   donors: z.array(Donor),
+  // Only populated when donors is empty AND a filer was specified. Null
+  // means the filer truly has no contributions in the data; non-null with
+  // a year span means the cycle filter eliminated rows that exist
+  // elsewhere.
+  filerActivity: FilerActivity.nullable().optional(),
 });
 
 type Row = {
@@ -64,8 +80,16 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
     where.push("filerIdent = ?");
     params.push(args.filerIdent);
   } else if (args.filerName) {
-    where.push("filerName ILIKE ?");
-    params.push(`%${args.filerName.replace(/[%_]/g, "")}%`);
+    const m = nameWhere(["filerName"], args.filerName);
+    if (!m) {
+      return Result.parse({
+        filer: args.filerName,
+        cycle: args.cycle ?? "",
+        donors: [],
+      });
+    }
+    where.push(m.sql);
+    params.push(...m.params);
   }
   if (args.donorScope === "individual") {
     where.push("contributorPersentTypeCd = 'INDIVIDUAL'");
@@ -152,11 +176,58 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
     }),
   );
 
+  let filerActivity: z.infer<typeof FilerActivity> | null = null;
+  if (donors.length === 0 && (args.filerIdent || args.filerName)) {
+    filerActivity = await probeFilerActivity(args);
+  }
+
   return Result.parse({
     filer: args.filerIdent ?? args.filerName ?? "",
     cycle: args.cycle ?? `${from}-${to}`,
     donors,
+    filerActivity,
   });
+}
+
+async function probeFilerActivity(args: {
+  filerIdent?: string;
+  filerName?: string;
+}): Promise<z.infer<typeof FilerActivity> | null> {
+  const where: string[] = [];
+  const params: Array<string | number> = [];
+  if (args.filerIdent) {
+    where.push("filerIdent = ?");
+    params.push(args.filerIdent);
+  } else if (args.filerName) {
+    const m = nameWhere(["filerName"], args.filerName);
+    if (!m) return null;
+    where.push(m.sql);
+    params.push(...m.params);
+  } else {
+    return null;
+  }
+  const probe = await query<{
+    firstYear: string | null;
+    lastYear: string | null;
+    totalContributions: number;
+  }>(
+    `
+    SELECT
+      MIN(SUBSTR(receivedDt, 1, 4)) AS firstYear,
+      MAX(SUBSTR(receivedDt, 1, 4)) AS lastYear,
+      COUNT(*)::INTEGER             AS totalContributions
+    FROM tec_contributions
+    WHERE ${where.join(" AND ")}
+    `,
+    params,
+  );
+  const row = probe[0];
+  if (!row || row.totalContributions === 0) return null;
+  return {
+    firstYear: row.firstYear,
+    lastYear: row.lastYear,
+    totalContributions: row.totalContributions,
+  };
 }
 
 function parseCycle(cycle: string | undefined): [number, number] {

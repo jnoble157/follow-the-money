@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { distance } from "fastest-levenshtein";
 import { query } from "../db/connect.ts";
+import { nameWhere } from "../db/names.ts";
 import { Citation, Confidence } from "../schemas/index.ts";
 import { austinContributionCitation } from "../citations.ts";
 import type { Tool } from "./types.ts";
@@ -68,16 +69,20 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
   const where: string[] = [];
   const params: Array<string | number> = [];
   if (args.donorName) {
-    where.push("Donor ILIKE ?");
-    params.push(`%${args.donorName.replace(/[%_]/g, "")}%`);
+    const m = nameWhere(["Donor"], args.donorName);
+    if (m) { where.push(m.sql); params.push(...m.params); }
+    else { where.push("1 = 0"); }
   }
   if (args.stem) {
+    // stem is an employer fragment, not a person name — stays as raw
+    // substring on Donor_Reported_Employer.
     where.push("Donor_Reported_Employer ILIKE ?");
     params.push(`%${args.stem.replace(/[%_]/g, "")}%`);
   }
   if (args.recipient) {
-    where.push("Recipient ILIKE ?");
-    params.push(`%${args.recipient.replace(/[%_]/g, "")}%`);
+    const m = nameWhere(["Recipient"], args.recipient);
+    if (m) { where.push(m.sql); params.push(...m.params); }
+    else { where.push("1 = 0"); }
   }
   // Drop nulls and empty strings — they cluster as nonsense.
   where.push("Donor_Reported_Employer IS NOT NULL");

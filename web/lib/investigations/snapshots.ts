@@ -12,7 +12,9 @@ import type { InvestigationState } from "./state";
 // fixtures and the ad-hoc cache live server-side and survive across tabs.
 
 const PREFIX = "txmoney:inv:";
-const VERSION = 1;
+// Bumped to 2 when InvestigationState added `topRecipients`. Old snapshots
+// would deserialize with the field undefined and crash RecipientTable.
+const VERSION = 2;
 
 type Snapshot = {
   v: number;

@@ -40,6 +40,18 @@ export type DonorRow = {
   citation: Citation;
 };
 
+// Outflow counterpart to DonorRow. Populated by the agent's
+// complete_investigation when the question is "what is X funding," "where
+// does X give," "who does X support" — the right rail then renders top
+// recipients instead of top donors. Same idea, opposite direction.
+export type RecipientRow = {
+  rank: number;
+  recipient: string;
+  contributions: number;
+  total: number;
+  citation: Citation;
+};
+
 // Sections of the report a narrative chunk lives in. The Report component
 // switches on this to apply the right typography and ordering. Default is
 // "body" so old scripts without the field render unchanged.
@@ -107,7 +119,11 @@ export type InvestigationEvent =
       label?: string;
       weight?: number;
     }
-  | { type: "investigation_complete"; topDonors?: DonorRow[] }
+  | {
+      type: "investigation_complete";
+      topDonors?: DonorRow[];
+      topRecipients?: RecipientRow[];
+    }
   // Post-run "follow the money one hop further" suggestion. The agent
   // generates this in a single dedicated OpenAI call after
   // complete_investigation; the reducer hands it to RelatedRail in

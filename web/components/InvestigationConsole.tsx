@@ -6,6 +6,7 @@ import { PlanTrace } from "./PlanTrace";
 import { Report } from "./Report";
 import { EvidenceGraph } from "./EvidenceGraph";
 import { DonorTable } from "./DonorTable";
+import { RecipientTable } from "./RecipientTable";
 import { DisambiguationModal } from "./DisambiguationModal";
 import { RelatedRail } from "./RelatedRail";
 
@@ -44,6 +45,7 @@ export function InvestigationConsole({ initialQuestion }: Props) {
             />
           </div>
           <DonorTable donors={state.topDonors} />
+          <RecipientTable recipients={state.topRecipients} />
           {state.status === "complete" ? (
             <RelatedRail
               currentQuestion={state.question}

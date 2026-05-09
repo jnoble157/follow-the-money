@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { distance } from "fastest-levenshtein";
 import { query } from "../db/connect.ts";
+import { confidence, nameWhere } from "../db/names.ts";
 import { Citation, Confidence } from "../schemas/index.ts";
 import type { Tool } from "./types.ts";
 
@@ -9,6 +9,9 @@ import type { Tool } from "./types.ts";
 // — candidates, officeholders, PACs, and committees. We search across
 // recipients of contributions (the closest the Austin schema gets to a
 // canonical filer table) and aggregate.
+//
+// Match is order-agnostic: "Kirk Watson" and "Watson, Kirk" both resolve
+// to the same Recipient row. See db/names.ts for the tokenization rules.
 
 const Args = z.object({
   name: z.string().min(2).max(120),
@@ -43,7 +46,9 @@ type Row = {
 
 async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result>> {
   const args = Args.parse(rawArgs);
-  const wildcard = `%${args.name.replace(/[%_]/g, "")}%`;
+  const match = nameWhere(["Recipient"], args.name);
+  if (!match) return { matches: [] };
+
   const rows = await query<Row>(
     `
     SELECT
@@ -54,24 +59,22 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
       MAX(Contribution_Year)                      AS lastSeen,
       ANY_VALUE(TRANSACTION_ID)                   AS sampleTid
     FROM austin_contributions
-    WHERE Recipient ILIKE ?
+    WHERE ${match.sql}
     GROUP BY Recipient
     ORDER BY n DESC
     LIMIT ?
     `,
-    [wildcard, args.limit],
+    [...match.params, args.limit],
   );
 
-  const target = args.name.toLowerCase();
-  const matches = rows.map((r) => {
-    const conf = nameConfidence(target, r.filerName.toLowerCase());
-    return Match.parse({
+  const matches = rows.map((r) =>
+    Match.parse({
       filerName: r.filerName,
       contributionsCount: r.n,
       totalRaised: Number(r.total ?? 0),
       firstSeen: r.firstSeen,
       lastSeen: r.lastSeen,
-      confidence: conf,
+      confidence: confidence(args.name, r.filerName),
       source: {
         reportInfoIdent: `ATX-FILER-${slug(r.filerName)}`,
         url: "https://data.austintexas.gov/d/3kfv-biw6",
@@ -81,19 +84,10 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
             r.total ? `, $${Number(r.total).toLocaleString("en-US")}` : ""
           }${r.firstSeen ? ` (${r.firstSeen}-${r.lastSeen ?? r.firstSeen})` : ""}.`,
       },
-    });
-  });
+    }),
+  );
 
   return { matches };
-}
-
-function nameConfidence(target: string, candidate: string): number {
-  if (!target || !candidate) return 0;
-  const d = distance(target, candidate);
-  const max = Math.max(target.length, candidate.length);
-  // Levenshtein gives an absolute distance. Normalize to [0, 1] with a
-  // gentle floor so partial matches aren't reported as zero confidence.
-  return Math.max(0, 1 - d / max);
 }
 
 function slug(s: string): string {
@@ -103,7 +97,7 @@ function slug(s: string): string {
 export const findFiler: Tool<typeof Args, typeof Result> = {
   name: "find_filer",
   description:
-    "Resolve a free-text name to Austin campaign-finance filers (candidates, officeholders, PACs, committees). Returns ranked candidates with confidence; the agent should ask the user before reporting a number against a low-confidence match.",
+    "Resolve a free-text name to Austin campaign-finance filers (candidates, officeholders, PACs, committees). Match is order-agnostic: pass natural order ('Kirk Watson') or last-first ('Watson, Kirk') — both resolve to the same filer. Returns ranked candidates with confidence; ask the user before reporting a number against a low-confidence match.",
   argsSchema: Args,
   resultSchema: Result,
   run,

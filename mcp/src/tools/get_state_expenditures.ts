@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { query } from "../db/connect.ts";
+import { nameWhere } from "../db/names.ts";
 import { Citation } from "../schemas/index.ts";
 import { tecExpenditureCitation } from "../citations.ts";
 import type { Tool } from "./types.ts";
@@ -65,15 +66,17 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
     params.push(args.filerIdent);
   }
   if (args.filerName) {
-    where.push("filerName ILIKE ?");
-    params.push(`%${args.filerName.replace(/[%_]/g, "")}%`);
+    const m = nameWhere(["filerName"], args.filerName);
+    if (m) { where.push(m.sql); params.push(...m.params); }
+    else { where.push("1 = 0"); }
   }
   if (args.payee) {
-    where.push(
-      "(payeeNameOrganization ILIKE ? OR payeeNameLast ILIKE ? OR payeeNameFirst ILIKE ?)",
+    const m = nameWhere(
+      ["payeeNameOrganization", "payeeNameLast", "payeeNameFirst"],
+      args.payee,
     );
-    const pat = `%${args.payee.replace(/[%_]/g, "")}%`;
-    params.push(pat, pat, pat);
+    if (m) { where.push(`(${m.sql})`); params.push(...m.params); }
+    else { where.push("1 = 0"); }
   }
   if (args.descriptionLike) {
     where.push("expendDescr ILIKE ?");

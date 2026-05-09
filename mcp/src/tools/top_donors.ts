@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { query } from "../db/connect.ts";
+import { nameWhere } from "../db/names.ts";
 import { Citation } from "../schemas/index.ts";
 import { austinContributionCitation } from "../citations.ts";
 import type { Tool } from "./types.ts";
@@ -36,10 +37,21 @@ const Donor = z.object({
   source: Citation,
 });
 
+// When donors comes back empty but the recipient is real, this tells the
+// agent why: the filer has activity in the data, just not in the cycle
+// the agent asked for. Same shape and field name as top_state_donors so
+// the system prompt can describe one rule for both jurisdictions.
+const FilerActivity = z.object({
+  firstYear: z.string().nullable(),
+  lastYear: z.string().nullable(),
+  totalContributions: z.number().int().nonnegative(),
+});
+
 const Result = z.object({
   recipient: z.string(),
   cycle: z.string(),
   donors: z.array(Donor),
+  filerActivity: FilerActivity.nullable().optional(),
 });
 
 type Row = {
@@ -55,7 +67,14 @@ type Row = {
 async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result>> {
   const args = Args.parse(rawArgs);
   const [from, to] = parseCycle(args.cycle);
-  const recipientLike = `%${args.recipient.replace(/[%_]/g, "")}%`;
+  const recipientMatch = nameWhere(["Recipient"], args.recipient);
+  if (!recipientMatch) {
+    return Result.parse({
+      recipient: args.recipient,
+      cycle: args.cycle ?? `${from}-${to}`,
+      donors: [],
+    });
+  }
   const donorScopeFilter =
     args.donorScope === "individual"
       ? "AND Donor_Type ILIKE 'INDIVIDUAL'"
@@ -75,7 +94,7 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
         TRANSACTION_ID AS tid,
         Contribution_Date AS dt
       FROM austin_contributions
-      WHERE Recipient ILIKE ?
+      WHERE ${recipientMatch.sql}
         AND TRY_CAST(Contribution_Year AS INTEGER) BETWEEN ? AND ?
         ${donorScopeFilter}
     ),
@@ -106,7 +125,7 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
     ORDER BY r.total DESC
     LIMIT ?
     `,
-    [recipientLike, from, to, args.limit],
+    [...recipientMatch.params, from, to, args.limit],
   );
 
   const donors = rows.map((r, i) =>
@@ -126,11 +145,44 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
     }),
   );
 
+  let filerActivity: z.infer<typeof FilerActivity> | null = null;
+  if (donors.length === 0) {
+    filerActivity = await probeFilerActivity(recipientMatch);
+  }
+
   return Result.parse({
     recipient: args.recipient,
     cycle: args.cycle ?? `${from}-${to}`,
     donors,
+    filerActivity,
   });
+}
+
+async function probeFilerActivity(
+  recipientMatch: { sql: string; params: string[] },
+): Promise<z.infer<typeof FilerActivity> | null> {
+  const probe = await query<{
+    firstYear: string | null;
+    lastYear: string | null;
+    totalContributions: number;
+  }>(
+    `
+    SELECT
+      MIN(Contribution_Year)        AS firstYear,
+      MAX(Contribution_Year)        AS lastYear,
+      COUNT(*)::INTEGER             AS totalContributions
+    FROM austin_contributions
+    WHERE ${recipientMatch.sql}
+    `,
+    recipientMatch.params,
+  );
+  const row = probe[0];
+  if (!row || row.totalContributions === 0) return null;
+  return {
+    firstYear: row.firstYear,
+    lastYear: row.lastYear,
+    totalContributions: row.totalContributions,
+  };
 }
 
 function parseCycle(cycle: string | undefined): [number, number] {

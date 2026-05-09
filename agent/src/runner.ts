@@ -38,6 +38,12 @@ const MAX_AGENT_TURNS = 24;
 
 // Build the OpenAI tool registry once per process. MCP data tools come from
 // the shared @txmoney/mcp package; writer tools are local to the agent.
+// We also expose OpenAI's hosted `web_search` tool so the agent can pull
+// background context (what an organization is, what it advocates, recent
+// news) when a TEC row alone doesn't tell the reader why a number
+// matters. The system prompt enforces the contract: web search is
+// context-only — every dollar amount, count, and date in the report
+// still cites a TEC or Austin source row.
 function buildOpenAITools(): Tool[] {
   const data: Tool[] = MCP_TOOLS.map((t) => ({
     type: "function",
@@ -50,7 +56,11 @@ function buildOpenAITools(): Tool[] {
     strict: false,
   }));
   const writer = writerToolsForOpenAI() as Tool[];
-  return [...data, ...writer];
+  const websearch: Tool = {
+    type: "web_search",
+    search_context_size: "low",
+  };
+  return [...data, ...writer, websearch];
 }
 
 export type RunOptions = {
@@ -286,6 +296,7 @@ async function* streamTurn(opts: {
       currentStepId: opts.getStepId(),
       sessionId: opts.sessionId,
       citationRegistry: opts.citationRegistry,
+      narrativeCount: opts.narrativeForReadNext.length,
     });
     for (const e of handled.events) {
       // Mirror narrative + graph_node into the read-next buffers as we go.
@@ -433,12 +444,13 @@ async function handleToolUse(args: {
   currentStepId: string;
   sessionId: string;
   citationRegistry: CitationRegistry;
+  narrativeCount: number;
 }): Promise<Handled> {
-  const { block, currentStepId, citationRegistry } = args;
+  const { block, currentStepId, citationRegistry, narrativeCount } = args;
   const events: InvestigationEvent[] = [];
 
   if (isWriterTool(block.name)) {
-    return handleWriterTool(block, currentStepId, citationRegistry);
+    return handleWriterTool(block, currentStepId, citationRegistry, narrativeCount);
   }
 
   const tool = getTool(block.name);
@@ -516,6 +528,7 @@ function handleWriterTool(
   block: Block,
   currentStepId: string,
   citationRegistry: CitationRegistry,
+  narrativeCount: number,
 ): Handled {
   const events: InvestigationEvent[] = [];
   const name = block.name as WriterToolName;
@@ -606,6 +619,30 @@ function handleWriterTool(
       return { events, toolOutput: ack(block.callId), complete: false };
     }
     case "complete_investigation": {
+      // Hard invariant: a report has a body. Hard rule 3 of the system
+      // prompt says "if a tool returned nothing, say no records found" —
+      // which is still a narrative chunk (role: missing). Without this
+      // guard, the agent occasionally short-circuits straight to
+      // complete_investigation on a 0-row result, leaving the report
+      // panel empty. We bounce that back to the model with a concrete
+      // instruction; the next turn produces the missing-role chunk and
+      // then we let it complete.
+      if (narrativeCount === 0) {
+        return {
+          events: [],
+          toolOutput: {
+            type: "function_call_output",
+            call_id: block.callId,
+            output:
+              "REJECTED: complete_investigation requires at least one emit_narrative chunk first. " +
+              "If the data didn't answer the question, emit emit_narrative with role:'missing' " +
+              "explaining what's not in this view, then call complete_investigation again. " +
+              "If a tool returned 0 rows for a filer that has filerActivity (lifetime data exists outside your cycle), " +
+              "consider widening the cycle and trying once more before narrating the gap.",
+          },
+          complete: false,
+        };
+      }
       const a = parsed as {
         topDonors?: Array<{
           rank: number;
@@ -614,6 +651,17 @@ function handleWriterTool(
           contributions: number;
           total: number;
           variants?: string[];
+          citation: {
+            reportInfoIdent: string;
+            url?: string;
+            rowSummary?: string;
+          };
+        }>;
+        topRecipients?: Array<{
+          rank: number;
+          recipient: string;
+          contributions: number;
+          total: number;
           citation: {
             reportInfoIdent: string;
             url?: string;
@@ -630,7 +678,18 @@ function handleWriterTool(
         variants: d.variants,
         citation: enrichCitation(d.citation, citationRegistry),
       }));
-      events.push({ type: "investigation_complete", topDonors: donors });
+      const recipients = a.topRecipients?.map((r) => ({
+        rank: r.rank,
+        recipient: r.recipient,
+        contributions: r.contributions,
+        total: r.total,
+        citation: enrichCitation(r.citation, citationRegistry),
+      }));
+      events.push({
+        type: "investigation_complete",
+        topDonors: donors,
+        topRecipients: recipients,
+      });
       return { events, toolOutput: ack(block.callId), complete: true };
     }
   }

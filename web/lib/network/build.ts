@@ -1,0 +1,453 @@
+import path from "node:path";
+import { DuckDBInstance, type DuckDBConnection } from "@duckdb/node-api";
+
+// Cross-dataset entity graph for the /network page. We query the Austin
+// campaign-finance + lobby parquets and take the top-N entities of each kind
+// by money flow, then stitch them together with the obvious edges
+// (donor→politician, employer→politician, lobbyist→client, client→politician
+// via employee giving).
+//
+// We hold a private DuckDB instance with only the Austin views registered,
+// rather than reusing @txmoney/mcp/db. The shared MCP connection also
+// registers TEC views that aren't present in every checkout, which crashes
+// the connection at startup.
+
+const REPO_ROOT = path.resolve(process.cwd(), "..");
+const PARQUET = path.join(REPO_ROOT, "data", "parquet");
+
+const VIEWS: Record<string, string> = {
+  austin_contributions: "austin/cf/contributions.parquet",
+  austin_lobby_registrants: "austin/lobby/registrants.parquet",
+  austin_lobby_clients: "austin/lobby/clients.parquet",
+};
+
+let connP: Promise<DuckDBConnection> | null = null;
+
+async function getConn(): Promise<DuckDBConnection> {
+  if (connP) return connP;
+  connP = (async () => {
+    const instance = await DuckDBInstance.create(":memory:");
+    const conn = await instance.connect();
+    for (const [view, rel] of Object.entries(VIEWS)) {
+      const abs = path.join(PARQUET, rel).replace(/'/g, "''");
+      await conn.run(
+        `CREATE OR REPLACE VIEW ${view} AS SELECT * FROM '${abs}'`,
+      );
+    }
+    return conn;
+  })();
+  return connP;
+}
+
+async function query<T extends Record<string, unknown>>(
+  sql: string,
+  params: ReadonlyArray<string | number | boolean | null> = [],
+): Promise<T[]> {
+  const conn = await getConn();
+  const reader = await conn.runAndReadAll(sql, params as never);
+  return reader.getRowObjectsJS() as T[];
+}
+//
+// Top-N is intentionally small — vis-network handles thousands of nodes but
+// the human reading the page can't. Sizes are tuned for ~150 nodes total.
+
+export type EntityKind =
+  | "politician"
+  | "donor"
+  | "employer"
+  | "lobbyist"
+  | "client";
+
+export type NetworkNode = {
+  id: string;
+  kind: EntityKind;
+  label: string;
+  // Total dollars associated with this entity. For politicians, sum received;
+  // for donors / employers, sum given; for lobbyists / clients, sum of employee
+  // giving rolled up through the employer column. Drives node size.
+  flow: number;
+  // Wikipedia thumbnail URL when one was found by lib/network/images.ts.
+  // Optional — most individual donors won't have a Wikipedia page; the
+  // renderer falls back to a colored dot when missing.
+  image?: string;
+};
+
+export type NetworkEdge = {
+  id: string;
+  from: string;
+  to: string;
+  weight: number;
+  kind: "contribution" | "employer_giving" | "represents" | "client_giving";
+};
+
+export type NetworkData = {
+  nodes: NetworkNode[];
+  edges: NetworkEdge[];
+};
+
+const TOP_POLITICIANS = 35;
+const TOP_DONORS = 30;
+const TOP_EMPLOYERS = 25;
+const TOP_LOBBYISTS = 25;
+const TOP_CLIENTS = 25;
+
+// Generic / placeholder employer strings reported by donors. Stripping these
+// keeps the employer column from being dominated by "Self" and "N/A".
+const EMPLOYER_NOISE = new Set(
+  [
+    "",
+    "n/a",
+    "na",
+    "none",
+    "self",
+    "self-employed",
+    "self employed",
+    "retired",
+    "homemaker",
+    "not employed",
+    "unemployed",
+    "info requested",
+    "information requested",
+    "requested",
+    "not applicable",
+  ].map((s) => s.toLowerCase()),
+);
+
+function isNoiseEmployer(name: string | null | undefined): boolean {
+  if (!name) return true;
+  return EMPLOYER_NOISE.has(name.trim().toLowerCase());
+}
+
+function id(kind: EntityKind, name: string): string {
+  return `${kind}:${name}`;
+}
+
+// Inline a list of strings into an IN (...) clause. The values come from our
+// own queries (filer/donor/employer/lobbyist names from the parquets), so this
+// is not a user-input injection vector — but we still escape single quotes
+// since real names contain apostrophes ("O'Rourke", "Trammell Crow").
+function inList(values: string[]): string {
+  if (values.length === 0) return "(NULL)";
+  const escaped = values.map((v) => `'${v.replace(/'/g, "''")}'`);
+  return `(${escaped.join(",")})`;
+}
+
+let cached: Promise<NetworkData> | null = null;
+
+export async function getNetwork(): Promise<NetworkData> {
+  if (!cached) cached = build();
+  const data = await cached;
+  // Image enrichment returns immediately with whatever is already cached and
+  // schedules background fetches for the rest. We re-enrich on every call so
+  // refreshes pick up newly-fetched thumbnails without waiting for the
+  // module-level `cached` promise to be invalidated.
+  const { enrichNodes } = await import("./images");
+  const enrichedNodes = await enrichNodes(data.nodes);
+  return { nodes: enrichedNodes, edges: data.edges };
+}
+
+// Same DuckDB-derived graph as getNetwork but without the image enrichment
+// step. Used by scripts/refill-images.ts to feed the bulk fetcher without
+// triggering the route's own background fetch.
+export async function getNetworkRaw(): Promise<NetworkData> {
+  if (!cached) cached = build();
+  return cached;
+}
+
+async function build(): Promise<NetworkData> {
+  // --- Top recipients (politicians / PACs) -------------------------------
+  const politicians = await query<{ name: string; total: number }>(
+    `
+    SELECT
+      Recipient AS name,
+      SUM(TRY_CAST(Contribution_Amount AS DOUBLE)) AS total
+    FROM austin_contributions
+    WHERE Recipient IS NOT NULL
+      AND TRIM(Recipient) <> ''
+      AND TRY_CAST(Contribution_Amount AS DOUBLE) > 0
+    GROUP BY Recipient
+    ORDER BY total DESC NULLS LAST
+    LIMIT ?
+    `,
+    [TOP_POLITICIANS],
+  );
+
+  // --- Top individual donors --------------------------------------------
+  const donors = await query<{ name: string; total: number }>(
+    `
+    SELECT
+      Donor AS name,
+      SUM(TRY_CAST(Contribution_Amount AS DOUBLE)) AS total
+    FROM austin_contributions
+    WHERE Donor IS NOT NULL
+      AND TRIM(Donor) <> ''
+      AND TRY_CAST(Contribution_Amount AS DOUBLE) > 0
+    GROUP BY Donor
+    ORDER BY total DESC NULLS LAST
+    LIMIT ?
+    `,
+    [TOP_DONORS],
+  );
+
+  // --- Top employers (donor-reported) -----------------------------------
+  // Pull a wider slice and filter noise (Self, N/A, etc.) in JS.
+  const employerRaw = await query<{ name: string; total: number }>(
+    `
+    SELECT
+      Donor_Reported_Employer AS name,
+      SUM(TRY_CAST(Contribution_Amount AS DOUBLE)) AS total
+    FROM austin_contributions
+    WHERE Donor_Reported_Employer IS NOT NULL
+      AND TRIM(Donor_Reported_Employer) <> ''
+      AND TRY_CAST(Contribution_Amount AS DOUBLE) > 0
+    GROUP BY Donor_Reported_Employer
+    ORDER BY total DESC NULLS LAST
+    LIMIT ?
+    `,
+    [TOP_EMPLOYERS * 4],
+  );
+  const employers = employerRaw
+    .filter((r) => !isNoiseEmployer(r.name))
+    .slice(0, TOP_EMPLOYERS);
+
+  // --- Top lobbyists by client count ------------------------------------
+  const lobbyists = await query<{ name: string; total: number }>(
+    `
+    SELECT
+      r.REGISTRANT_FULL_NAME AS name,
+      COUNT(DISTINCT c.CLIENT_ID) AS total
+    FROM austin_lobby_registrants r
+    LEFT JOIN austin_lobby_clients c USING (REGISTRANT_ID)
+    WHERE r.REGISTRANT_FULL_NAME IS NOT NULL
+      AND TRIM(r.REGISTRANT_FULL_NAME) <> ''
+    GROUP BY r.REGISTRANT_FULL_NAME
+    ORDER BY total DESC
+    LIMIT ?
+    `,
+    [TOP_LOBBYISTS],
+  );
+
+  // --- Top clients by lobbyist count ------------------------------------
+  const clients = await query<{ name: string; total: number }>(
+    `
+    SELECT
+      CLIENT_LAST_NAME AS name,
+      COUNT(DISTINCT REGISTRANT_ID) AS total
+    FROM austin_lobby_clients
+    WHERE CLIENT_LAST_NAME IS NOT NULL
+      AND TRIM(CLIENT_LAST_NAME) <> ''
+    GROUP BY CLIENT_LAST_NAME
+    ORDER BY total DESC
+    LIMIT ?
+    `,
+    [TOP_CLIENTS],
+  );
+
+  const politicianNames = politicians.map((r) => r.name);
+  const donorNames = donors.map((r) => r.name);
+  const employerNames = employers.map((r) => r.name);
+  const lobbyistNames = lobbyists.map((r) => r.name);
+  const clientNames = clients.map((r) => r.name);
+
+  // --- Edges --------------------------------------------------------------
+
+  // Donor → politician contributions, restricted to the selected sets so we
+  // don't return tens of thousands of edges.
+  const donorEdges =
+    donorNames.length > 0 && politicianNames.length > 0
+      ? await query<{ donor: string; recipient: string; total: number }>(
+          `
+          SELECT
+            Donor AS donor,
+            Recipient AS recipient,
+            SUM(TRY_CAST(Contribution_Amount AS DOUBLE)) AS total
+          FROM austin_contributions
+          WHERE Donor IN ${inList(donorNames)}
+            AND Recipient IN ${inList(politicianNames)}
+            AND TRY_CAST(Contribution_Amount AS DOUBLE) > 0
+          GROUP BY Donor, Recipient
+          HAVING SUM(TRY_CAST(Contribution_Amount AS DOUBLE)) > 0
+          `,
+        )
+      : [];
+
+  // Employer (donor-reported) → politician — rolled employee giving.
+  const employerEdges =
+    employerNames.length > 0 && politicianNames.length > 0
+      ? await query<{
+          employer: string;
+          recipient: string;
+          total: number;
+        }>(
+          `
+          SELECT
+            Donor_Reported_Employer AS employer,
+            Recipient AS recipient,
+            SUM(TRY_CAST(Contribution_Amount AS DOUBLE)) AS total
+          FROM austin_contributions
+          WHERE Donor_Reported_Employer IN ${inList(employerNames)}
+            AND Recipient IN ${inList(politicianNames)}
+            AND TRY_CAST(Contribution_Amount AS DOUBLE) > 0
+          GROUP BY Donor_Reported_Employer, Recipient
+          HAVING SUM(TRY_CAST(Contribution_Amount AS DOUBLE)) > 0
+          `,
+        )
+      : [];
+
+  // Lobbyist ↔ Client representation. Count rows so we can de-dupe.
+  const lobbyEdges =
+    lobbyistNames.length > 0 && clientNames.length > 0
+      ? await query<{ lobbyist: string; client: string; total: number }>(
+          `
+          SELECT
+            r.REGISTRANT_FULL_NAME AS lobbyist,
+            c.CLIENT_LAST_NAME AS client,
+            COUNT(*) AS total
+          FROM austin_lobby_clients c
+          JOIN austin_lobby_registrants r USING (REGISTRANT_ID)
+          WHERE r.REGISTRANT_FULL_NAME IN ${inList(lobbyistNames)}
+            AND c.CLIENT_LAST_NAME IN ${inList(clientNames)}
+          GROUP BY r.REGISTRANT_FULL_NAME, c.CLIENT_LAST_NAME
+          `,
+        )
+      : [];
+
+  // Client → politician via employer ILIKE matching. Lobby clients in Austin
+  // are listed by company surname (e.g., "Endeavor Real Estate Group"); the
+  // contributions side reports the same firm in the Donor_Reported_Employer
+  // column. ILIKE prefix-match catches the most common variants without
+  // pulling in unrelated companies.
+  const clientEdges: { client: string; recipient: string; total: number }[] =
+    [];
+  if (clientNames.length > 0 && politicianNames.length > 0) {
+    for (const clientName of clientNames) {
+      const trimmed = clientName.trim();
+      if (trimmed.length < 4) continue; // too generic to ILIKE-match safely
+      const rows = await query<{ recipient: string; total: number }>(
+        `
+        SELECT
+          Recipient AS recipient,
+          SUM(TRY_CAST(Contribution_Amount AS DOUBLE)) AS total
+        FROM austin_contributions
+        WHERE Donor_Reported_Employer ILIKE ?
+          AND Recipient IN ${inList(politicianNames)}
+          AND TRY_CAST(Contribution_Amount AS DOUBLE) > 0
+        GROUP BY Recipient
+        HAVING SUM(TRY_CAST(Contribution_Amount AS DOUBLE)) > 1000
+        `,
+        [`${trimmed}%`],
+      );
+      for (const r of rows) {
+        clientEdges.push({
+          client: clientName,
+          recipient: r.recipient,
+          total: Number(r.total),
+        });
+      }
+    }
+  }
+
+  // Roll client flow up from the employee-giving edges so client nodes can
+  // be sized by money (instead of just lobbyist count) on the graph.
+  const clientFlow = new Map<string, number>();
+  for (const e of clientEdges) {
+    clientFlow.set(
+      e.client,
+      (clientFlow.get(e.client) ?? 0) + Number(e.total),
+    );
+  }
+
+  // Lobbyist flow = sum of their clients' employee-giving flow.
+  const lobbyistFlow = new Map<string, number>();
+  for (const e of lobbyEdges) {
+    const cf = clientFlow.get(e.client) ?? 0;
+    lobbyistFlow.set(e.lobbyist, (lobbyistFlow.get(e.lobbyist) ?? 0) + cf);
+  }
+
+  // --- Assemble nodes ---------------------------------------------------
+  const nodes: NetworkNode[] = [];
+  for (const r of politicians) {
+    nodes.push({
+      id: id("politician", r.name),
+      kind: "politician",
+      label: r.name,
+      flow: Number(r.total ?? 0),
+    });
+  }
+  for (const r of donors) {
+    nodes.push({
+      id: id("donor", r.name),
+      kind: "donor",
+      label: r.name,
+      flow: Number(r.total ?? 0),
+    });
+  }
+  for (const r of employers) {
+    nodes.push({
+      id: id("employer", r.name),
+      kind: "employer",
+      label: r.name,
+      flow: Number(r.total ?? 0),
+    });
+  }
+  for (const r of lobbyists) {
+    nodes.push({
+      id: id("lobbyist", r.name),
+      kind: "lobbyist",
+      // Lobby column is dollars-via-clients; fall back to client-count *
+      // a constant so well-connected lobbyists with low-flow clients still
+      // show up at a visible size.
+      label: r.name,
+      flow: Math.max(lobbyistFlow.get(r.name) ?? 0, Number(r.total) * 25_000),
+    });
+  }
+  for (const r of clients) {
+    nodes.push({
+      id: id("client", r.name),
+      kind: "client",
+      label: r.name,
+      flow: Math.max(clientFlow.get(r.name) ?? 0, Number(r.total) * 50_000),
+    });
+  }
+
+  // --- Assemble edges ---------------------------------------------------
+  const edges: NetworkEdge[] = [];
+  for (const e of donorEdges) {
+    edges.push({
+      id: `${id("donor", e.donor)}->${id("politician", e.recipient)}`,
+      from: id("donor", e.donor),
+      to: id("politician", e.recipient),
+      weight: Number(e.total),
+      kind: "contribution",
+    });
+  }
+  for (const e of employerEdges) {
+    edges.push({
+      id: `${id("employer", e.employer)}->${id("politician", e.recipient)}`,
+      from: id("employer", e.employer),
+      to: id("politician", e.recipient),
+      weight: Number(e.total),
+      kind: "employer_giving",
+    });
+  }
+  for (const e of lobbyEdges) {
+    edges.push({
+      id: `${id("lobbyist", e.lobbyist)}->${id("client", e.client)}`,
+      from: id("lobbyist", e.lobbyist),
+      to: id("client", e.client),
+      weight: Number(e.total),
+      kind: "represents",
+    });
+  }
+  for (const e of clientEdges) {
+    edges.push({
+      id: `${id("client", e.client)}->${id("politician", e.recipient)}`,
+      from: id("client", e.client),
+      to: id("politician", e.recipient),
+      weight: Number(e.total),
+      kind: "client_giving",
+    });
+  }
+
+  return { nodes, edges };
+}

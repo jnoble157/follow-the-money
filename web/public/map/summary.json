@@ -1,0 +1,22 @@
+{
+  "filers": {
+    "total_addresses": 574,
+    "geocoded": 472
+  },
+  "payees": {
+    "total_addresses": 6157,
+    "geocoded": 4984
+  },
+  "clients": {
+    "total_addresses": 2956,
+    "geocoded": 2531
+  },
+  "registrants": {
+    "total_addresses": 278,
+    "geocoded": 247
+  },
+  "property": {
+    "total_addresses": 2807,
+    "geocoded": 2298
+  }
+}

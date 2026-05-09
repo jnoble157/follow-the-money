@@ -160,9 +160,9 @@ async function recordOne(
 
 async function main(): Promise<void> {
   loadDotEnv();
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     console.error(
-      "ANTHROPIC_API_KEY is unset; record-hero needs it. Set in repo .env.",
+      "OPENAI_API_KEY is unset; record-hero needs it. Set in repo .env.",
     );
     process.exit(2);
   }

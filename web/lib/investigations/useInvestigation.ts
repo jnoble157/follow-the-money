@@ -58,12 +58,20 @@ export function useInvestigation() {
     abortRef.current = controller;
     sessionIdRef.current = newSessionId();
 
-    // Same-tab snapshot of a completed run for this question — back from a
-    // profile page lands here. Hydrate instantly instead of re-streaming.
-    const snap = loadSnapshot(question);
-    if (snap) {
-      safeDispatch({ kind: "hydrate", state: snap });
-      return;
+    // The snapshot is the back-from-profile affordance: when the user
+    // tabs over to an entity profile and bounces back, we want them to
+    // land on the same report state without watching the stream replay.
+    // For *every other* entry into this page — clicking a trending pill
+    // on the home page, picking a related-rail card, opening a fresh
+    // search, hitting Enter on the search bar — they should see the
+    // animation, even if the answer is server-cached. Same destination,
+    // but the agent feels live each time.
+    if (shouldHydrateFromSnapshot()) {
+      const snap = loadSnapshot(question);
+      if (snap) {
+        safeDispatch({ kind: "hydrate", state: snap });
+        return;
+      }
     }
 
     safeDispatch({ kind: "reset" });
@@ -172,4 +180,22 @@ function newSessionId(): string {
     return crypto.randomUUID();
   }
   return `s-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+// True only when the most recent navigation came from a profile page.
+// document.referrer is the same-origin URL the browser navigated from; for
+// an in-app link from /profile/<slug> it's the absolute URL of that page.
+// On a fresh tab open, a search-bar submit, or a click from /, the
+// referrer is either empty or doesn't match — and we re-stream.
+function shouldHydrateFromSnapshot(): boolean {
+  if (typeof document === "undefined") return false;
+  const ref = document.referrer;
+  if (!ref) return false;
+  try {
+    const url = new URL(ref);
+    if (url.origin !== window.location.origin) return false;
+    return /^\/profile\//.test(url.pathname);
+  } catch {
+    return false;
+  }
 }

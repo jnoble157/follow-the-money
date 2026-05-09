@@ -221,9 +221,21 @@ function MissingDataNote({
 
 // The receipts strip. Once the run completes the elapsed counter freezes;
 // while running it ticks every second so the user can see the run is alive.
+//
+// Two source-row pills now: "scanned" counts every source row a tool returned
+// (the agent saw it); "cited" counts only the subset the agent picked up in
+// a narrative chunk. Old code conflated both as "sources cited," which
+// disagreed with the citations footer's count whenever the agent saw more
+// than it cited.
 function ReportStatusStrip({ state }: { state: InvestigationState }) {
-  const { status, startedAt, finishedAt, citedSourceRows, variantsMergedCount } =
-    state;
+  const {
+    status,
+    startedAt,
+    finishedAt,
+    scannedSourceRows,
+    citedSourceRows,
+    variantsMergedCount,
+  } = state;
   const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {
     if (status !== "running" && status !== "blocked") return;
@@ -236,7 +248,12 @@ function ReportStatusStrip({ state }: { state: InvestigationState }) {
 
   const items: string[] = [statusLabel(status)];
   if (startedAt) items.push(formatElapsed(elapsedMs));
-  if (citedSourceRows.length > 0) items.push(`${citedSourceRows.length} sources cited`);
+  if (scannedSourceRows.length > 0) {
+    items.push(`${scannedSourceRows.length} rows scanned`);
+  }
+  if (citedSourceRows.length > 0) {
+    items.push(`${citedSourceRows.length} cited`);
+  }
   if (variantsMergedCount > 0) {
     items.push(
       `${variantsMergedCount} variant${variantsMergedCount === 1 ? "" : "s"} merged`,

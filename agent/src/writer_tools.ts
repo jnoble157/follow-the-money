@@ -116,16 +116,21 @@ export const WRITER_TOOL_DESCRIPTIONS: Record<WriterToolName, string> = {
     "End the run. Optionally emit the final top-donors table. Once you call this, no further events are emitted.",
 };
 
-// Convert each writer-tool schema to Anthropic's tool format. The agent
+// Convert each writer-tool schema to OpenAI Responses API tool format. The
 // runner concatenates these with the converted MCP tools.
-export function writerToolsForAnthropic() {
+export function writerToolsForOpenAI() {
   return Object.entries(WRITER_TOOL_SCHEMAS).map(([name, schema]) => ({
+    type: "function" as const,
     name,
     description: WRITER_TOOL_DESCRIPTIONS[name as WriterToolName],
-    input_schema: zodToJsonSchema(schema, { $refStrategy: "none" }) as {
-      type: "object";
-      properties?: unknown;
-      [k: string]: unknown;
-    },
+    parameters: zodToJsonSchema(schema, { $refStrategy: "none" }) as Record<
+      string,
+      unknown
+    >,
+    // OpenAI strict mode requires a tighter JSON Schema subset
+    // (additionalProperties: false, all properties required, no defaults).
+    // zod-to-json-schema doesn't emit that subset, so disable strict and
+    // rely on the Zod parse on dispatch for validation.
+    strict: false,
   }));
 }

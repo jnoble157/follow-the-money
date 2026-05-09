@@ -67,11 +67,11 @@ async function* selectStream(
 
   // 4. Live agent. Tee to ad-hoc cache so the next time anyone asks the
   // same question, we replay rather than re-spend tokens.
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     yield {
       type: "investigation_failed",
       reason:
-        "This question isn't in the recorded set and ANTHROPIC_API_KEY isn't configured. Try one of the trending questions on the home page.",
+        "This question isn't in the recorded set and OPENAI_API_KEY isn't configured. Try one of the trending questions on the home page.",
     };
     return;
   }

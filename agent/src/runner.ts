@@ -1,12 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
+import type { ResponseInputItem, Tool } from "openai/resources/responses/responses";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { TOOLS as MCP_TOOLS, getTool } from "@txmoney/mcp/tools";
 import {
   WRITER_TOOL_SCHEMAS,
-  writerToolsForAnthropic,
+  writerToolsForOpenAI,
   type WriterToolName,
 } from "./writer_tools.ts";
 import {
@@ -15,89 +16,10 @@ import {
   setPending,
   clearPending,
 } from "./sessions.ts";
+import { generateReadNext } from "./read_next.ts";
+import type { InvestigationEvent } from "@txmoney/mcp/events";
 
-// Wire-format event the front end consumes. Defined here as a plain
-// inlined union; the canonical type lives in web/lib/investigations/types.ts.
-// Any change here must also land there.
-export type InvestigationEvent =
-  | { type: "plan_started"; question: string }
-  | { type: "investigation_started"; startedAt: number }
-  | { type: "plan_step"; id: string; description: string }
-  | {
-      type: "tool_call";
-      stepId: string;
-      tool: string;
-      args: Record<string, unknown>;
-    }
-  | {
-      type: "tool_result";
-      stepId: string;
-      rowCount: number;
-      sample: Array<Record<string, unknown>>;
-      sourceRows: string[];
-      confidence?: number;
-    }
-  | {
-      type: "narrative_chunk";
-      text: string;
-      citations: Array<{
-        reportInfoIdent: string;
-        url: string;
-        rowSummary: string;
-      }>;
-      role?: "lede" | "body" | "methods" | "reading_note" | "missing";
-    }
-  | {
-      type: "graph_node";
-      id: string;
-      label: string;
-      kind: "filer" | "donor" | "employer" | "lobbyist" | "client" | "pac";
-      sublabel?: string;
-      profileSlug?: string;
-    }
-  | {
-      type: "graph_edge";
-      from: string;
-      to: string;
-      label?: string;
-      weight?: number;
-    }
-  | {
-      type: "disambiguation_required";
-      id: string;
-      stepId: string;
-      title: string;
-      explanation: string;
-      variants: Array<{
-        variant: string;
-        contributions: number;
-        total: number;
-        sampleContributors: string[];
-        sampleCitation: {
-          reportInfoIdent: string;
-          url: string;
-          rowSummary: string;
-        };
-      }>;
-    }
-  | { type: "disambiguation_resolved"; id: string; merged: boolean }
-  | {
-      type: "investigation_complete";
-      topDonors?: Array<{
-        rank: number;
-        donor: string;
-        rolledEmployer: string | null;
-        contributions: number;
-        total: number;
-        variants?: string[];
-        citation: {
-          reportInfoIdent: string;
-          url: string;
-          rowSummary: string;
-        };
-      }>;
-    }
-  | { type: "investigation_failed"; reason: string };
+export type { InvestigationEvent } from "@txmoney/mcp/events";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SYSTEM_PROMPT = fs.readFileSync(
@@ -105,24 +27,29 @@ const SYSTEM_PROMPT = fs.readFileSync(
   "utf8",
 );
 
-const MODEL = process.env.TXMONEY_MODEL ?? "claude-sonnet-4-5";
+// Default model. gpt-5.1 is the strongest narrative + tool-calling SKU on
+// the OpenAI Responses API at the time of writing; the read-next call uses
+// gpt-5-mini because it's a single short turn where latency matters more
+// than the marginal quality. Override either with the env vars below if
+// your API key has access to a different SKU.
+const MODEL = process.env.TXMONEY_MODEL ?? "gpt-5.1";
+const READ_NEXT_MODEL = process.env.TXMONEY_READ_NEXT_MODEL ?? "gpt-5-mini";
 const MAX_AGENT_TURNS = 24;
 
-// Build the Anthropic tool registry once. MCP data tools come from the
-// shared @txmoney/mcp package; writer tools are local to the agent.
-function buildAnthropicTools(): Anthropic.Tool[] {
-  const data = MCP_TOOLS.map((t) => ({
+// Build the OpenAI tool registry once per process. MCP data tools come from
+// the shared @txmoney/mcp package; writer tools are local to the agent.
+function buildOpenAITools(): Tool[] {
+  const data: Tool[] = MCP_TOOLS.map((t) => ({
+    type: "function",
     name: t.name,
     description: t.description,
-    input_schema: zodToJsonSchema(t.argsSchema, {
-      $refStrategy: "none",
-    }) as Anthropic.Tool.InputSchema,
+    parameters: zodToJsonSchema(t.argsSchema, { $refStrategy: "none" }) as Record<
+      string,
+      unknown
+    >,
+    strict: false,
   }));
-  const writer = writerToolsForAnthropic().map((t) => ({
-    name: t.name,
-    description: t.description,
-    input_schema: t.input_schema as Anthropic.Tool.InputSchema,
-  }));
+  const writer = writerToolsForOpenAI() as Tool[];
   return [...data, ...writer];
 }
 
@@ -136,24 +63,26 @@ export async function* runInvestigation(
   sessionId: string,
   options: RunOptions = {},
 ): AsyncGenerator<InvestigationEvent> {
-  const apiKey = options.apiKey ?? process.env.ANTHROPIC_API_KEY;
+  const apiKey = options.apiKey ?? process.env.OPENAI_API_KEY;
   if (!apiKey) {
     yield {
       type: "investigation_failed",
-      reason: "ANTHROPIC_API_KEY is not set; the live agent can't run without it.",
+      reason: "OPENAI_API_KEY is not set; the live agent can't run without it.",
     };
     return;
   }
-  const client = new Anthropic({ apiKey });
-  const tools = buildAnthropicTools();
+  const client = new OpenAI({ apiKey });
+  const tools = buildOpenAITools();
+  const model = options.model ?? MODEL;
   createSession(sessionId);
 
   yield { type: "plan_started", question };
   yield { type: "investigation_started", startedAt: Date.now() };
 
   // Conversation log we send to the model on each turn. We append assistant
-  // turns as-is, then append tool_result blocks once the round is done.
-  const messages: Anthropic.MessageParam[] = [
+  // function_call items as they arrive, then append function_call_output
+  // items once the round is done.
+  const messages: ResponseInputItem[] = [
     { role: "user", content: question },
   ];
 
@@ -164,40 +93,29 @@ export async function* runInvestigation(
   // Citation registry, built from every data-tool result we see during the
   // run. The model only has to emit reportInfoIdent in writer-tool citations
   // — the runner looks the row up here to fill in url and rowSummary before
-  // the event reaches the UI. Saves ~270 chars per citation of model output,
-  // which is the difference between a 38s and a 25s run on citation-heavy
-  // questions.
+  // the event reaches the UI.
   const citationRegistry = new Map<
     string,
     { url: string; rowSummary: string }
   >();
 
-  // Mutable carrier the streaming-turn generator fills in as it runs. We use
-  // an outer object so the turn can yield events through the AsyncGenerator
-  // protocol while still surfacing the assistant message + tool results +
-  // disambiguation parking to the next iteration.
-  type AssistantBlock = Anthropic.TextBlockParam | Anthropic.ToolUseBlockParam;
-  type TurnOutcome = {
-    assistantBlocks: AssistantBlock[];
-    toolResults: Anthropic.ToolResultBlockParam[];
-    completed: boolean;
-    pendingDisambiguation?: { id: string; blockId: string };
-  };
+  // Narrative buffer for the post-run read-next call. Capturing here keeps
+  // the read-next prompt short — we feed it the lede + body chunks plus a
+  // short list of graph nodes, not the whole event log.
+  const narrativeForReadNext: Array<{ role: string; text: string }> = [];
+  const graphNodesForReadNext: Array<{ kind: string; label: string }> = [];
 
   try {
     for (let turn = 0; turn < MAX_AGENT_TURNS && !completed; turn++) {
       const outcome: TurnOutcome = {
-        assistantBlocks: [],
-        toolResults: [],
+        assistantItems: [],
+        toolOutputs: [],
         completed: false,
       };
 
-      // Stream the turn. Writer-tool events are yielded as their tool_use
-      // blocks finalize (content_block_stop), so the report panel paints
-      // the lede while the model is still generating body chunks.
       for await (const ev of streamTurn({
         client,
-        model: options.model ?? MODEL,
+        model,
         tools,
         messages,
         sessionId,
@@ -206,53 +124,68 @@ export async function* runInvestigation(
         setStepId: (id) => {
           currentStepId = id;
         },
+        narrativeForReadNext,
+        graphNodesForReadNext,
         outcome,
       })) {
         yield ev;
       }
 
-      messages.push({
-        role: "assistant",
-        content: outcome.assistantBlocks,
-      });
+      // Splice the assistant items into the conversation in arrival order
+      // so call_id references resolve correctly on the next request.
+      for (const item of outcome.assistantItems) {
+        messages.push(item);
+      }
 
       if (outcome.completed) {
         completed = true;
         break;
       }
 
-      // Disambiguation pauses the run between turns. The writer-tool
-      // dispatcher already emitted disambiguation_required mid-turn; park
-      // here until the user answers, then feed { merged } back as the
-      // tool_result for the next turn.
       if (outcome.pendingDisambiguation) {
-        const { id, blockId } = outcome.pendingDisambiguation;
+        const { id, callId } = outcome.pendingDisambiguation;
         const merged = await new Promise<boolean>((resolve) => {
           setPending(sessionId, { id, resolve });
         });
         clearPending(sessionId);
         yield { type: "disambiguation_resolved", id, merged };
-        outcome.toolResults.push({
-          type: "tool_result",
-          tool_use_id: blockId,
-          content: JSON.stringify({ merged }),
+        outcome.toolOutputs.push({
+          type: "function_call_output",
+          call_id: callId,
+          output: JSON.stringify({ merged }),
         });
       }
 
-      if (outcome.toolResults.length === 0) {
+      if (outcome.toolOutputs.length === 0) {
         // Model ended the turn without calling any tool. Close gracefully.
         yield { type: "investigation_complete" };
         completed = true;
         break;
       }
 
-      messages.push({ role: "user", content: outcome.toolResults });
+      for (const item of outcome.toolOutputs) {
+        messages.push(item);
+      }
     }
     if (!completed) {
       yield {
         type: "investigation_failed",
         reason: `Agent did not complete within ${MAX_AGENT_TURNS} turns.`,
       };
+    } else {
+      // Post-run read-next. Don't fail the whole investigation if this
+      // call errors — the user already has the report.
+      try {
+        const rn = await generateReadNext(client, READ_NEXT_MODEL, {
+          question,
+          narrative: narrativeForReadNext,
+          graphNodes: graphNodesForReadNext,
+        });
+        if (rn) yield rn;
+      } catch (err) {
+        // Swallow; the report is still valid without the read-next pill.
+        console.error("read_next generation failed:", err);
+      }
     }
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
@@ -262,155 +195,120 @@ export async function* runInvestigation(
   }
 }
 
-// One assistant turn streamed as it generates. As each tool_use block ends
-// (content_block_stop), we parse its accumulated input, dispatch the writer
-// event (or run the data tool and dispatch tool_call/tool_result), and yield
-// the InvestigationEvents in arrival order. Outer callers iterate this and
-// re-yield up to the SSE consumer — that's what makes the user see the lede
-// the moment Sonnet finishes typing it, instead of waiting for the whole
-// turn to land.
+type TurnOutcome = {
+  // Items the model emitted this turn (function_call items, plus optional
+  // assistant message items). They get appended to the conversation in the
+  // outer loop after the turn completes.
+  assistantItems: ResponseInputItem[];
+  toolOutputs: ResponseInputItem[];
+  completed: boolean;
+  pendingDisambiguation?: { id: string; callId: string };
+};
+
 type CitationRegistry = Map<string, { url: string; rowSummary: string }>;
 
+// One assistant turn streamed against the OpenAI Responses API. Yields
+// InvestigationEvents to the outer generator as tool calls finalize, so the
+// UI paints the lede the moment the model finishes typing it instead of
+// waiting for the whole turn to land.
 async function* streamTurn(opts: {
-  client: Anthropic;
+  client: OpenAI;
   model: string;
-  tools: Anthropic.Tool[];
-  messages: Anthropic.MessageParam[];
+  tools: Tool[];
+  messages: ResponseInputItem[];
   sessionId: string;
   citationRegistry: CitationRegistry;
   getStepId: () => string;
   setStepId: (id: string) => void;
-  outcome: {
-    assistantBlocks: Array<
-      Anthropic.TextBlockParam | Anthropic.ToolUseBlockParam
-    >;
-    toolResults: Anthropic.ToolResultBlockParam[];
-    completed: boolean;
-    pendingDisambiguation?: { id: string; blockId: string };
-  };
+  narrativeForReadNext: Array<{ role: string; text: string }>;
+  graphNodesForReadNext: Array<{ kind: string; label: string }>;
+  outcome: TurnOutcome;
 }): AsyncGenerator<InvestigationEvent> {
-  // Per-content-block accumulator. tool_use input arrives as a sequence of
-  // input_json_delta strings that need concatenation then JSON.parse on
-  // content_block_stop. text blocks accumulate text_delta strings; we
-  // preserve them only for the assistant-message history.
-  type BlockState =
-    | { kind: "tool_use"; id: string; name: string; jsonBuf: string }
-    | { kind: "text"; text: string };
-  const blocks = new Map<number, BlockState>();
-
-  // 2048 is enough headroom for one full writer-tool turn under the prompt's
-  // output budget (lede + optional body + a handful of graph calls + complete).
-  // Lowering this from 4096 directly tightens the wall-clock; Sonnet 4.5
-  // outputs at ~70 tok/s and we can't afford the extra 30s ceiling.
-  const stream = opts.client.messages.stream({
+  const stream = await opts.client.responses.create({
     model: opts.model,
-    max_tokens: 2048,
-    system: SYSTEM_PROMPT,
+    instructions: SYSTEM_PROMPT,
+    input: opts.messages,
     tools: opts.tools,
-    messages: opts.messages,
+    parallel_tool_calls: true,
+    // Don't persist on OpenAI side; we manage history ourselves so the run
+    // is reproducible and recordable to JSONL.
+    store: false,
+    stream: true,
+    max_output_tokens: 2048,
   });
 
   for await (const ev of stream) {
-    if (ev.type === "content_block_start") {
-      const cb = ev.content_block;
-      if (cb.type === "tool_use") {
-        blocks.set(ev.index, {
-          kind: "tool_use",
-          id: cb.id,
-          name: cb.name,
-          jsonBuf: "",
-        });
-      } else if (cb.type === "text") {
-        blocks.set(ev.index, { kind: "text", text: "" });
-      }
+    if (ev.type !== "response.output_item.done") continue;
+    const item = ev.item;
+    if (item.type !== "function_call") {
+      // Plain assistant messages without tool calls aren't part of our
+      // workflow — the agent is expected to communicate via writer tools.
+      // Keep them in the assistant log so the next turn can see them.
+      opts.outcome.assistantItems.push(item as ResponseInputItem);
       continue;
     }
 
-    if (ev.type === "content_block_delta") {
-      const state = blocks.get(ev.index);
-      if (!state) continue;
-      if (
-        ev.delta.type === "input_json_delta" &&
-        state.kind === "tool_use"
-      ) {
-        state.jsonBuf += ev.delta.partial_json;
-      } else if (
-        ev.delta.type === "text_delta" &&
-        state.kind === "text"
-      ) {
-        state.text += ev.delta.text;
-      }
-      continue;
-    }
+    const callId = item.call_id;
+    const name = item.name;
+    const argsJson = item.arguments;
 
-    if (ev.type !== "content_block_stop") continue;
-
-    const state = blocks.get(ev.index);
-    if (!state) continue;
-    blocks.delete(ev.index);
-
-    if (state.kind === "text") {
-      if (state.text.length > 0) {
-        opts.outcome.assistantBlocks.push({ type: "text", text: state.text });
-      }
-      continue;
-    }
-
-    const input = parseJson(state.jsonBuf);
-    opts.outcome.assistantBlocks.push({
-      type: "tool_use",
-      id: state.id,
-      name: state.name,
-      input: input as Record<string, unknown>,
+    // Persist the function_call item so the next turn's input includes it
+    // before the matching function_call_output.
+    opts.outcome.assistantItems.push({
+      type: "function_call",
+      call_id: callId,
+      name,
+      arguments: argsJson,
     });
 
-    const block = {
-      id: state.id,
-      name: state.name,
-      input,
-    } as Anthropic.ToolUseBlock;
+    const args = parseJson(argsJson);
 
-    if (state.name === "request_disambiguation") {
+    if (name === "request_disambiguation") {
       const handled = handleDisambigRequest(
-        block,
+        { callId, name, args },
         opts.getStepId(),
         opts.citationRegistry,
       );
       for (const e of handled.events) yield e;
-      if (handled.toolResultError) {
-        opts.outcome.toolResults.push(handled.toolResultError);
+      if (handled.toolOutputError) {
+        opts.outcome.toolOutputs.push(handled.toolOutputError);
       } else if (handled.disambiguationId) {
         opts.outcome.pendingDisambiguation = {
           id: handled.disambiguationId,
-          blockId: state.id,
+          callId,
         };
       }
       continue;
     }
 
     const handled = await handleToolUse({
-      block,
+      block: { callId, name, args },
       currentStepId: opts.getStepId(),
       sessionId: opts.sessionId,
       citationRegistry: opts.citationRegistry,
     });
-    for (const e of handled.events) yield e;
+    for (const e of handled.events) {
+      // Mirror narrative + graph_node into the read-next buffers as we go.
+      if (e.type === "narrative_chunk") {
+        opts.narrativeForReadNext.push({
+          role: e.role ?? "body",
+          text: e.text,
+        });
+      } else if (e.type === "graph_node") {
+        opts.graphNodesForReadNext.push({ kind: e.kind, label: e.label });
+      }
+      yield e;
+    }
     if (handled.newStepId) opts.setStepId(handled.newStepId);
-    opts.outcome.toolResults.push(handled.toolResult);
+    opts.outcome.toolOutputs.push(handled.toolOutput);
     if (handled.complete) {
       opts.outcome.completed = true;
-      // The model usually emits complete_investigation last. If the stream
-      // has further blocks we still record them in the assistant history,
-      // but the run is over so we don't dispatch their UI events.
     }
   }
-
-  // Drain so the SDK surfaces any error encountered mid-stream.
-  await stream.finalMessage();
 }
 
 function parseJson(buf: string): unknown {
-  if (buf.trim().length === 0) return {};
+  if (!buf || buf.trim().length === 0) return {};
   try {
     return JSON.parse(buf);
   } catch {
@@ -419,14 +317,43 @@ function parseJson(buf: string): unknown {
 }
 
 // Trim what we hand back to the model on the next turn. The MCP tools were
-// designed for human consumption: get_contributions can return 200 rows with
-// type strings the agent never quotes. Feeding all of that back as input
-// tokens lengthens the next-turn TTFT and tempts the model to produce a
-// longer (slower) narrative. We cap to MODEL_ROW_CAP rows under any of the
-// known array keys and drop null/empty fields per row. The UI's sample comes
-// from the *full* result via summarizeMcpResult — only the model-facing copy
-// gets compacted.
-const MODEL_ROW_CAP = 60;
+// designed for human consumption: top_state_donors can return 50 donors
+// with employer + occupation + full citation each, and feeding all of that
+// back as input tokens lengthens the next-turn TTFT for no narrative
+// benefit. Keep only the columns the model uses to write the lede; the full
+// row stays in the citation registry on the runner side so footnotes still
+// resolve.
+const MODEL_ROW_CAP = 30;
+const KEEP_ROW_FIELDS = new Set([
+  "rank",
+  "donor",
+  "donorEmployer",
+  "rolledEmployer",
+  "totalAmount",
+  "contributionsCount",
+  "filerName",
+  "filerIdent",
+  "filerTypeCd",
+  "totalRaised",
+  "confidence",
+  "amount",
+  "date",
+  "recipient",
+  "payee",
+  "description",
+  "canonical",
+  "mergedTotal",
+  "mergedCount",
+  "variant",
+  "variants",
+  "name",
+  "austinEmployer",
+  "stateEmployer",
+  // Source row identifiers — the model needs these to cite. We include the
+  // top-level reportInfoIdent (when the row has a flat one) plus the
+  // nested source object's reportInfoIdent.
+  "reportInfoIdent",
+]);
 const MODEL_ARRAY_KEYS = [
   "donors",
   "recipients",
@@ -434,6 +361,7 @@ const MODEL_ARRAY_KEYS = [
   "clusters",
   "rows",
 ] as const;
+
 function compactForModel(result: unknown): unknown {
   if (!result || typeof result !== "object") return result;
   const r = result as Record<string, unknown>;
@@ -445,7 +373,9 @@ function compactForModel(result: unknown): unknown {
       (MODEL_ARRAY_KEYS as readonly string[]).includes(k)
     ) {
       out[k] = v.slice(0, MODEL_ROW_CAP).map((row) =>
-        typeof row === "object" && row !== null ? compactRow(row as Record<string, unknown>) : row,
+        typeof row === "object" && row !== null
+          ? compactRow(row as Record<string, unknown>)
+          : row,
       );
       if (v.length > MODEL_ROW_CAP) {
         out[`${k}Truncated`] = true;
@@ -463,43 +393,62 @@ function compactRow(row: Record<string, unknown>): Record<string, unknown> {
   for (const [k, v] of Object.entries(row)) {
     if (v === null || v === undefined) continue;
     if (typeof v === "string" && v.length === 0) continue;
-    out[k] = v;
+    if (k === "source" && typeof v === "object" && v !== null) {
+      const src = v as Record<string, unknown>;
+      // Keep only the ident — the runner already has url + summary in the
+      // citation registry. This is the single biggest token saving.
+      if (typeof src.reportInfoIdent === "string") {
+        out.reportInfoIdent = src.reportInfoIdent;
+      }
+      continue;
+    }
+    if (
+      Array.isArray(v) &&
+      v.length > 0 &&
+      typeof v[0] === "object"
+    ) {
+      out[k] = v.slice(0, 5).map((nested) =>
+        typeof nested === "object" && nested !== null
+          ? compactRow(nested as Record<string, unknown>)
+          : nested,
+      );
+      continue;
+    }
+    if (KEEP_ROW_FIELDS.has(k)) out[k] = v;
   }
   return out;
 }
 
 type Handled = {
   events: InvestigationEvent[];
-  toolResult: Anthropic.ToolResultBlockParam;
+  toolOutput: ResponseInputItem;
   complete: boolean;
   newStepId?: string;
 };
 
+type Block = { callId: string; name: string; args: unknown };
+
 async function handleToolUse(args: {
-  block: Anthropic.ToolUseBlock;
+  block: Block;
   currentStepId: string;
   sessionId: string;
   citationRegistry: CitationRegistry;
 }): Promise<Handled> {
-  const { block, currentStepId, sessionId, citationRegistry } = args;
+  const { block, currentStepId, citationRegistry } = args;
   const events: InvestigationEvent[] = [];
 
-  // Writer tools first — they don't hit the data layer.
   if (isWriterTool(block.name)) {
-    return handleWriterTool(block, currentStepId, sessionId, citationRegistry);
+    return handleWriterTool(block, currentStepId, citationRegistry);
   }
 
-  // MCP data tool: run it, mirror the call + result to the UI, return the
-  // serialized result back to the agent.
   const tool = getTool(block.name);
   if (!tool) {
     return {
       events,
-      toolResult: {
-        type: "tool_result",
-        tool_use_id: block.id,
-        is_error: true,
-        content: `unknown tool: ${block.name}`,
+      toolOutput: {
+        type: "function_call_output",
+        call_id: block.callId,
+        output: `unknown tool: ${block.name}`,
       },
       complete: false,
     };
@@ -509,16 +458,13 @@ async function handleToolUse(args: {
     type: "tool_call",
     stepId: currentStepId,
     tool: block.name,
-    args: (block.input as Record<string, unknown>) ?? {},
+    args: (block.args as Record<string, unknown>) ?? {},
   });
 
   let resultJson: string;
   let result: unknown;
   try {
-    result = await tool.run((block.input ?? {}) as never);
-    // Harvest every {reportInfoIdent, url, rowSummary} triple from the result
-    // into the run-level registry. The model will reference these by ident in
-    // later writer tools and we'll fill in the rest at dispatch time.
+    result = await tool.run((block.args ?? {}) as never);
     indexCitations(result, citationRegistry);
     resultJson = JSON.stringify(compactForModel(result));
   } catch (err) {
@@ -532,11 +478,10 @@ async function handleToolUse(args: {
     });
     return {
       events,
-      toolResult: {
-        type: "tool_result",
-        tool_use_id: block.id,
-        is_error: true,
-        content: `tool ${block.name} failed: ${reason}`,
+      toolOutput: {
+        type: "function_call_output",
+        call_id: block.callId,
+        output: `tool ${block.name} failed: ${reason}`,
       },
       complete: false,
     };
@@ -554,10 +499,10 @@ async function handleToolUse(args: {
 
   return {
     events,
-    toolResult: {
-      type: "tool_result",
-      tool_use_id: block.id,
-      content: resultJson,
+    toolOutput: {
+      type: "function_call_output",
+      call_id: block.callId,
+      output: resultJson,
     },
     complete: false,
   };
@@ -567,28 +512,26 @@ function isWriterTool(name: string): name is WriterToolName {
   return Object.prototype.hasOwnProperty.call(WRITER_TOOL_SCHEMAS, name);
 }
 
-async function handleWriterTool(
-  block: Anthropic.ToolUseBlock,
+function handleWriterTool(
+  block: Block,
   currentStepId: string,
-  sessionId: string,
   citationRegistry: CitationRegistry,
-): Promise<Handled> {
+): Handled {
   const events: InvestigationEvent[] = [];
   const name = block.name as WriterToolName;
   const schema = WRITER_TOOL_SCHEMAS[name];
 
   let parsed: unknown;
   try {
-    parsed = schema.parse(block.input ?? {});
+    parsed = schema.parse(block.args ?? {});
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     return {
       events,
-      toolResult: {
-        type: "tool_result",
-        tool_use_id: block.id,
-        is_error: true,
-        content: `invalid ${name} args: ${reason}`,
+      toolOutput: {
+        type: "function_call_output",
+        call_id: block.callId,
+        output: `invalid ${name} args: ${reason}`,
       },
       complete: false,
     };
@@ -600,7 +543,7 @@ async function handleWriterTool(
       events.push({ type: "plan_step", id: a.id, description: a.description });
       return {
         events,
-        toolResult: ack(block.id),
+        toolOutput: ack(block.callId),
         complete: false,
         newStepId: a.id,
       };
@@ -621,7 +564,7 @@ async function handleWriterTool(
         citations: a.citations.map((c) => enrichCitation(c, citationRegistry)),
         role: a.role,
       });
-      return { events, toolResult: ack(block.id), complete: false };
+      return { events, toolOutput: ack(block.callId), complete: false };
     }
     case "emit_graph_node": {
       const a = parsed as {
@@ -639,7 +582,7 @@ async function handleWriterTool(
         sublabel: a.sublabel,
         profileSlug: a.profileSlug,
       });
-      return { events, toolResult: ack(block.id), complete: false };
+      return { events, toolOutput: ack(block.callId), complete: false };
     }
     case "emit_graph_edge": {
       const a = parsed as {
@@ -655,12 +598,12 @@ async function handleWriterTool(
         label: a.label,
         weight: a.weight,
       });
-      return { events, toolResult: ack(block.id), complete: false };
+      return { events, toolOutput: ack(block.callId), complete: false };
     }
     case "request_disambiguation": {
-      // Handled in the runner main loop so the event yields before parking.
-      // This case is unreachable; keep it for exhaustiveness.
-      return { events, toolResult: ack(block.id), complete: false };
+      // Handled in streamTurn so the event yields before the runner parks
+      // the loop. This case is unreachable; keep it for exhaustiveness.
+      return { events, toolOutput: ack(block.callId), complete: false };
     }
     case "complete_investigation": {
       const a = parsed as {
@@ -688,32 +631,28 @@ async function handleWriterTool(
         citation: enrichCitation(d.citation, citationRegistry),
       }));
       events.push({ type: "investigation_complete", topDonors: donors });
-      return { events, toolResult: ack(block.id), complete: true };
+      return { events, toolOutput: ack(block.callId), complete: true };
     }
   }
-  return { events, toolResult: ack(block.id), complete: false };
+  return { events, toolOutput: ack(block.callId), complete: false };
 }
 
-function ack(toolUseId: string): Anthropic.ToolResultBlockParam {
+function ack(callId: string): ResponseInputItem {
   return {
-    type: "tool_result",
-    tool_use_id: toolUseId,
-    content: "ok",
+    type: "function_call_output",
+    call_id: callId,
+    output: "ok",
   };
 }
 
-// Validates request_disambiguation args and produces the immediate
-// disambiguation_required event. The runner yields the event, then awaits
-// the user's reply on its own. We don't await inside this function — that
-// would deadlock the consumer.
 function handleDisambigRequest(
-  block: Anthropic.ToolUseBlock,
+  block: Block,
   currentStepId: string,
   citationRegistry: CitationRegistry,
 ): {
   events: InvestigationEvent[];
   disambiguationId?: string;
-  toolResultError?: Anthropic.ToolResultBlockParam;
+  toolOutputError?: ResponseInputItem;
 } {
   const schema = WRITER_TOOL_SCHEMAS["request_disambiguation"];
   let parsed: {
@@ -733,16 +672,15 @@ function handleDisambigRequest(
     }>;
   };
   try {
-    parsed = schema.parse(block.input ?? {}) as typeof parsed;
+    parsed = schema.parse(block.args ?? {}) as typeof parsed;
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     return {
       events: [],
-      toolResultError: {
-        type: "tool_result",
-        tool_use_id: block.id,
-        is_error: true,
-        content: `invalid request_disambiguation args: ${reason}`,
+      toolOutputError: {
+        type: "function_call_output",
+        call_id: block.callId,
+        output: `invalid request_disambiguation args: ${reason}`,
       },
     };
   }
@@ -791,9 +729,6 @@ function indexCitations(value: unknown, registry: CitationRegistry): void {
   for (const v of Object.values(obj)) indexCitations(v, registry);
 }
 
-// Fills in any url/rowSummary fields the model omitted. The model gets a
-// real wire-format Citation no matter how lazy it was about repeating
-// already-known fields.
 function enrichCitation(
   c: { reportInfoIdent: string; url?: string; rowSummary?: string },
   registry: CitationRegistry,
@@ -806,10 +741,6 @@ function enrichCitation(
   };
 }
 
-// Pull a row count, three sample rows, and the source-row idents out of an
-// MCP tool result without knowing the exact shape. Tools share a small
-// vocabulary: the result contains one of `donors`, `recipients`, `matches`,
-// `clusters`, or `rows`. We walk those.
 function summarizeMcpResult(result: unknown): {
   rowCount: number;
   sample: Array<Record<string, unknown>>;
@@ -839,7 +770,6 @@ function summarizeMcpResult(result: unknown): {
     const sources = collectSources(row);
     for (const id of sources) sourceRows.push(id);
     if (typeof row.confidence === "number") {
-      // Lowest confidence wins so the UI shows the riskiest bound.
       if (confidence === undefined || row.confidence < confidence) {
         confidence = row.confidence;
       }
@@ -862,7 +792,6 @@ function collectSources(row: Record<string, unknown>): string[] {
   if (a?.reportInfoIdent) out.push(a.reportInfoIdent);
   const s = row.stateSource as { reportInfoIdent?: string } | undefined;
   if (s?.reportInfoIdent) out.push(s.reportInfoIdent);
-  // cluster.variants[].source
   const variants = row.variants as
     | Array<{ source?: { reportInfoIdent?: string } }>
     | undefined;

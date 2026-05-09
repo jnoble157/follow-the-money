@@ -61,7 +61,7 @@ Austin Open Data    ─┘
 
 DuckDB on Parquet returns sub-second answers on the full historical dataset on a laptop. No database server, no rate-limited APIs, no auth, no scraping. The agent's tools return clean structured rows, not HTML.
 
-The MCP server exposes a small, bounded set of tools — `find_filer`, `top_donors`, `get_contributions`, `get_expenditures`, `cross_reference_lobby` — each with explicit input and output schemas. The agent picks the right ones for the question, gets back rows, decides on a visualization (network graph, sankey, time series, or table), and writes a citation-bound narrative.
+The MCP server exposes a bounded set of tools, split by jurisdiction: `find_filer` / `top_donors` / `get_contributions` / `get_expenditures` for Austin City Council and city PACs; `find_state_filer` / `top_state_donors` / `get_state_contributions` / `get_state_expenditures` for Texas state filings (Governor, AG, state legislators, statewide PACs); `cluster_employer_variants` and `cross_reference_lobby` for the cross-cutting joins. Each tool has explicit input and output schemas. The agent picks the right ones for the question, gets back rows, decides on a visualization (network graph, sankey, time series, or table), and writes a citation-bound narrative.
 
 The interesting moments live at the joins:
 
@@ -120,13 +120,18 @@ pip install -r scripts/ingest/requirements.txt
 # Pull the data (Austin first; it's the smallest and most complete)
 python scripts/ingest/download.py austin    # ~270 MB, ~3 min
 python scripts/ingest/download.py lobby     # ~52 MB, ~20 s
-python scripts/ingest/download.py cf        # ~1.0 GB, ~3-10 min — needs ~5 GB scratch disk
+python scripts/ingest/download.py cf        # ~1.0 GB, ~30 s on a fast pipe — needs ~5 GB scratch disk
 
 # Build Parquet
 python scripts/ingest/build.py austin               # < 5 s
 python scripts/ingest/build.py lobby                # ~100 s
-python scripts/ingest/build.py cf --delete-csv      # ~5-10 min
+python scripts/ingest/build.py cf --delete-csv      # ~70 s
 ```
+
+The TEC `cf` step is the one that unlocks state-level investigations
+(Governor, AG, state legislators, statewide PACs). The other steps cover
+Austin City Council; the agent will return "no records found" for state
+filers until you've run both `download.py cf` and `build.py cf`.
 
 The MCP server, agent runtime, and frontend each have their own quickstart in their respective folders.
 

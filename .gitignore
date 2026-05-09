@@ -9,6 +9,10 @@ venv/
 .env
 .env.local
 node_modules/
+# Workspaces share the lockfile at the repo root. Per-workspace
+# package-lock.json files (web/, agent/, mcp/) are leftovers from before
+# we adopted npm workspaces and should not be committed.
+*/package-lock.json
 .next/
 .turbo/
 .cache/

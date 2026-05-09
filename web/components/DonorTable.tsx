@@ -12,21 +12,15 @@ type Props = {
 export function DonorTable({ donors }: Props) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
-  if (donors.length === 0) {
-    return (
-      <div className="space-y-2">
-        <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted">
-          Top contributors
-        </h2>
-        <p className="text-[12px] text-muted">
-          A ranked table appears here when the investigation completes.
-        </p>
-      </div>
-    );
-  }
+  // Hide the panel entirely when the table has nothing meaningful to show:
+  // empty (typical for outflow questions where the agent skipped the table),
+  // or degenerate (every row names the same donor — e.g. "Uber 1, Uber 2…"
+  // for a "what is uber funding" question that misused the topDonors slot).
+  if (donors.length === 0) return null;
+  if (isDegenerateRanking(donors)) return null;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 rounded-md border border-rule bg-white p-4">
       <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted">
         Top contributors
       </h2>
@@ -112,4 +106,18 @@ export function DonorTable({ donors }: Props) {
       </div>
     </div>
   );
+}
+
+// True when every row's donor name normalizes to the same string. The agent
+// occasionally fills topDonors with five contribution rows from the same
+// entity (e.g. "Uber 1", "Uber 2", "Uber 3" for a "what is uber funding"
+// question); that table doesn't say anything beyond what the lede already
+// did, so we hide it. Suffix digits are stripped so "Uber 1" / "Uber 2"
+// collapse to "uber".
+function isDegenerateRanking(donors: DonorRow[]): boolean {
+  if (donors.length < 2) return false;
+  const norm = (s: string): string =>
+    s.toLowerCase().replace(/[\s_]+\d+$/, "").trim();
+  const first = norm(donors[0].donor);
+  return donors.every((d) => norm(d.donor) === first);
 }

@@ -11,10 +11,9 @@ import type { InvestigationEvent } from "./types";
 //   { ts: number, event: InvestigationEvent }     (zero or more bodies)
 //
 // `ts` is wall-clock milliseconds at recording time. We *don't* replay at the
-// original gaps — those gaps are mostly Anthropic-tool-call latency and don't
+// original gaps — those gaps are mostly model-tool-call latency and don't
 // reflect anything the reader needs to see paced out. Instead we walk events
-// at a fixed cadence per type (CADENCE_MS below), scaled by `speed`. A 17-
-// event recorded fixture lands in ~1.3 seconds at speed=1.
+// at a fixed cadence per type (CADENCE_MS below), scaled by `speed`.
 
 export type RecordedFile = {
   filePath: string;
@@ -57,23 +56,27 @@ export async function readRecordedMeta(
   }
 }
 
-// Replay cadence (ms) per event type. The original timestamps in the JSONL
-// are an Anthropic-API artifact: most of the gap between two events is just
-// model-emit-one-tool-block-per-turn round-trip cost, not anything a reader
-// needs to see paced out. We replay at a snappy fixed rate instead so a
-// recorded investigation lands in single-digit seconds even on stage.
+// Replay cadence (ms) per event type. Original recorded timestamps were
+// dominated by model-call latency and didn't pace anything a reader needs.
+// We replay at a fixed rate so the run feels live without the variance.
+//
+// Calibration: a typical hero run is ~25 events (3 plan steps + 4 tool
+// rounds + ~10 narrative chunks + ~6 graph events). With these numbers the
+// run lands in ~5s — long enough to read the lede as it appears, short
+// enough that a judge doesn't tap out.
 const CADENCE_MS: Record<InvestigationEvent["type"], number> = {
   plan_started: 0,
   investigation_started: 0,
-  plan_step: 80,
-  tool_call: 60,
-  tool_result: 60,
-  narrative_chunk: 220,
-  graph_node: 35,
-  graph_edge: 35,
+  plan_step: 280,
+  tool_call: 200,
+  tool_result: 220,
+  narrative_chunk: 380,
+  graph_node: 80,
+  graph_edge: 80,
   disambiguation_required: 0,
   disambiguation_resolved: 0,
-  investigation_complete: 0,
+  investigation_complete: 200,
+  read_next: 240,
   investigation_failed: 0,
 };
 

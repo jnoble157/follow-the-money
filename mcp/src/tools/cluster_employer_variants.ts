@@ -56,6 +56,13 @@ type RawRow = {
   date: string;
 };
 
+// Hard cap on rows pulled into JS for clustering. The unscoped form of this
+// tool (stem only, no donor or recipient) used to scan the entire 238k-row
+// contributions table and pull every variant of every donor. With this cap
+// the worst case is bounded; in practice donor + recipient scoping cuts the
+// pull to under 1k rows.
+const ROW_CAP = 8000;
+
 async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result>> {
   const args = Args.parse(rawArgs);
   const where: string[] = [];
@@ -87,8 +94,10 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
       Contribution_Date       AS date
     FROM austin_contributions
     WHERE ${where.join(" AND ")}
+    ORDER BY TRY_CAST(Contribution_Amount AS DOUBLE) DESC NULLS LAST
+    LIMIT ?
     `,
-    params,
+    [...params, ROW_CAP],
   );
 
   // Group rows by exact variant string first.

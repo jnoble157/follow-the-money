@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./tools": "./src/tools/index.ts",
     "./db": "./src/db/connect.ts",
+    "./events": "./src/events.ts",
     "./schemas": "./src/schemas/index.ts"
   },
   "scripts": {
@@ -20,7 +21,7 @@
     "@duckdb/node-api": "1.5.2-r.1",
     "@modelcontextprotocol/sdk": "1.0.4",
     "fastest-levenshtein": "1.0.16",
-    "zod": "3.24.1",
+    "zod": "3.25.76",
     "zod-to-json-schema": "3.24.1"
   },
   "devDependencies": {

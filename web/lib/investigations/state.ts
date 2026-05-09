@@ -18,10 +18,28 @@ export type PlanStepView = {
   toolCall?: { tool: string; args: Record<string, unknown> };
   toolResult?: {
     rowCount: number;
+    // Distinct reportInfoIdent values the tool result carried — what the
+    // step "scanned." Differs from the count of citations the agent
+    // chose to cite from those rows; the plan trace shows both.
     sample: Array<Record<string, unknown>>;
     sourceRows: string[];
+    // Number of those source rows the agent cited in narrative chunks
+    // attached to this step. Updated as narrative_chunk events arrive
+    // after the result. Lets the plan trace show "answered with 5 cited
+    // donors out of 30 scanned" instead of just "30 rows."
+    citedRowCount: number;
+    // Lowest fuzzy-match confidence in the result, when applicable. The
+    // PlanTrace renders this as a pill so the reader can see when entity
+    // resolution was thin.
+    confidence?: number;
   };
   blockedOn?: string;
+  // Wall-clock timestamps for the step's life on the client. startedAt
+  // is set when the plan_step event lands; endedAt is set when the *next*
+  // plan_step lands or when the investigation completes / blocks. These
+  // are display-only — they don't gate any logic.
+  startedAt?: number;
+  endedAt?: number;
 };
 
 export type NarrativeChunk = {
@@ -80,15 +98,21 @@ export type InvestigationState = {
   // budget rather than the replay's wall time.
   startedAt?: number;
   finishedAt?: number;
-  // Distinct reportInfoIdent values seen across all tool_result.sourceRows
-  // and narrative_chunk.citations. The set is collapsed to a count for
-  // rendering; the underlying ids live in citedSourceRows so the status strip
-  // can grow into a "show me all 7 cited rows" affordance later.
+  // Distinct reportInfoIdent values surfaced by tool_result events.
+  // "Scanned" because the agent saw them; not all of them get cited.
+  scannedSourceRows: string[];
+  // Subset the agent actually cited in a narrative_chunk. Status strip
+  // shows both as separate pills so the labels stop lying — old code
+  // conflated them under "rows cited."
   citedSourceRows: string[];
   // Number of times the user confirmed a merge in a disambiguation modal.
   // The count is what the strip shows; the boolean values live in
   // resolvedDisambiguations for the script branches.
   variantsMergedCount: number;
+  // Post-run "follow the money" suggestion. Populated by a read_next event
+  // when the live runner generated one; otherwise null and RelatedRail
+  // falls back to its static tag-overlap pick.
+  readNext?: { question: string; kicker: string; rationale: string };
 };
 
 export const initialState: InvestigationState = {
@@ -101,6 +125,7 @@ export const initialState: InvestigationState = {
   topDonors: [],
   pendingDisambiguation: null,
   resolvedDisambiguations: {},
+  scannedSourceRows: [],
   citedSourceRows: [],
   variantsMergedCount: 0,
 };
@@ -124,18 +149,21 @@ export function reduce(
       };
     case "investigation_started":
       return { ...state, startedAt: ev.startedAt };
-    case "plan_step":
+    case "plan_step": {
+      const now = Date.now();
       return {
         ...state,
         planSteps: [
-          ...markPrevDone(state.planSteps),
+          ...markPrevDone(state.planSteps, now),
           {
             id: ev.id,
             description: ev.description,
             status: "running",
+            startedAt: now,
           },
         ],
       };
+    }
     case "tool_call":
       return {
         ...state,
@@ -156,11 +184,13 @@ export function reduce(
                   rowCount: ev.rowCount,
                   sample: ev.sample,
                   sourceRows: ev.sourceRows,
+                  citedRowCount: 0,
+                  confidence: ev.confidence,
                 },
               }
             : s,
         ),
-        citedSourceRows: mergeIdents(state.citedSourceRows, ev.sourceRows),
+        scannedSourceRows: mergeIdents(state.scannedSourceRows, ev.sourceRows),
       };
     case "disambiguation_required":
       return {
@@ -168,7 +198,12 @@ export function reduce(
         status: "blocked",
         planSteps: state.planSteps.map((s) =>
           s.id === ev.stepId
-            ? { ...s, status: "blocked", blockedOn: ev.id }
+            ? {
+                ...s,
+                status: "blocked",
+                blockedOn: ev.id,
+                endedAt: s.endedAt ?? Date.now(),
+              }
             : s,
         ),
         pendingDisambiguation: {
@@ -197,7 +232,30 @@ export function reduce(
             : s,
         ),
       };
-    case "narrative_chunk":
+    case "narrative_chunk": {
+      const newCitations = ev.citations.map((c) => c.reportInfoIdent);
+      // Walk back through plan steps newest-first; the first step whose
+      // toolResult.sourceRows contains any of these citations gets credit
+      // for the cite. This is the right attribution because the agent's
+      // pattern is "tool call -> immediately narrate from it" — a citation
+      // hops back at most one or two plan steps.
+      const planSteps = state.planSteps.map((s) => s);
+      let attributed = false;
+      for (let i = planSteps.length - 1; i >= 0 && !attributed; i--) {
+        const tr = planSteps[i].toolResult;
+        if (!tr) continue;
+        const overlap = newCitations.filter((id) => tr.sourceRows.includes(id));
+        if (overlap.length > 0) {
+          planSteps[i] = {
+            ...planSteps[i],
+            toolResult: {
+              ...tr,
+              citedRowCount: tr.citedRowCount + overlap.length,
+            },
+          };
+          attributed = true;
+        }
+      }
       return {
         ...state,
         narrative: [
@@ -209,11 +267,10 @@ export function reduce(
             role: ev.role ?? "body",
           },
         ],
-        citedSourceRows: mergeIdents(
-          state.citedSourceRows,
-          ev.citations.map((c) => c.reportInfoIdent),
-        ),
+        planSteps,
+        citedSourceRows: mergeIdents(state.citedSourceRows, newCitations),
       };
+    }
     case "graph_node":
       if (state.graphNodes.some((n) => n.id === ev.id)) return state;
       return {
@@ -242,13 +299,24 @@ export function reduce(
           },
         ],
       };
-    case "investigation_complete":
+    case "investigation_complete": {
+      const finishedAt = Date.now();
       return {
         ...state,
         status: "complete",
-        finishedAt: Date.now(),
-        planSteps: markPrevDone(state.planSteps),
+        finishedAt,
+        planSteps: markPrevDone(state.planSteps, finishedAt),
         topDonors: ev.topDonors ?? state.topDonors,
+      };
+    }
+    case "read_next":
+      return {
+        ...state,
+        readNext: {
+          question: ev.question,
+          kicker: ev.kicker,
+          rationale: ev.rationale,
+        },
       };
     case "investigation_failed":
       return {
@@ -259,10 +327,10 @@ export function reduce(
   }
 }
 
-function markPrevDone(steps: PlanStepView[]): PlanStepView[] {
+function markPrevDone(steps: PlanStepView[], at: number): PlanStepView[] {
   return steps.map((s, i, arr) =>
     i === arr.length - 1 && s.status === "running"
-      ? { ...s, status: "done" }
+      ? { ...s, status: "done", endedAt: s.endedAt ?? at }
       : s,
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { DataSet } from "vis-data/peer";
@@ -33,25 +34,88 @@ const NODE_COLORS: Record<GraphNodeKind, { bg: string; border: string }> = {
 };
 
 export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const networkRef = useRef<Network | null>(null);
-  const nodesRef = useRef<DataSet<{ id: string }> | null>(null);
-  const edgesRef = useRef<DataSet<{ id: string }> | null>(null);
-  const router = useRouter();
-  // Effective slug map: per-node `profileSlug` plus the optional override prop.
   const slugMap = useMemo(() => {
     const m: Record<string, string> = {};
     for (const n of nodes) if (n.profileSlug) m[n.id] = n.profileSlug;
     if (nodeIdToProfileSlug) Object.assign(m, nodeIdToProfileSlug);
     return m;
   }, [nodes, nodeIdToProfileSlug]);
-  // Latest slug map kept in a ref so the network's click handler (bound once)
-  // always reads the current snapshot.
+
+  const [expanded, setExpanded] = useState(false);
+
+  // Trap ESC + restore body scroll while the modal is up.
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setExpanded(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [expanded]);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted">
+          Evidence graph
+        </h2>
+        {nodes.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="font-mono text-[11px] uppercase tracking-wider text-evidence hover:text-ink"
+          >
+            Expand →
+          </button>
+        ) : null}
+      </div>
+      <GraphCanvas
+        nodes={nodes}
+        edges={edges}
+        slugMap={slugMap}
+        className="h-[320px] w-full rounded-md border border-rule bg-white"
+      />
+      {nodes.length === 0 ? (
+        <p className="text-[12px] text-muted">
+          Donors, filers, PACs, and lobbyists are added here as the agent
+          discovers them.
+        </p>
+      ) : null}
+      {expanded ? (
+        <GraphModal
+          nodes={nodes}
+          edges={edges}
+          slugMap={slugMap}
+          onClose={() => setExpanded(false)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+type CanvasProps = {
+  nodes: GraphNodeView[];
+  edges: GraphEdgeView[];
+  slugMap: Record<string, string>;
+  className: string;
+};
+
+// One vis-network instance and the effects that keep it in sync with
+// nodes / edges / slugMap. Stateless and reusable — the inline graph and
+// the fullscreen modal both render one of these.
+function GraphCanvas({ nodes, edges, slugMap, className }: CanvasProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const networkRef = useRef<Network | null>(null);
+  const nodesRef = useRef<DataSet<{ id: string }> | null>(null);
+  const edgesRef = useRef<DataSet<{ id: string }> | null>(null);
+  const router = useRouter();
   const slugMapRef = useRef(slugMap);
   slugMapRef.current = slugMap;
-
-  const hasLinkable = Object.keys(slugMap).length > 0;
-  const [hintDismissed, setHintDismissed] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -61,7 +125,6 @@ export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
     edgesRef.current = edgesDs;
     const network = new Network(
       containerRef.current,
-      // vis-network types over DataSet are awkward; cast at the boundary.
       { nodes: nodesDs as never, edges: edgesDs as never },
       {
         autoResize: true,
@@ -107,8 +170,6 @@ export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
     );
     networkRef.current = network;
 
-    // Click → /profile/<slug> when the node maps to a known profile. Hover
-    // changes the cursor to communicate the affordance.
     network.on("click", (params: { nodes: Array<string | number> }) => {
       const id = params.nodes?.[0];
       if (id == null) return;
@@ -134,8 +195,6 @@ export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
     };
   }, [router]);
 
-  // Sync nodes — re-applies styling when the slug map changes so newly
-  // linkable nodes get the heavier border without rebuilding the DataSet.
   useEffect(() => {
     const ds = nodesRef.current;
     if (!ds) return;
@@ -152,9 +211,7 @@ export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
           face: "ui-sans-serif, system-ui, Inter, Arial, sans-serif",
           color: "#1A1A1A",
           size: 13,
-          ...(linkable
-            ? { multi: "html" as const }
-            : {}),
+          ...(linkable ? { multi: "html" as const } : {}),
         },
       } as Record<string, unknown>;
       if (existing.has(n.id)) {
@@ -182,36 +239,59 @@ export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
     }
   }, [edges]);
 
-  return (
-    <div className="space-y-2">
-      <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted">
-        Evidence graph
-      </h2>
-      <div
-        ref={containerRef}
-        className="h-[320px] w-full rounded-md border border-rule bg-white"
-      />
-      {nodes.length === 0 ? (
-        <p className="text-[12px] text-muted">
-          Donors, filers, PACs, and lobbyists are added here as the agent
-          discovers them.
-        </p>
-      ) : (
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="font-mono text-[11px] text-muted">
-            {nodes.length} nodes · {edges.length} edges
+  return <div ref={containerRef} className={className} />;
+}
+
+type ModalProps = {
+  nodes: GraphNodeView[];
+  edges: GraphEdgeView[];
+  slugMap: Record<string, string>;
+  onClose: () => void;
+};
+
+// Portal-mounted fullscreen variant. Same vis-network setup as the inline
+// canvas — interactions and styling come from GraphCanvas — wrapped in a
+// dim backdrop that closes on click. We render to document.body via a
+// portal so the modal escapes the report's max-width column.
+function GraphModal({ nodes, edges, slugMap, onClose }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const onBackdrop = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target === e.currentTarget) onClose();
+    },
+    [onClose],
+  );
+  if (!mounted) return null;
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Evidence graph (expanded)"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 px-4 py-6"
+      onClick={onBackdrop}
+    >
+      <div className="flex h-full max-h-[92vh] w-full max-w-[1200px] flex-col rounded-md border border-rule bg-page shadow-2xl">
+        <div className="flex items-center justify-between border-b border-rule px-4 py-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+            Evidence graph
           </p>
-          {hasLinkable && !hintDismissed ? (
-            <button
-              type="button"
-              onClick={() => setHintDismissed(true)}
-              className="font-mono text-[11px] text-accent hover:text-ink"
-            >
-              Click a bordered node to open its profile · dismiss
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-sm border border-rule px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-muted hover:border-ink hover:text-ink"
+          >
+            Close · esc
+          </button>
         </div>
-      )}
-    </div>
+        <GraphCanvas
+          nodes={nodes}
+          edges={edges}
+          slugMap={slugMap}
+          className="h-full w-full bg-white"
+        />
+      </div>
+    </div>,
+    document.body,
   );
 }

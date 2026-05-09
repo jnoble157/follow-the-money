@@ -10,6 +10,11 @@ const AUSTIN_EXPEND_DATASET = "https://data.austintexas.gov/d/gd3e-xut2";
 const AUSTIN_LOBBY_REGISTRANTS = "https://data.austintexas.gov/d/58ix-34ma";
 const AUSTIN_LOBBY_CLIENTS = "https://data.austintexas.gov/d/7ena-g23u";
 const TEC_LOBBY_LANDING = "https://www.ethics.state.tx.us/search/lobby/";
+// TEC's per-report PDF deep link. reportInfoIdent is the documentID in their
+// CFIS system. The page renders the original report PDF; our citation hands
+// the user straight to the source filing.
+const TEC_REPORT_DOC = "https://www.ethics.state.tx.us/dfs/loadDoc.cfm";
+const TEC_CF_SEARCH = "https://www.ethics.state.tx.us/search/cf/";
 
 export function austinContributionCitation(args: {
   transactionId: string;
@@ -87,5 +92,64 @@ export function tecLobbyRegistrationCitation(args: {
     url: TEC_LOBBY_LANDING,
     rowSummary:
       `TEC ${args.year} lobby registration, FilerID ${args.filerId}: ${args.filerName} (${args.business}).`,
+  };
+}
+
+export function tecContributionCitation(args: {
+  reportInfoIdent: string;
+  filerName: string;
+  contributor: string;
+  amount: number;
+  date?: string | null;
+}): Citation {
+  // reportInfoIdent left-pads to 11 digits per the TEC schema. We strip
+  // padding before the URL because the dfs/loadDoc.cfm endpoint accepts the
+  // unpadded numeric form, but we keep the padded value on
+  // reportInfoIdent so it round-trips to the citation registry verbatim.
+  const docId = String(args.reportInfoIdent).replace(/^0+/, "") || "0";
+  return {
+    reportInfoIdent: String(args.reportInfoIdent),
+    url: `${TEC_REPORT_DOC}?documentID=${encodeURIComponent(docId)}`,
+    rowSummary:
+      `TEC campaign-finance report ${args.reportInfoIdent}, contribution to ${args.filerName} from ${args.contributor}: ` +
+      `$${args.amount.toLocaleString("en-US")}` +
+      (args.date ? `, ${args.date}` : "") +
+      ".",
+  };
+}
+
+export function tecExpenditureCitation(args: {
+  reportInfoIdent: string;
+  filerName: string;
+  payee: string;
+  amount: number;
+  date?: string | null;
+  description?: string | null;
+}): Citation {
+  const docId = String(args.reportInfoIdent).replace(/^0+/, "") || "0";
+  const desc = args.description ? ` (${args.description})` : "";
+  return {
+    reportInfoIdent: String(args.reportInfoIdent),
+    url: `${TEC_REPORT_DOC}?documentID=${encodeURIComponent(docId)}`,
+    rowSummary:
+      `TEC campaign-finance report ${args.reportInfoIdent}, expenditure by ${args.filerName} to ${args.payee}: ` +
+      `$${args.amount.toLocaleString("en-US")}` +
+      (args.date ? `, ${args.date}` : "") +
+      desc +
+      ".",
+  };
+}
+
+export function tecFilerCitation(args: {
+  filerIdent: string;
+  filerName: string;
+  filerTypeCd?: string | null;
+}): Citation {
+  const t = args.filerTypeCd ? ` (${args.filerTypeCd})` : "";
+  return {
+    reportInfoIdent: `TEC-FILER-${args.filerIdent}`,
+    url: `${TEC_CF_SEARCH}?Filer_ID=${encodeURIComponent(args.filerIdent)}`,
+    rowSummary:
+      `Texas Ethics Commission filer index, filerIdent ${args.filerIdent}: ${args.filerName}${t}.`,
   };
 }

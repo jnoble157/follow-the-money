@@ -3,22 +3,24 @@
 import Link from "next/link";
 import type { Route } from "next";
 import type { GraphNodeView } from "@/lib/investigations/state";
-import { HERO_INVESTIGATIONS } from "@/lib/investigations/registry";
 import { listAllProfiles } from "@/lib/profiles/registry";
 
 type Props = {
   currentQuestion: string | null;
   graphNodes: GraphNodeView[];
+  // LLM-generated follow-up, produced by a post-run OpenAI call once the
+  // investigation completes. We deliberately do *not* fall back to a
+  // tag-overlap pick across the hero registry: that pick is too noisy and
+  // tends to surface investigations unrelated to the story the user just
+  // read (e.g. recommending the s1-epstein hero after a question about
+  // Uber). When `readNext` is missing, the investigation card is omitted
+  // entirely; the related-profile card carries the rail on its own.
+  readNext?: { question: string; kicker: string; rationale: string };
 };
 
-// Two onward-navigation cards: a related investigation (by topic tag
-// overlap with the current one) and a related profile (by entity overlap
-// with the graph). Either can be null; we render an empty pane in that
-// case so the layout doesn't reflow.
-export function RelatedRail({ currentQuestion, graphNodes }: Props) {
-  const investigation = pickRelatedInvestigation(currentQuestion);
+export function RelatedRail({ currentQuestion, graphNodes, readNext }: Props) {
   const profile = pickRelatedProfile(currentQuestion, graphNodes);
-  if (!investigation && !profile) return null;
+  if (!readNext && !profile) return null;
   return (
     <section
       aria-label="Read next"
@@ -28,18 +30,21 @@ export function RelatedRail({ currentQuestion, graphNodes }: Props) {
         Read next
       </p>
       <div className="space-y-3">
-        {investigation ? (
+        {readNext ? (
           <Link
             href={
-              `/investigate?q=${encodeURIComponent(investigation.question)}` as Route
+              `/investigate?q=${encodeURIComponent(readNext.question)}` as Route
             }
             className="group block rounded-sm border border-rule p-3 hover:border-ink"
           >
             <p className="font-mono text-[10px] uppercase tracking-wider text-evidence">
-              Investigation · {investigation.pillLabel}
+              Follow the money · {readNext.kicker}
             </p>
             <p className="mt-1 font-serif text-[14px] leading-snug text-ink group-hover:underline decoration-accent decoration-1 underline-offset-4">
-              {investigation.question}
+              {readNext.question}
+            </p>
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-wide text-muted">
+              {readNext.rationale}
             </p>
           </Link>
         ) : null}
@@ -63,40 +68,6 @@ export function RelatedRail({ currentQuestion, graphNodes }: Props) {
 
 function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9'\s]/g, " ").replace(/\s+/g, " ").trim();
-}
-
-function pickRelatedInvestigation(currentQuestion: string | null) {
-  if (!currentQuestion) return null;
-  const others = HERO_INVESTIGATIONS.filter(
-    (inv) => normalize(inv.question) !== normalize(currentQuestion),
-  );
-  if (others.length === 0) return null;
-
-  const currentTags = tagsForQuestion(currentQuestion);
-
-  // Score by tag overlap; ties broken by registry order.
-  let best = others[0];
-  let bestScore = -1;
-  for (const cand of others) {
-    const score = cand.tags.filter((t) => currentTags.has(t)).length;
-    if (score > bestScore) {
-      best = cand;
-      bestScore = score;
-    }
-  }
-  return best;
-}
-
-// The current investigation's tags. We resolve the registry entry by
-// question; for live-run questions that aren't in the registry we fall
-// back to the empty set, which means the rail picks the first registered
-// investigation other than the current one.
-function tagsForQuestion(question: string): Set<string> {
-  const norm = normalize(question);
-  const inv = HERO_INVESTIGATIONS.find(
-    (i) => normalize(i.question) === norm,
-  );
-  return new Set(inv?.tags ?? []);
 }
 
 function pickRelatedProfile(

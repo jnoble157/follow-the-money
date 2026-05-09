@@ -43,13 +43,14 @@ export function InvestigationConsole({ initialQuestion }: Props) {
               edges={state.graphEdges}
             />
           </div>
-          <div className="rounded-md border border-rule bg-white p-4">
-            <DonorTable donors={state.topDonors} />
-          </div>
-          <RelatedRail
-            currentQuestion={state.question}
-            graphNodes={state.graphNodes}
-          />
+          <DonorTable donors={state.topDonors} />
+          {state.status === "complete" ? (
+            <RelatedRail
+              currentQuestion={state.question}
+              graphNodes={state.graphNodes}
+              readNext={state.readNext}
+            />
+          ) : null}
         </aside>
       </div>
       <DisambiguationModal

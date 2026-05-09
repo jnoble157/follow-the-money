@@ -19,7 +19,10 @@ const Args = z.object({
     .regex(/^\d{4}(-\d{4})?$/)
     .optional(),
   donorScope: z.enum(["individual", "organization", "any"]).default("any"),
-  limit: z.number().int().positive().max(50).default(10),
+  // System prompt caps the rendered table at 5; default to that so the
+  // tool returns exactly what the model needs. The agent can pass a
+  // larger limit when explicitly asked for a longer roll.
+  limit: z.number().int().positive().max(50).default(5),
 });
 
 const Donor = z.object({

@@ -5,7 +5,7 @@
 //   2. Regression guard. CI runs it and a single failure fails the build.
 //
 // The questions live in questions.yaml so we can read and edit them without
-// thinking about TypeScript escaping. Reads ANTHROPIC_API_KEY from
+// thinking about TypeScript escaping. Reads OPENAI_API_KEY from
 // repo-root .env automatically.
 import fs from "node:fs";
 import path from "node:path";
@@ -121,9 +121,9 @@ async function runOne(entry: EvalEntry): Promise<EvalResult> {
 
 async function main(): Promise<void> {
   loadDotEnv();
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     console.error(
-      "ANTHROPIC_API_KEY is unset; the eval rig needs it. Set in repo .env.",
+      "OPENAI_API_KEY is unset; the eval rig needs it. Set in repo .env.",
     );
     process.exit(2);
   }

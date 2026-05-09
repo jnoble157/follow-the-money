@@ -213,6 +213,26 @@ export function NetworkGraph({ data, className }: Props) {
       });
     });
 
+    // WebKit (Safari) often gives vis-network a wrong container size on the
+    // first frame — the canvas stays tiny until something triggers a refit.
+    // EvidenceGraph uses the same ResizeObserver pattern; here we only need
+    // redraw + fit because this graph uses physics instead of moveTo.
+    function refitToContainer(): void {
+      if (networkRef.current !== network || !containerRef.current) return;
+      const { width, height } = containerRef.current.getBoundingClientRect();
+      if (width < 50 || height < 50) return;
+      network.redraw();
+      network.fit({ animation: false });
+    }
+
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(refitToContainer);
+    });
+    ro.observe(containerRef.current);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(refitToContainer);
+    });
+
     network.on("click", (params: { nodes: Array<string | number> }) => {
       const id = params.nodes?.[0];
       // Any click cancels an active search so we don't end up with two
@@ -237,6 +257,7 @@ export function NetworkGraph({ data, className }: Props) {
     });
 
     return () => {
+      ro.disconnect();
       network.destroy();
       networkRef.current = null;
       nodesDsRef.current = null;
@@ -374,7 +395,7 @@ export function NetworkGraph({ data, className }: Props) {
   return (
     <div
       ref={wrapperRef}
-      className="relative bg-white fullscreen:bg-page"
+      className="relative w-full shrink-0 bg-white fullscreen:bg-page"
     >
       <div
         ref={containerRef}
@@ -382,7 +403,7 @@ export function NetworkGraph({ data, className }: Props) {
           isFullscreen
             ? "h-screen w-screen bg-white"
             : (className ??
-              "h-[78vh] w-full rounded-md border border-rule bg-white")
+              "h-[78vh] min-h-[360px] w-full shrink-0 overflow-hidden rounded-md border border-rule bg-white")
         }
       />
       <Legend />

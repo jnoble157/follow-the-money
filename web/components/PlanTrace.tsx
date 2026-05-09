@@ -5,7 +5,7 @@ import type { PlanStepView } from "@/lib/investigations/state";
 
 type Props = {
   steps: PlanStepView[];
-  status: "idle" | "running" | "blocked" | "complete" | "failed";
+  status: "idle" | "running" | "complete" | "failed";
 };
 
 export function PlanTrace({ steps, status }: Props) {
@@ -33,8 +33,6 @@ function Header({ status }: { status: Props["status"] }) {
   const label =
     status === "running"
       ? "Running"
-      : status === "blocked"
-      ? "Waiting for you"
       : status === "complete"
       ? "Complete"
       : status === "failed"
@@ -43,16 +41,12 @@ function Header({ status }: { status: Props["status"] }) {
   return (
     <div className="flex items-center justify-between">
       <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted">
-        Plan trace
+        Agent trace
       </h2>
       <span
         className={
           "font-mono text-[11px] uppercase tracking-wider " +
-          (status === "blocked"
-            ? "text-accent"
-            : status === "failed"
-            ? "text-accent"
-            : "text-muted")
+          (status === "failed" ? "text-accent" : "text-muted")
         }
       >
         {label}
@@ -80,7 +74,6 @@ function Step({ step }: { step: PlanStepView }) {
   const tool = step.toolCall?.tool;
   const provenance = tool ? PROVENANCE[tool] : undefined;
   const outcome = stepOutcome(step);
-  const blocked = step.status === "blocked";
 
   return (
     <li className="relative -ml-[5px] pl-3">
@@ -137,11 +130,6 @@ function Step({ step }: { step: PlanStepView }) {
           </p>
         ) : null}
       </button>
-      {blocked ? (
-        <p className="mt-1 rounded-sm border border-accent/40 bg-accent/5 px-2 py-1 text-[11px] text-ink">
-          Waiting on you to merge variants — pick one in the modal to continue.
-        </p>
-      ) : null}
       {open && step.toolResult ? (
         <pre className="mt-2 max-h-40 overflow-auto rounded-sm border border-rule bg-white p-2 font-mono text-[11px] leading-snug text-ink">
           {JSON.stringify(step.toolResult.sample, null, 2)}
@@ -176,11 +164,7 @@ function Receipt({
 
 function Dot({ status }: { status: PlanStepView["status"] }) {
   const cls =
-    status === "running"
-      ? "bg-accent animate-pulseRing"
-      : status === "blocked"
-      ? "bg-accent"
-      : "bg-ink";
+    status === "running" ? "bg-accent animate-pulseRing" : "bg-ink";
   return (
     <span
       aria-hidden

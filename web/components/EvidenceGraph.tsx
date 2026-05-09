@@ -66,14 +66,24 @@ const TARGET_FILL_RATIO = 0.78;
 const FIT_PAD_X = 160;
 const FIT_PAD_Y = 90;
 const ZOOM_STEP = 1.25;
+const GRAPH_NODE_LIMIT = 5;
 
 export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
+  const visibleNodes = useMemo(
+    () => nodes.slice(0, GRAPH_NODE_LIMIT),
+    [nodes],
+  );
+  const visibleEdges = useMemo(() => {
+    const ids = new Set(visibleNodes.map((n) => n.id));
+    return edges.filter((e) => ids.has(e.from) && ids.has(e.to));
+  }, [edges, visibleNodes]);
+
   const slugMap = useMemo(() => {
     const m: Record<string, string> = {};
-    for (const n of nodes) if (n.profileSlug) m[n.id] = n.profileSlug;
+    for (const n of visibleNodes) if (n.profileSlug) m[n.id] = n.profileSlug;
     if (nodeIdToProfileSlug) Object.assign(m, nodeIdToProfileSlug);
     return m;
-  }, [nodes, nodeIdToProfileSlug]);
+  }, [visibleNodes, nodeIdToProfileSlug]);
 
   const [expanded, setExpanded] = useState(false);
 
@@ -98,7 +108,7 @@ export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
         <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted">
           Evidence graph
         </h2>
-        {nodes.length > 0 ? (
+        {visibleNodes.length > 0 ? (
           <button
             type="button"
             onClick={() => setExpanded(true)}
@@ -109,12 +119,12 @@ export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
         ) : null}
       </div>
       <GraphFrame
-        nodes={nodes}
-        edges={edges}
+        nodes={visibleNodes}
+        edges={visibleEdges}
         slugMap={slugMap}
         className="h-[320px] w-full rounded-md border border-rule bg-white"
       />
-      {nodes.length === 0 ? (
+      {visibleNodes.length === 0 ? (
         <p className="text-[12px] text-muted">
           Donors, filers, PACs, and lobbyists are added here as the agent
           discovers them.
@@ -122,8 +132,8 @@ export function EvidenceGraph({ nodes, edges, nodeIdToProfileSlug }: Props) {
       ) : null}
       {expanded ? (
         <GraphModal
-          nodes={nodes}
-          edges={edges}
+          nodes={visibleNodes}
+          edges={visibleEdges}
           slugMap={slugMap}
           onClose={() => setExpanded(false)}
         />

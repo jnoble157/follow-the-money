@@ -218,6 +218,7 @@ async function probeFilerActivity(args: {
       COUNT(*)::INTEGER             AS totalContributions
     FROM tec_contributions
     WHERE ${where.join(" AND ")}
+      AND COALESCE(infoOnlyFlag, '') <> 'Y'
     `,
     params,
   );

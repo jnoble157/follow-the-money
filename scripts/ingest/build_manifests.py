@@ -499,6 +499,7 @@ def create_official_contrib_base(con: duckdb.DuckDBPyConnection) -> None:
           FROM tec c
           LEFT JOIN official_target t ON t.source = 'tec' AND t.name = c.filerName
           WHERE clean_value(c.filerIdent) IS NOT NULL
+            AND COALESCE(c.infoOnlyFlag, '') <> 'Y'
             AND (
               c.filerTypeCd IN ('COH', 'JCOH', 'SCC')
               OR t.slug IS NOT NULL
@@ -558,9 +559,9 @@ def build_donors(con: duckdb.DuckDBPyConnection, limit: int) -> tuple[list[dict]
         f"""
         CREATE TEMP TABLE top_donor_keys AS
         SELECT
-          clean_name(normalizedName) || '|' || COALESCE(zipKey, 'unknown') AS donorKey,
+          clean_name(normalizedName) || '|' || donorType AS donorKey,
           clean_name(normalizedName) AS normalizedName,
-          COALESCE(zipKey, 'unknown') AS zipKey,
+          donorType,
           SUM(amount) AS total,
           COUNT(*)::INTEGER AS contributionCount,
           MIN(year) FILTER (WHERE year IS NOT NULL) AS minYear,
@@ -568,7 +569,7 @@ def build_donors(con: duckdb.DuckDBPyConnection, limit: int) -> tuple[list[dict]
           SUM(CASE WHEN donorType = 'individual' THEN 1 ELSE 0 END)::INTEGER AS individualRows,
           SUM(CASE WHEN donorType = 'organization' THEN 1 ELSE 0 END)::INTEGER AS organizationRows
         FROM donor_base
-        GROUP BY donorKey, normalizedName, zipKey
+        GROUP BY donorKey, normalizedName, donorType
         HAVING SUM(amount) > 0
         ORDER BY total DESC, normalizedName
         LIMIT {int(limit)}
@@ -619,6 +620,23 @@ def build_donors(con: duckdb.DuckDBPyConnection, limit: int) -> tuple[list[dict]
             ROW_NUMBER() OVER (PARTITION BY donorKey ORDER BY n DESC, city) AS rn
           FROM city_counts
         ),
+        zip_counts AS (
+          SELECT b.donorKey, b.zipKey, COUNT(*) AS n, SUM(b.amount) AS total
+          FROM donor_base b
+          JOIN top_donor_keys k ON b.donorKey = k.donorKey
+          WHERE b.zipKey IS NOT NULL
+          GROUP BY b.donorKey, b.zipKey
+        ),
+        zip_ranked AS (
+          SELECT
+            donorKey,
+            zipKey,
+            ROW_NUMBER() OVER (
+              PARTITION BY donorKey
+              ORDER BY n DESC, total DESC, zipKey
+            ) AS rn
+          FROM zip_counts
+        ),
         largest_ranked AS (
           SELECT
             b.*,
@@ -632,7 +650,7 @@ def build_donors(con: duckdb.DuckDBPyConnection, limit: int) -> tuple[list[dict]
         SELECT
           k.donorKey,
           k.normalizedName,
-          k.zipKey,
+          z.zipKey,
           k.total,
           k.contributionCount,
           k.minYear,
@@ -652,6 +670,7 @@ def build_donors(con: duckdb.DuckDBPyConnection, limit: int) -> tuple[list[dict]
         LEFT JOIN display_ranked d ON d.donorKey = k.donorKey AND d.rn = 1
         LEFT JOIN employer_ranked e ON e.donorKey = k.donorKey AND e.rn = 1
         LEFT JOIN city_ranked c ON c.donorKey = k.donorKey AND c.rn = 1
+        LEFT JOIN zip_ranked z ON z.donorKey = k.donorKey AND z.rn = 1
         LEFT JOIN largest_ranked l ON l.donorKey = k.donorKey AND l.rn = 1
         ORDER BY k.total DESC, k.normalizedName
         """
@@ -786,7 +805,7 @@ def create_donor_base(con: duckdb.DuckDBPyConnection) -> None:
           rawName,
           normalizedName,
           COALESCE(zipKey, 'unknown') AS zipKey,
-          clean_name(normalizedName) || '|' || COALESCE(zipKey, 'unknown') AS donorKey,
+          clean_name(normalizedName) || '|' || donorType AS donorKey,
           donorType,
           city,
           employer,
@@ -860,6 +879,7 @@ def create_donor_base(con: duckdb.DuckDBPyConnection) -> None:
             END AS dateText
           FROM tec
           WHERE contributorPersentTypeCd IN ('INDIVIDUAL', 'ENTITY')
+            AND COALESCE(infoOnlyFlag, '') <> 'Y'
         )
         WHERE sourceRowId IS NOT NULL
           AND normalizedName IS NOT NULL

@@ -58,7 +58,7 @@ async function run(rawArgs: z.input<typeof Args>): Promise<z.infer<typeof Result
   // would just add the same filerName/filerTypeCd we already have on the
   // contribution row. Empirically the contribution table is the source of
   // truth for which filers are actually active.
-  const where: string[] = [match.sql];
+  const where: string[] = [match.sql, "COALESCE(infoOnlyFlag, '') <> 'Y'"];
   const params: Array<string | number> = [...match.params];
   if (args.filerTypeCd) {
     where.push("filerTypeCd = ?");

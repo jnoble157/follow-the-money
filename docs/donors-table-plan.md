@@ -12,9 +12,9 @@
 | Filters | Donor type tabs (Individual / Organization / All) + text search |
 | Name dedup | Simple normalization (uppercase, "Last, First" for individuals) |
 | Component | Dual-mode `OfficialsList` extended |
-| Detail page | Yes, `/donor/<name>-<zip>` |
+| Detail page | Yes, `/donor/<name>-<primary-zip>` |
 | Detail content | Summary + Top recipients + Yearly totals + Employer variants |
-| Slug strategy | Normalized name + primary ZIP |
+| Slug strategy | Normalized name + most frequent ZIP |
 | Build script | Single `build_manifests.py` (merges officials + donors) |
 
 ---
@@ -31,7 +31,7 @@
 - **For TEC individuals** (`contributorPersentTypeCd = 'INDIVIDUAL'`): normalize to `UPPER(contributorNameLast || ', ' || contributorNameFirst)`.
 - **For TEC orgs** (`contributorPersentTypeCd = 'ENTITY'`): normalize to `UPPER(contributorNameOrganization)`.
 - **For Austin**: normalize `Donor` to uppercase, standardize order.
-- **Grouping key**: normalized name + `contributorStreetPostalCode` (TEC) or inferred ZIP.
+- **Grouping key**: normalized name + donor type. ZIP stays on the row as evidence and slug/display data, not identity.
 - **Aggregations per group**:
   - `total` — sum of all `contributionAmount`.
   - `count` — row count.

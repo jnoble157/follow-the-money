@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { resolveDisambiguation as resolveStub } from "@/lib/investigations/stub";
-import { resolveDisambiguation as resolveLive } from "@txmoney/agent";
+import { resolveDisambiguation as resolveLiveLocal } from "@txmoney/agent";
+import {
+  isAgentServiceConfigured,
+  resolveRemote,
+} from "@/lib/investigations/agent-client";
 
 export const runtime = "nodejs";
 
@@ -20,13 +24,28 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  // The session lives in either the stub map or the live-agent map; we
-  // don't know which without checking. Try stub first (it's the hand-
-  // scripted hero path); fall through to live.
-  const ok =
-    resolveStub(body.sessionId, body.disambiguationId, body.merged) ||
-    resolveLive(body.sessionId, body.disambiguationId, body.merged);
-  if (!ok) {
+  // The session might live in three places: the stub (hero path), the
+  // remote agent service (Railway), or — for local dev only — the
+  // in-process agent. Stub is local, so try it first; then forward to
+  // whichever live runner is configured.
+  if (resolveStub(body.sessionId, body.disambiguationId, body.merged)) {
+    return Response.json({ ok: true });
+  }
+  let liveOk = false;
+  if (isAgentServiceConfigured()) {
+    liveOk = await resolveRemote(
+      body.sessionId,
+      body.disambiguationId,
+      body.merged,
+    );
+  } else {
+    liveOk = resolveLiveLocal(
+      body.sessionId,
+      body.disambiguationId,
+      body.merged,
+    );
+  }
+  if (!liveOk) {
     return Response.json(
       { error: "no pending disambiguation for that session" },
       { status: 404 },

@@ -1,0 +1,38 @@
+# Things we DO want in the image: the source for agent, mcp, plus parquet.
+# Things we DON'T want: web build artifacts, raw data, eval recordings,
+# anything Python.
+
+.git
+.venv
+venv
+__pycache__
+*.pyc
+
+node_modules
+**/node_modules
+.next
+.turbo
+
+# We bake parquet, not raw zips/csvs.
+data/raw
+data/duckdb
+data/cache
+data/figures
+
+# Web app isn't run from this image.
+web
+
+# Eval + recording artifacts that aren't needed at runtime.
+agent/recordings
+agent/eval/cassettes
+
+# Local-only tooling and editor scratch.
+docs
+*.pdf
+*.log
+*.duckdb
+*.duckdb.wal
+.DS_Store
+.vscode
+.idea
+.vercel

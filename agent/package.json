@@ -15,6 +15,7 @@
     "test": "tsx src/eval/run.ts",
     "record-hero": "tsx src/record.ts",
     "backfill-read-next": "tsx src/backfill_read_next.ts",
+    "serve": "tsx src/server.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

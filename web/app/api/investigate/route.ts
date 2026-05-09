@@ -5,8 +5,12 @@ import {
   UnknownInvestigationError,
 } from "@/lib/investigations/stub";
 import {
-  runInvestigation as runLive,
+  runInvestigation as runLiveLocal,
 } from "@txmoney/agent";
+import {
+  isAgentServiceConfigured,
+  runRemote,
+} from "@/lib/investigations/agent-client";
 import {
   loadCached,
   loadRecorded,
@@ -65,17 +69,27 @@ async function* selectStream(
     return;
   }
 
-  // 4. Live agent. Tee to ad-hoc cache so the next time anyone asks the
-  // same question, we replay rather than re-spend tokens.
+  // 4. Live agent. Prefer the remote service (Railway) when configured,
+  // since Vercel can't run the agent locally — the parquet doesn't fit in
+  // the deployment. Fall back to the in-process runner for local dev.
+  // Tee to ad-hoc cache so the next time anyone asks the same question,
+  // we replay rather than re-spend tokens.
+  if (isAgentServiceConfigured()) {
+    const live = runRemote(question, sessionId);
+    for await (const ev of streamAndRecord(live, question)) {
+      yield ev;
+    }
+    return;
+  }
   if (!process.env.OPENAI_API_KEY) {
     yield {
       type: "investigation_failed",
       reason:
-        "This is a stub demo. This question isn't in the recorded set and OPENAI_API_KEY isn't configured. Try one of the trending questions on the home page.",
+        "This is a stub demo. This question isn't in the recorded set, and neither AGENT_SERVICE_URL nor OPENAI_API_KEY is configured. Try one of the trending questions on the home page.",
     };
     return;
   }
-  const live = runLive(question, sessionId);
+  const live = runLiveLocal(question, sessionId);
   for await (const ev of streamAndRecord(live, question)) {
     yield ev;
   }

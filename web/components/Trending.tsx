@@ -25,6 +25,12 @@ const TRENDING = [
     kicker: "Twenty years of $2,500 checks",
     why: "One Austin real-estate firm has been writing $1,000 to $2,500 checks to the same politician since 2002. Small enough to escape notice, frequent enough to add up.",
   },
+  {
+    id: "a3-cross-tier",
+    rank: 4,
+    kicker: "Same names, two rooms",
+    why: "Twelve lobbyists are registered to work Austin City Hall and the Texas Capitol at the same time. Often on the same fights, for the same firms.",
+  },
 ] as const;
 
 export function Trending() {

@@ -218,6 +218,30 @@ test("/profile/no-federal-data renders the refusal page", async () => {
   assert.match(body, /Federal Election Commission/i);
 });
 
+test("profile roster API returns one expanded-table page", async () => {
+  const res = await fetch(
+    `${BASE_URL}/api/profile-roster?kind=donors&page=2&perPage=20`,
+  );
+  assert.ok(res.ok, `profile roster endpoint returned ${res.status}`);
+  const body = (await res.json()) as {
+    page: number;
+    perPage: number;
+    rows: unknown[];
+  };
+  assert.equal(body.page, 2);
+  assert.equal(body.perPage, 20);
+  assert.equal(body.rows.length, 20);
+});
+
+test("expanded rosters render numbered pagination controls", async () => {
+  const body = await html("/donors");
+  const text = body.replace(/<!-- -->/g, "");
+  assert.match(text, /Showing 1-20 of/);
+  assert.match(body, /First/);
+  assert.match(body, /Last/);
+  assert.match(body, /aria-current="page"/);
+});
+
 // Classifier shape. Hits /api/classify so the test process doesn't have to
 // resolve Next path aliases.
 

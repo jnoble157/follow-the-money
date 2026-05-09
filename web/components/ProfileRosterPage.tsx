@@ -3,7 +3,14 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { Fragment, useDeferredValue, useMemo, useState } from "react";
+import {
+  Fragment,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
 import { formatMoney } from "@/lib/formatMoney";
 import type {
@@ -11,22 +18,14 @@ import type {
   Jurisdiction,
   OfficialWithStats,
 } from "@/lib/profiles/types";
-import {
-  filterDonors,
-  filterOfficials,
-  sortDonors,
-  sortOfficials,
-  type DonorTypeFilter,
-  type EntityTab,
-  type JurisdictionFilter,
-  type SortDir,
-  type SortKey,
+import type {
+  DonorTypeFilter,
+  EntityTab,
+  JurisdictionFilter,
+  ProfileRosterResult,
+  SortDir,
+  SortKey,
 } from "@/lib/profiles/roster";
-import {
-  hasProfilePage,
-  listDonorsWithStats,
-  listOfficialsWithStats,
-} from "@/lib/profiles/registry";
 import { Avatar } from "./Avatar";
 import { Footnote } from "./Footnote";
 
@@ -52,51 +51,115 @@ const DONOR_HEADERS: { key: SortKey; label: string; align: "left" | "right" }[] 
   { key: "yearsActive", label: "Years", align: "right" },
 ];
 
-type Props = {
-  perPage?: number | null;
-  defaultTab?: EntityTab;
+type RosterArgs = {
+  kind: EntityTab;
+  page: number;
+  perPage: number;
+  sortKey: SortKey | null;
+  sortDir: SortDir;
+  query: string;
+  jurisdiction: JurisdictionFilter;
+  donorType: DonorTypeFilter;
 };
 
-export function OfficialsList({
-  perPage = 8,
-  defaultTab = "officials",
-}: Props) {
-  const router = useRouter();
-  const officialRows = useMemo(() => listOfficialsWithStats(), []);
-  const donorRows = useMemo(() => listDonorsWithStats(), []);
+type Props = {
+  initial: ProfileRosterResult;
+};
+
+export function ProfileRosterPage({ initial }: Props) {
   const [sortKey, setSortKey] = useState<SortKey | null>("total");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const [page, setPage] = useState(1);
-  const [tab, setTab] = useState<EntityTab>(defaultTab);
+  const [page, setPage] = useState(initial.page);
   const [jurisdiction, setJurisdiction] = useState<JurisdictionFilter>("all");
   const [donorType, setDonorType] = useState<DonorTypeFilter>("organization");
   const [officialQuery, setOfficialQuery] = useState("");
   const [donorQuery, setDonorQuery] = useState("");
   const [expandedOfficials, setExpandedOfficials] = useState<Set<string>>(new Set());
+  const [data, setData] = useState<ProfileRosterResult>(initial);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const deferredOfficialQuery = useDeferredValue(officialQuery);
   const deferredDonorQuery = useDeferredValue(donorQuery);
+  const cache = useRef(
+    new Map<string, ProfileRosterResult>([
+      [
+        cacheKey({
+          kind: initial.kind,
+          page: initial.page,
+          perPage: initial.perPage,
+          sortKey: "total",
+          sortDir: "desc",
+          query: "",
+          jurisdiction: "all",
+          donorType: "organization",
+        }),
+        initial,
+      ],
+    ]),
+  );
 
-  const officials = useMemo(() => {
-    const filtered = filterOfficials(
-      officialRows,
+  const args = useMemo<RosterArgs>(
+    () => ({
+      kind: initial.kind,
+      page,
+      perPage: initial.perPage,
+      sortKey,
+      sortDir,
+      query: initial.kind === "officials" ? deferredOfficialQuery : deferredDonorQuery,
       jurisdiction,
+      donorType,
+    }),
+    [
+      initial.kind,
+      initial.perPage,
+      page,
+      sortKey,
+      sortDir,
       deferredOfficialQuery,
-    );
-    return sortOfficials(filtered, sortKey, sortDir);
-  }, [officialRows, jurisdiction, deferredOfficialQuery, sortKey, sortDir]);
+      deferredDonorQuery,
+      jurisdiction,
+      donorType,
+    ],
+  );
 
-  const donors = useMemo(() => {
-    const filtered = filterDonors(donorRows, donorType, deferredDonorQuery);
-    return sortDonors(filtered, sortKey, sortDir);
-  }, [donorRows, donorType, deferredDonorQuery, sortKey, sortDir]);
+  useEffect(() => {
+    const key = cacheKey(args);
+    const cached = cache.current.get(key);
+    if (cached) {
+      setData(cached);
+      setError(null);
+      setLoading(false);
+      return;
+    }
 
-  const rowCount = tab === "officials" ? officials.length : donors.length;
-  const effectivePerPage = perPage ?? Math.max(1, rowCount);
-  const totalPages = Math.max(1, Math.ceil(rowCount / effectivePerPage));
-  const start = (page - 1) * effectivePerPage;
-  const pagedOfficials = officials.slice(start, start + effectivePerPage);
-  const pagedDonors = donors.slice(start, start + effectivePerPage);
-  const headers = tab === "officials" ? OFFICIAL_HEADERS : DONOR_HEADERS;
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+
+    fetch(`/api/profile-roster?${queryString(args)}`, {
+      signal: controller.signal,
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`Roster request failed: ${res.status}`);
+        return (await res.json()) as ProfileRosterResult;
+      })
+      .then((next) => {
+        cache.current.set(key, next);
+        setData(next);
+        if (next.page !== page) setPage(next.page);
+      })
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setError(err instanceof Error ? err.message : String(err));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [args, page]);
+
+  const headers = data.kind === "officials" ? OFFICIAL_HEADERS : DONOR_HEADERS;
 
   function handleHeaderClick(key: SortKey) {
     if (sortKey === key) {
@@ -113,50 +176,30 @@ export function OfficialsList({
     setPage(1);
   }
 
-  function chooseTab(next: EntityTab) {
-    setTab(next);
-    setPage(1);
-  }
-
-  if (officialRows.length === 0 && donorRows.length === 0) {
-    return (
-      <section aria-labelledby="officials-heading" className="space-y-3">
-        <h2
-          id="officials-heading"
-          className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted"
-        >
-          Public officials
-        </h2>
-        <p className="text-[12px] text-muted">
-          No profile data available. Run the build script.
-        </p>
-      </section>
-    );
-  }
-
   return (
-    <section aria-labelledby="officials-heading" className="space-y-3">
+    <section
+      aria-labelledby="profile-roster-heading"
+      aria-busy={loading}
+      className="space-y-3"
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between">
         <h2
-          id="officials-heading"
+          id="profile-roster-heading"
           className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted"
         >
-          {tab === "officials" ? "Public officials" : "Donors"}
+          {data.kind === "officials" ? "Public officials" : "Donors"}
         </h2>
-        <div className="flex flex-wrap gap-2">
-          <TabButton active={tab === "officials"} onClick={() => chooseTab("officials")}>
-            Officials
-          </TabButton>
-          <TabButton active={tab === "donors"} onClick={() => chooseTab("donors")}>
-            Donors
-          </TabButton>
-        </div>
+        {loading ? (
+          <span className="font-mono text-[11px] uppercase tracking-wider text-muted">
+            Loading
+          </span>
+        ) : null}
       </div>
 
-      {tab === "officials" ? (
+      {data.kind === "officials" ? (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
-            <TabButton
+            <Pill
               active={jurisdiction === "all"}
               onClick={() => {
                 setJurisdiction("all");
@@ -164,8 +207,8 @@ export function OfficialsList({
               }}
             >
               All
-            </TabButton>
-            <TabButton
+            </Pill>
+            <Pill
               active={jurisdiction === "austin"}
               onClick={() => {
                 setJurisdiction("austin");
@@ -173,8 +216,8 @@ export function OfficialsList({
               }}
             >
               Austin
-            </TabButton>
-            <TabButton
+            </Pill>
+            <Pill
               active={jurisdiction === "tx_state"}
               onClick={() => {
                 setJurisdiction("tx_state");
@@ -182,8 +225,8 @@ export function OfficialsList({
               }}
             >
               State
-            </TabButton>
-            <TabButton
+            </Pill>
+            <Pill
               active={jurisdiction === "tx_federal"}
               onClick={() => {
                 setJurisdiction("tx_federal");
@@ -191,7 +234,7 @@ export function OfficialsList({
               }}
             >
               Federal
-            </TabButton>
+            </Pill>
           </div>
           <input
             value={officialQuery}
@@ -200,13 +243,13 @@ export function OfficialsList({
               setPage(1);
             }}
             placeholder="Search official name"
-            className="h-9 w-full rounded-sm border border-rule bg-white px-3 text-[13px] text-ink outline-none focus:border-ink sm:w-[280px]"
+            className="h-11 w-full rounded-sm border border-rule bg-white px-4 text-[15px] text-ink outline-none focus:border-ink sm:w-[520px]"
           />
         </div>
       ) : (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
-            <TabButton
+            <Pill
               active={donorType === "all"}
               onClick={() => {
                 setDonorType("all");
@@ -214,8 +257,8 @@ export function OfficialsList({
               }}
             >
               All
-            </TabButton>
-            <TabButton
+            </Pill>
+            <Pill
               active={donorType === "individual"}
               onClick={() => {
                 setDonorType("individual");
@@ -223,8 +266,8 @@ export function OfficialsList({
               }}
             >
               Individual
-            </TabButton>
-            <TabButton
+            </Pill>
+            <Pill
               active={donorType === "organization"}
               onClick={() => {
                 setDonorType("organization");
@@ -232,7 +275,7 @@ export function OfficialsList({
               }}
             >
               Organization
-            </TabButton>
+            </Pill>
           </div>
           <input
             value={donorQuery}
@@ -241,10 +284,16 @@ export function OfficialsList({
               setPage(1);
             }}
             placeholder="Search donor or employer"
-            className="h-9 w-full rounded-sm border border-rule bg-white px-3 text-[13px] text-ink outline-none focus:border-ink sm:w-[280px]"
+            className="h-11 w-full rounded-sm border border-rule bg-white px-4 text-[15px] text-ink outline-none focus:border-ink sm:w-[520px]"
           />
         </div>
       )}
+
+      {error ? (
+        <p className="rounded-sm border border-rule bg-white px-3 py-2 text-[13px] text-muted">
+          {error}
+        </p>
+      ) : null}
 
       <div className="overflow-hidden rounded-md border border-rule bg-white">
         <table className="w-full table-fixed text-[13px]">
@@ -274,13 +323,13 @@ export function OfficialsList({
             </tr>
           </thead>
           <tbody className="divide-y divide-rule">
-            {tab === "officials" ? (
-              pagedOfficials.length > 0 ? (
-                pagedOfficials.map((o, i) => (
-                  <OfficialRow
+            {data.kind === "officials" ? (
+              data.rows.length > 0 ? (
+                data.rows.map((o, i) => (
+                  <OfficialRosterRow
                     key={o.slug}
                     official={o}
-                    sourceIndex={start + i + 1}
+                    sourceIndex={data.start + i + 1}
                     expanded={expandedOfficials.has(o.slug)}
                     onToggle={() =>
                       setExpandedOfficials((prev) => {
@@ -290,7 +339,6 @@ export function OfficialsList({
                         return next;
                       })
                     }
-                    router={router}
                   />
                 ))
               ) : (
@@ -300,13 +348,12 @@ export function OfficialsList({
                   </td>
                 </tr>
               )
-            ) : pagedDonors.length > 0 ? (
-              pagedDonors.map((d, i) => (
-                <DonorRow
+            ) : data.rows.length > 0 ? (
+              data.rows.map((d, i) => (
+                <DonorRosterRow
                   key={d.slug}
                   donor={d}
-                  sourceIndex={start + i + 1}
-                  router={router}
+                  sourceIndex={data.start + i + 1}
                 />
               ))
             ) : (
@@ -320,93 +367,202 @@ export function OfficialsList({
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-1">
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="rounded-sm border border-rule bg-white px-3 py-1.5 text-[12px] font-mono text-ink hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Previous
-          </button>
-          <span className="text-[12px] font-mono text-muted">
-            Page {page} of {totalPages}
-          </span>
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="rounded-sm border border-rule bg-white px-3 py-1.5 text-[12px] font-mono text-ink hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Next
-          </button>
-        </div>
-      )}
+      <RosterPagination data={data} loading={loading} onPage={setPage} />
     </section>
   );
 }
 
-function OfficialRow({
+function RosterPagination({
+  data,
+  loading,
+  onPage,
+}: {
+  data: ProfileRosterResult;
+  loading: boolean;
+  onPage: (page: number) => void;
+}) {
+  const firstRow = data.rowCount === 0 ? 0 : data.start + 1;
+  const lastRow = Math.min(data.start + data.rows.length, data.rowCount);
+  const pages = paginationWindow(data.page, data.totalPages);
+
+  return (
+    <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
+      <div className="font-mono text-[12px] text-muted">
+        Showing {firstRow.toLocaleString()}-{lastRow.toLocaleString()} of{" "}
+        {data.rowCount.toLocaleString()}
+      </div>
+      {data.totalPages > 1 ? (
+        <nav
+          aria-label="Pagination"
+          className="flex flex-wrap items-center gap-1.5"
+        >
+          <PageStep
+            label="First"
+            disabled={data.page === 1 || loading}
+            onClick={() => onPage(1)}
+          />
+          <PageStep
+            label="Prev"
+            disabled={data.page === 1 || loading}
+            onClick={() => onPage(Math.max(1, data.page - 1))}
+          />
+          <div className="flex flex-wrap items-center gap-1">
+            {pages.map((p, i) =>
+              p === "gap" ? (
+                <span
+                  key={`gap-${i}`}
+                  className="flex h-9 min-w-8 items-center justify-center px-1 font-mono text-[12px] text-muted"
+                >
+                  ...
+                </span>
+              ) : (
+                <PageNumber
+                  key={p}
+                  page={p}
+                  active={p === data.page}
+                  disabled={loading}
+                  onClick={() => onPage(p)}
+                />
+              ),
+            )}
+          </div>
+          <PageStep
+            label="Next"
+            disabled={data.page === data.totalPages || loading}
+            onClick={() => onPage(Math.min(data.totalPages, data.page + 1))}
+          />
+          <PageStep
+            label="Last"
+            disabled={data.page === data.totalPages || loading}
+            onClick={() => onPage(data.totalPages)}
+          />
+        </nav>
+      ) : null}
+    </div>
+  );
+}
+
+function PageStep({
+  label,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="h-9 rounded-sm border border-rule bg-white px-3 text-[12px] font-mono text-ink hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {label}
+    </button>
+  );
+}
+
+function PageNumber({
+  page,
+  active,
+  disabled,
+  onClick,
+}: {
+  page: number;
+  active: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={active || disabled}
+      aria-current={active ? "page" : undefined}
+      className={
+        active
+          ? "h-9 min-w-9 rounded-sm border border-ink bg-ink px-2 text-[12px] font-mono text-white"
+          : "h-9 min-w-9 rounded-sm border border-rule bg-white px-2 text-[12px] font-mono text-ink hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
+      }
+    >
+      {page}
+    </button>
+  );
+}
+
+function paginationWindow(
+  page: number,
+  totalPages: number,
+): Array<number | "gap"> {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const pages = new Set<number>([1, totalPages, page - 1, page, page + 1]);
+  if (page <= 4) {
+    for (let i = 2; i <= 5; i += 1) pages.add(i);
+  }
+  if (page >= totalPages - 3) {
+    for (let i = totalPages - 4; i < totalPages; i += 1) pages.add(i);
+  }
+
+  const sorted = [...pages]
+    .filter((p) => p >= 1 && p <= totalPages)
+    .sort((a, b) => a - b);
+  const out: Array<number | "gap"> = [];
+  for (const p of sorted) {
+    const prev = out[out.length - 1];
+    if (typeof prev === "number" && p - prev > 1) out.push("gap");
+    out.push(p);
+  }
+  return out;
+}
+
+function OfficialRosterRow({
   official,
   sourceIndex,
   expanded,
   onToggle,
-  router,
 }: {
   official: OfficialWithStats;
   sourceIndex: number;
   expanded: boolean;
   onToggle: () => void;
-  router: ReturnType<typeof useRouter>;
 }) {
-  const hasProfile = hasProfilePage(official.slug);
+  const router = useRouter();
+  const detailHref = `/profile/${official.slug}` as Route;
   const hasDonors = official.topOrganizationDonors.length > 0;
   return (
     <Fragment>
       <tr
-        className={`transition-colors ${hasProfile ? "cursor-pointer hover:bg-page" : "hover:bg-page"}`}
+        className="cursor-pointer transition-colors hover:bg-page"
         onClick={() => {
-          if (hasProfile) {
-            router.push(`/profile/${official.slug}` as Route);
-          }
+          router.push(detailHref);
         }}
       >
         <td className="px-2 py-2">
-          {hasProfile ? (
-            <Link
-              href={`/profile/${official.slug}` as Route}
-              className="inline-block"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Avatar name={official.name} kind="official" size={32} />
-            </Link>
-          ) : (
+          <Link
+            href={detailHref}
+            className="inline-block"
+            onClick={(e) => e.stopPropagation()}
+          >
             <Avatar name={official.name} kind="official" size={32} />
-          )}
+          </Link>
         </td>
         <td className="px-2 py-2">
-          {hasProfile ? (
-            <Link
-              href={`/profile/${official.slug}` as Route}
-              className="group inline-block min-w-0"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="truncate text-[14px] text-ink group-hover:underline decoration-accent decoration-1 underline-offset-4">
-                {official.name}
-              </div>
-              <div className="mt-0.5 line-clamp-2 text-[12px] text-muted leading-tight">
-                {official.role}
-              </div>
-            </Link>
-          ) : (
-            <div className="inline-block min-w-0">
-              <div className="truncate text-[14px] text-ink">{official.name}</div>
-              <div className="mt-0.5 line-clamp-2 text-[12px] text-muted leading-tight">
-                {official.role}
-              </div>
+          <Link
+            href={detailHref}
+            className="group inline-block min-w-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="truncate text-[14px] text-ink group-hover:underline decoration-accent decoration-1 underline-offset-4">
+              {official.name}
             </div>
-          )}
+            <div className="mt-0.5 line-clamp-2 text-[12px] text-muted leading-tight">
+              {official.role}
+            </div>
+          </Link>
         </td>
         <td className="px-2 py-2 text-right font-mono tnum text-ink whitespace-nowrap">
           {official.donationCount.toLocaleString()}
@@ -481,15 +637,14 @@ function OfficialRow({
   );
 }
 
-function DonorRow({
+function DonorRosterRow({
   donor,
   sourceIndex,
-  router,
 }: {
   donor: DonorSummary;
   sourceIndex: number;
-  router: ReturnType<typeof useRouter>;
 }) {
+  const router = useRouter();
   const detailHref = `/donor/${donor.slug}` as Route;
   const subline =
     donor.primaryEmployer ??
@@ -554,7 +709,7 @@ function DonorRow({
   );
 }
 
-function TabButton({
+function Pill({
   active,
   onClick,
   children,
@@ -576,4 +731,22 @@ function TabButton({
       {children}
     </button>
   );
+}
+
+function queryString(args: RosterArgs): string {
+  const params = new URLSearchParams({
+    kind: args.kind,
+    page: String(args.page),
+    perPage: String(args.perPage),
+    sortKey: args.sortKey ?? "none",
+    sortDir: args.sortDir,
+    query: args.query,
+    jurisdiction: args.jurisdiction,
+    donorType: args.donorType,
+  });
+  return params.toString();
+}
+
+function cacheKey(args: RosterArgs): string {
+  return queryString(args);
 }

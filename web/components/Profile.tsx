@@ -76,7 +76,7 @@ function ProfileHeader({ profile }: { profile: ProfileType }) {
   return (
     <header className="flex flex-col gap-4 border-b border-rule pb-6 md:flex-row md:items-start md:justify-between">
       <div className="flex items-start gap-4">
-        <Avatar name={profile.name} kind={profile.kind} size={72} />
+        <Avatar name={profile.name} kind={profile.kind} size={72} slug={profile.slug} />
         <div className="space-y-1">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
             {KIND_LABEL[profile.kind] ?? profile.kind}

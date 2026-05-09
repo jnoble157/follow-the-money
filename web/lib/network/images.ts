@@ -390,7 +390,7 @@ async function searchClearbitOnce(query: string): Promise<WikiHit | null> {
 // neither encyclopedia bothered with). The relevance filter applies to all
 // three so a hit only registers when the source's matched name plausibly
 // refers to the same entity.
-async function lookupImage(name: string, kind: EntityKind): Promise<CacheEntry> {
+export async function lookupImage(name: string, kind: EntityKind): Promise<CacheEntry> {
   const queries = searchTerms(name, kind);
   const sources: Array<{
     label: "wiki" | "wikidata" | "clearbit" | "serp";

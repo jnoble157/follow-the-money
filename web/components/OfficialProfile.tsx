@@ -19,7 +19,7 @@ export function OfficialProfile({ official }: Props) {
     <main className="mx-auto flex w-full max-w-[1120px] flex-col gap-8 px-6 py-8">
       <header className="flex flex-col gap-4 border-b border-rule pb-6 md:flex-row md:items-start md:justify-between">
         <div className="flex items-start gap-4">
-          <Avatar name={official.name} kind="official" size={72} />
+          <Avatar name={official.name} kind="official" size={72} slug={official.slug} />
           <div className="space-y-1">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
               Public official / candidate · {JURISDICTION_LABEL[official.jurisdiction]}

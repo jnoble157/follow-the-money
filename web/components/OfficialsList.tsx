@@ -379,10 +379,10 @@ function OfficialRow({
               className="inline-block"
               onClick={(e) => e.stopPropagation()}
             >
-              <Avatar name={official.name} kind="official" size={32} />
+              <Avatar name={official.name} kind="official" size={32} slug={official.slug} />
             </Link>
           ) : (
-            <Avatar name={official.name} kind="official" size={32} />
+            <Avatar name={official.name} kind="official" size={32} slug={official.slug} />
           )}
         </td>
         <td className="px-2 py-2">
@@ -511,6 +511,7 @@ function DonorRow({
             name={donor.displayName}
             kind={donor.donorType === "organization" ? "firm" : "lobbyist"}
             size={32}
+            slug={donor.slug}
           />
         </Link>
       </td>

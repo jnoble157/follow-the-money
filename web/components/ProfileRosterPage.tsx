@@ -547,7 +547,7 @@ function OfficialRosterRow({
             className="inline-block"
             onClick={(e) => e.stopPropagation()}
           >
-            <Avatar name={official.name} kind="official" size={32} />
+            <Avatar name={official.name} kind="official" size={32} slug={official.slug} />
           </Link>
         </td>
         <td className="px-2 py-2">
@@ -666,6 +666,7 @@ function DonorRosterRow({
             name={donor.displayName}
             kind={donor.donorType === "organization" ? "firm" : "lobbyist"}
             size={32}
+            slug={donor.slug}
           />
         </Link>
       </td>

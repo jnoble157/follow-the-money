@@ -4,6 +4,7 @@ import type {
   EmployerVariant,
   GraphNodeKind,
   InvestigationEvent,
+  NarrativeRole,
 } from "./types";
 
 // State the UI renders. The reducer is pure; effects (SSE, fetch) live in the
@@ -27,6 +28,10 @@ export type NarrativeChunk = {
   id: number;
   text: string;
   citations: Citation[];
+  // Defaults to "body" when the producer didn't tag the chunk. Optional
+  // because profile pages construct chunks as plain value objects without
+  // running them through the reducer.
+  role?: NarrativeRole;
 };
 
 export type GraphNodeView = {
@@ -70,6 +75,20 @@ export type InvestigationState = {
   topDonors: DonorRow[];
   pendingDisambiguation: DisambiguationView | null;
   resolvedDisambiguations: Record<string, boolean>;
+  // Receipts for the status strip. startedAt comes from the server's
+  // investigation_started event so cached replays show their original elapsed
+  // budget rather than the replay's wall time.
+  startedAt?: number;
+  finishedAt?: number;
+  // Distinct reportInfoIdent values seen across all tool_result.sourceRows
+  // and narrative_chunk.citations. The set is collapsed to a count for
+  // rendering; the underlying ids live in citedSourceRows so the status strip
+  // can grow into a "show me all 7 cited rows" affordance later.
+  citedSourceRows: string[];
+  // Number of times the user confirmed a merge in a disambiguation modal.
+  // The count is what the strip shows; the boolean values live in
+  // resolvedDisambiguations for the script branches.
+  variantsMergedCount: number;
 };
 
 export const initialState: InvestigationState = {
@@ -82,6 +101,8 @@ export const initialState: InvestigationState = {
   topDonors: [],
   pendingDisambiguation: null,
   resolvedDisambiguations: {},
+  citedSourceRows: [],
+  variantsMergedCount: 0,
 };
 
 let chunkCounter = 0;
@@ -101,6 +122,8 @@ export function reduce(
         question: ev.question,
         status: "running",
       };
+    case "investigation_started":
+      return { ...state, startedAt: ev.startedAt };
     case "plan_step":
       return {
         ...state,
@@ -137,6 +160,7 @@ export function reduce(
               }
             : s,
         ),
+        citedSourceRows: mergeIdents(state.citedSourceRows, ev.sourceRows),
       };
     case "disambiguation_required":
       return {
@@ -164,6 +188,9 @@ export function reduce(
           ...state.resolvedDisambiguations,
           [ev.id]: ev.merged,
         },
+        variantsMergedCount: ev.merged
+          ? state.variantsMergedCount + 1
+          : state.variantsMergedCount,
         planSteps: state.planSteps.map((s) =>
           s.blockedOn === ev.id
             ? { ...s, status: "done", blockedOn: undefined }
@@ -175,8 +202,17 @@ export function reduce(
         ...state,
         narrative: [
           ...state.narrative,
-          { id: nextChunkId(), text: ev.text, citations: ev.citations },
+          {
+            id: nextChunkId(),
+            text: ev.text,
+            citations: ev.citations,
+            role: ev.role ?? "body",
+          },
         ],
+        citedSourceRows: mergeIdents(
+          state.citedSourceRows,
+          ev.citations.map((c) => c.reportInfoIdent),
+        ),
       };
     case "graph_node":
       if (state.graphNodes.some((n) => n.id === ev.id)) return state;
@@ -210,6 +246,7 @@ export function reduce(
       return {
         ...state,
         status: "complete",
+        finishedAt: Date.now(),
         planSteps: markPrevDone(state.planSteps),
         topDonors: ev.topDonors ?? state.topDonors,
       };
@@ -228,4 +265,19 @@ function markPrevDone(steps: PlanStepView[]): PlanStepView[] {
       ? { ...s, status: "done" }
       : s,
   );
+}
+
+// Append-only set of source-row identifiers. Order is preserved (first-seen),
+// duplicates are dropped. Cheap because the lists are short — a typical
+// investigation cites under twenty rows.
+function mergeIdents(prev: string[], next: string[]): string[] {
+  if (next.length === 0) return prev;
+  const seen = new Set(prev);
+  const out = prev.slice();
+  for (const id of next) {
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
 }

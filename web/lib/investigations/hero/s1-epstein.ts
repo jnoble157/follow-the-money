@@ -87,10 +87,21 @@ const ifMerged: ScriptStep[] = [
     kind: "emit",
     event: {
       type: "narrative_chunk",
+      role: "lede",
       text: `Merging the variants gives a single individual donor — Robert Epstein, founder of Prophet Capital Asset Management LP — responsible for ${formatCount(rolledCount)} contributions totaling ${formatAmount(rolledTotal)} across four PACs active in Austin's 2018 ballot cycle.`,
       citations: [fairPlay175kCitation, fairPlay50kCitation, indyAustinCitation],
     },
     delayAfterMs: 900,
+  },
+  {
+    kind: "emit",
+    event: {
+      type: "narrative_chunk",
+      role: "methods",
+      text: `Three reported employer variants — Prophet Capital, Prophet Capital Management, PCM LLC — were rolled up under the same donor name and Austin ZIP at 92% match confidence. The agent paused and asked you to confirm the merge before reporting the rolled total; without that step the cluster does not surface in a top-contributors view.`,
+      citations: variants.map((v) => v.sampleCitation),
+    },
+    delayAfterMs: 700,
   },
   {
     kind: "emit",
@@ -192,6 +203,7 @@ const ifMerged: ScriptStep[] = [
     kind: "emit",
     event: {
       type: "narrative_chunk",
+      role: "body",
       text: `Of that cluster, ${formatAmount(fairPlayTotal)} went to Fair Play Austin PAC alone — the committee that opposed the city's 2018 deal handing the McKalla Place site to Major League Soccer. The single largest line item is the ${formatAmount(175_000)} monetary contribution on Apr 4, 2019; the rest is split across $50,000 of in-kind signature-gathering and four smaller monetary and in-kind gifts in 2018.`,
       citations: [fairPlay175kCitation, fairPlay50kCitation],
     },
@@ -201,7 +213,8 @@ const ifMerged: ScriptStep[] = [
     kind: "emit",
     event: {
       type: "narrative_chunk",
-      text: `Reading note: this investigation describes a pattern in public records — the Austin City Clerk's campaign finance dataset — and does not characterize the donor's motivation. The pro-stadium side won the Prop K vote and the site became Q2 Stadium.`,
+      role: "body",
+      text: `Coda: the pro-stadium side won Prop K. The McKalla Place site became Q2 Stadium and is now home to Austin FC. The Fair Play opposition Epstein bankrolled lost the vote, but the file is the largest individual outlay in the dataset for that cycle.`,
       citations: [stadiumCitation],
     },
     delayAfterMs: 700,
@@ -236,6 +249,7 @@ const ifKept: ScriptStep[] = [
     kind: "emit",
     event: {
       type: "narrative_chunk",
+      role: "lede",
       text: `Keeping the three employer variants separate, no individual entry crosses the $200,000 threshold for the cycle and the cluster does not surface in a top-contributors view. The variants — ${variants.map((v) => v.variant).join(", ")} — are reported by the same donor name and ZIP across ${formatCount(rolledCount)} contributions and together total ${formatAmount(rolledTotal)}; the conservative rendering is below.`,
       citations: variants.map((v) => v.sampleCitation),
     },
@@ -263,6 +277,7 @@ export const s1Epstein: HeroInvestigation = {
   question:
     "Who was the biggest individual political spender in Austin's 2018 ballot cycle?",
   pillLabel: "Biggest 2018 Austin ballot spender",
+  tags: ["austin", "ballot", "2018", "individual-donor", "real-estate", "entity-resolution"],
   steps: [
     {
       kind: "emit",

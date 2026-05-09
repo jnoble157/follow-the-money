@@ -36,7 +36,11 @@ export function FootnoteGroup({
           : `${startIndex}–${startIndex + citations.length - 1}`
       }
       content={
-        <div className="space-y-3">
+        // Span-with-block-display, not <div>: footnote chips live inside
+        // <p> in the report layout, and a <div> descendant of <p> is the
+        // hydration error the dev console warns about. Spans nested in
+        // spans are valid HTML in any parent context.
+        <span className="block space-y-3">
           {citations.map((c, i) => (
             <CitationCard
               key={c.reportInfoIdent + i}
@@ -44,7 +48,7 @@ export function FootnoteGroup({
               index={startIndex + i}
             />
           ))}
-        </div>
+        </span>
       }
     />
   );
@@ -58,12 +62,14 @@ function CitationCard({
   index?: number;
 }) {
   return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-muted">
+    <span className="block space-y-1">
+      <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-muted">
         {index !== undefined ? <span>[{index}]</span> : null}
         <span className="text-accent">{citation.reportInfoIdent}</span>
-      </div>
-      <p className="text-[12px] leading-snug text-ink">{citation.rowSummary}</p>
+      </span>
+      <span className="block text-[12px] leading-snug text-ink">
+        {citation.rowSummary}
+      </span>
       <a
         href={citation.url}
         target="_blank"
@@ -72,7 +78,7 @@ function CitationCard({
       >
         Open source filing →
       </a>
-    </div>
+    </span>
   );
 }
 

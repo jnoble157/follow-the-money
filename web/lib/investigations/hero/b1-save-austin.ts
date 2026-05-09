@@ -36,6 +36,7 @@ export const b1SaveAustin: HeroInvestigation = {
   id: "b1-save-austin",
   question: "Who funded Save Austin Now PAC for the 2021 Prop B campaign?",
   pillLabel: "Save Austin Now (Prop B)",
+  tags: ["austin", "ballot", "2021", "pac", "tech-money"],
   steps: [
     {
       kind: "emit",
@@ -91,6 +92,7 @@ export const b1SaveAustin: HeroInvestigation = {
       kind: "emit",
       event: {
         type: "narrative_chunk",
+        role: "lede",
         text: "Save Austin Now PAC raised $4,950,000 for the 2021 Prop B campaign — the ballot question to reinstate Austin's public-camping ban. The committee's biggest individual gifts came from Texas tech founders and venture investors: Philip Canfield (Ariet Capital, $450,000), Joe Liemandt (ESW Capital / Trilogy, $100,000), Stephen Oskoui and Luke Nosek (Gigafund / Founders Fund, $100,000 each), and Joe Lonsdale (8VC, $75,000). Royston Danielle of TelcoDR contributed $148,000; the only corporate gift in this slice is $100,000 from Charles Maund Toyota.",
         citations: [totalCitation, samples[0], samples[1]],
       },
@@ -113,7 +115,8 @@ export const b1SaveAustin: HeroInvestigation = {
       kind: "emit",
       event: {
         type: "narrative_chunk",
-        text: "Reading note: this is the top of the contributor list, not the long tail. Save Austin Now also reported hundreds of small-dollar contributions during the campaign with employer field listed as 'Best Efforts' (a regulatory placeholder used when a campaign couldn't determine the donor's employer); we describe that pattern but do not characterize the donors behind it.",
+        role: "reading_note",
+        text: "This is the top of the contributor list, not the long tail. Save Austin Now also reported hundreds of small-dollar contributions during the campaign with employer field listed as 'Best Efforts' — a regulatory placeholder used when a campaign couldn't determine the donor's employer. The aggregated picture above hides the small-dollar tail; the Big Five wrote roughly half the PAC's reported total in five checks.",
         citations: [totalCitation],
       },
       delayAfterMs: 600,

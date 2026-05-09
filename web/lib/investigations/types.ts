@@ -36,8 +36,22 @@ export type DonorRow = {
   citation: Citation;
 };
 
+// Sections of the report a narrative chunk lives in. The Report component
+// switches on this to apply the right typography and ordering. Default is
+// "body" so old scripts without the field render unchanged.
+export type NarrativeRole =
+  | "lede"          // single answer paragraph at the top
+  | "body"          // standard reporting paragraphs
+  | "methods"       // boxed callout: how the agent earned its keep
+  | "reading_note"  // the "we don't infer intent" disclaimer
+  | "missing";      // "what's not in this view" (e.g. federal data seam)
+
 export type InvestigationEvent =
   | { type: "plan_started"; question: string }
+  // Wall-clock timestamp the run began at, server-side. Used to compute the
+  // status-strip elapsed counter without needing a per-event timestamp on
+  // every other event.
+  | { type: "investigation_started"; startedAt: number }
   | { type: "plan_step"; id: string; description: string }
   | {
       type: "tool_call";
@@ -51,6 +65,10 @@ export type InvestigationEvent =
       rowCount: number;
       sample: Array<Record<string, unknown>>;
       sourceRows: string[];
+      // When a fuzzy-match tool returned a confidence score, the agent surfaces
+      // it here; the methods callout uses this to know when the agent did
+      // entity-resolution work as opposed to a straight lookup.
+      confidence?: number;
     }
   | {
       type: "disambiguation_required";
@@ -61,7 +79,12 @@ export type InvestigationEvent =
       variants: EmployerVariant[];
     }
   | { type: "disambiguation_resolved"; id: string; merged: boolean }
-  | { type: "narrative_chunk"; text: string; citations: Citation[] }
+  | {
+      type: "narrative_chunk";
+      text: string;
+      citations: Citation[];
+      role?: NarrativeRole;
+    }
   | {
       type: "graph_node";
       id: string;
@@ -102,5 +125,9 @@ export type HeroInvestigation = {
   id: string;
   question: string;
   pillLabel: string;
+  // Topic tags drive the RelatedRail's investigation-card pick. Tags are
+  // hand-curated for the hand-scripted heroes; recorded fixtures inherit them
+  // from a header row in the JSONL file.
+  tags: string[];
   steps: ScriptStep[];
 };

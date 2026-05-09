@@ -39,6 +39,7 @@ export const a3CrossTier: HeroInvestigation = {
   id: "a3-cross-tier",
   question: "Which Austin city lobbyists also lobby the Texas state legislature?",
   pillLabel: "Cross-tier lobbyists",
+  tags: ["lobby", "austin", "tec-state", "cross-tier", "fuzzy-join"],
   steps: [
     {
       kind: "emit",
@@ -116,10 +117,21 @@ export const a3CrossTier: HeroInvestigation = {
       kind: "emit",
       event: {
         type: "narrative_chunk",
+        role: "lede",
         text: `Twelve people are confirmed lobbying both the City of Austin and the Texas state legislature in 2025: Demetrius McDaniel (Greenberg Traurig), Kathleen Mitchell, Ana Husted, Ryan Hanretty, Madison Gessner, Stefanie Sass, Jerry Philips, Elizabeth Hadley, and four registrants from the Drenner Group — Steve Drenner, Amanda Morrow, Kelly Wright, and Andrew Linseisen. The cross-jurisdiction view is what makes them visible as a single set; neither registry on its own does.`,
         citations: [austinCitation, tecCitation],
       },
       delayAfterMs: 800,
+    },
+    {
+      kind: "emit",
+      event: {
+        type: "narrative_chunk",
+        role: "methods",
+        text: `Austin's REGISTRANT_ID and the TEC FilerID are different number spaces; the join is a fuzzy name match plus employer agreement at a 0.85 confidence floor. Twelve names cleared the bar without ambiguity in 2025; lower-confidence matches are deliberately excluded from this view.`,
+        citations: [austinCitation, tecCitation],
+      },
+      delayAfterMs: 700,
     },
     {
       kind: "emit",
@@ -161,7 +173,8 @@ export const a3CrossTier: HeroInvestigation = {
       kind: "emit",
       event: {
         type: "narrative_chunk",
-        text: `The Drenner Group cluster is the densest single firm in the join: four registrants in 2025 with parallel municipal-question filings on real-estate development and parallel state-level subject-matter filings. The Austin REGISTRANT_ID and TEC FilerID for these people are different numbers; the join goes through fuzzy name match plus employer agreement, not ID equality.`,
+        role: "body",
+        text: `The Drenner Group cluster is the densest single firm in the join: four registrants in 2025 with parallel municipal-question filings on real-estate development and parallel state-level subject-matter filings.`,
         citations: [austinCitation, tecCitation],
       },
       delayAfterMs: 700,
@@ -170,7 +183,8 @@ export const a3CrossTier: HeroInvestigation = {
       kind: "emit",
       event: {
         type: "narrative_chunk",
-        text: `Reading note: registration alone is not a description of activity. Each of these registrants files quarterly reports describing what they lobbied on; the cross-jurisdiction view is the entry point, not the conclusion. The full subject-matter rollup per registrant is one tool call away.`,
+        role: "reading_note",
+        text: `Registration alone is not a description of activity. Each of these registrants files quarterly reports describing what they lobbied on; the cross-jurisdiction view is the entry point, not the conclusion. The full subject-matter rollup per registrant is one tool call away.`,
         citations: [tecCitation],
       },
       delayAfterMs: 500,

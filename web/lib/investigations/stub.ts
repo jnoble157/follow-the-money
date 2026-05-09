@@ -71,6 +71,12 @@ async function* executeSteps(
   for (const step of steps) {
     if (step.kind === "emit") {
       yield step.event;
+      // Hand-scripted heroes don't carry a wall-clock timestamp; inject one
+      // right after plan_started so the status strip can show elapsed. The
+      // live agent emits this event itself.
+      if (step.event.type === "plan_started") {
+        yield { type: "investigation_started", startedAt: Date.now() };
+      }
       if (step.delayAfterMs > 0) {
         await sleep(step.delayAfterMs * speed);
       }

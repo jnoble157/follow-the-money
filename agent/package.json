@@ -1,0 +1,30 @@
+{
+  "name": "@txmoney/agent",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/runner.ts",
+  "types": "src/runner.ts",
+  "exports": {
+    ".": "./src/runner.ts",
+    "./eval": "./src/eval/run.ts",
+    "./record": "./src/record.ts"
+  },
+  "scripts": {
+    "eval": "tsx src/eval/run.ts",
+    "test": "tsx src/eval/run.ts",
+    "record-hero": "tsx src/record.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.32.1",
+    "@txmoney/mcp": "*",
+    "yaml": "2.6.1",
+    "zod": "3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5",
+    "tsx": "4.19.2",
+    "typescript": "5.7.3"
+  }
+}

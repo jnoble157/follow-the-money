@@ -32,6 +32,7 @@ export const a1Watson: HeroInvestigation = {
   id: "a1-watson",
   question: "Where did Kirk Watson's biggest political spending in 2022 actually go?",
   pillLabel: "Watson's biggest 2022 spend",
+  tags: ["austin", "watson", "mayor", "expenditure", "tec-state", "transfer"],
   steps: [
     {
       kind: "emit",
@@ -156,6 +157,7 @@ export const a1Watson: HeroInvestigation = {
       kind: "emit",
       event: {
         type: "narrative_chunk",
+        role: "lede",
         text:
           "Watson's single largest 2022 political expenditure was a $1,186,764 transfer from his Texas State Senate campaign account into a new committee, KPW PAC. The expenditure description on the filing reads 'Contribution (from prior Senate C/OH funds)' — a clean recycling of state-level fundraising into a city committee.",
         citations: [transferCitation],
@@ -191,6 +193,7 @@ export const a1Watson: HeroInvestigation = {
       kind: "emit",
       event: {
         type: "narrative_chunk",
+        role: "body",
         text:
           "By the 2024 mayoral cycle, Watson outraised his entire opposing field roughly 17 to 1: $1,986,830 across 2,896 unique donors, against the four challengers' combined $429,398. The Senate-to-PAC transfer is the legal backbone of that head start.",
         citations: [watson2024Citation, fieldCitation],
@@ -201,8 +204,9 @@ export const a1Watson: HeroInvestigation = {
       kind: "emit",
       event: {
         type: "narrative_chunk",
+        role: "reading_note",
         text:
-          "Reading note: this is what the public records say. The transfer is described and dated; we are not characterizing the legality or the strategy — Texas Election Code permits transfers between committees of the same officeholder, and the City Clerk accepted the filing.",
+          "Texas Election Code permits transfers between committees of the same officeholder, and the City Clerk accepted the filing — this is the legal mechanism, not a workaround. What's interesting is the scale: $1.18M is more than every challenger's total fundraising combined.",
         citations: [transferCitation],
       },
       delayAfterMs: 600,

@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { resolveDisambiguation } from "@/lib/investigations/stub";
+import { resolveDisambiguation as resolveStub } from "@/lib/investigations/stub";
+import { resolveDisambiguation as resolveLive } from "@txmoney/agent";
 
 export const runtime = "nodejs";
 
@@ -19,11 +20,12 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const ok = resolveDisambiguation(
-    body.sessionId,
-    body.disambiguationId,
-    body.merged,
-  );
+  // The session lives in either the stub map or the live-agent map; we
+  // don't know which without checking. Try stub first (it's the hand-
+  // scripted hero path); fall through to live.
+  const ok =
+    resolveStub(body.sessionId, body.disambiguationId, body.merged) ||
+    resolveLive(body.sessionId, body.disambiguationId, body.merged);
   if (!ok) {
     return Response.json(
       { error: "no pending disambiguation for that session" },

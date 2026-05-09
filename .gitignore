@@ -20,6 +20,7 @@ build/
 data/raw/
 data/parquet/
 data/duckdb/
+data/cache/
 !data/README.md
 
 scratch.md

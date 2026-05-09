@@ -3,16 +3,19 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import type { InvestigationEvent } from "./types";
 import { initialState, reduce, type InvestigationState } from "./state";
+import { loadSnapshot, saveSnapshot } from "./snapshots";
 
 type Action =
   | { kind: "event"; event: InvestigationEvent }
-  | { kind: "reset" };
+  | { kind: "reset" }
+  | { kind: "hydrate"; state: InvestigationState };
 
 function rootReducer(
   state: InvestigationState,
   action: Action,
 ): InvestigationState {
   if (action.kind === "reset") return { ...initialState };
+  if (action.kind === "hydrate") return action.state;
   return reduce(state, action.event);
 }
 
@@ -22,20 +25,48 @@ export function useInvestigation() {
   const [state, dispatch] = useReducer(rootReducer, initialState);
   const sessionIdRef = useRef<string>(newSessionId());
   const abortRef = useRef<AbortController | null>(null);
-
-  // Cancel any in-flight stream when the component unmounts.
+  // Strict-mode dev double-mounts components. If we abort on unmount, the
+  // *first* mount's fetch dies before its events reach the *second* mount's
+  // reducer — and the screen sits at IDLE while the server quietly streams
+  // a full investigation into the void. Instead we gate dispatches on this
+  // ref: events from a torn-down instance are dropped, but the underlying
+  // fetch is allowed to drain naturally. The next ask() aborts the previous
+  // controller, so we don't leak streams across user-initiated runs.
+  const aliveRef = useRef(true);
   useEffect(() => {
+    aliveRef.current = true;
     return () => {
-      abortRef.current?.abort();
+      aliveRef.current = false;
     };
   }, []);
+
+  const safeDispatch = useCallback((action: Action) => {
+    if (!aliveRef.current) return;
+    dispatch(action);
+  }, []);
+
+  // Save the snapshot once an investigation completes, so the next mount
+  // for the same question can hydrate instead of re-streaming.
+  useEffect(() => {
+    if (state.status !== "complete" || !state.question) return;
+    saveSnapshot(state.question, state);
+  }, [state.status, state.question, state]);
 
   const ask = useCallback(async (question: string, opts: RunOptions = {}) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
     sessionIdRef.current = newSessionId();
-    dispatch({ kind: "reset" });
+
+    // Same-tab snapshot of a completed run for this question — back from a
+    // profile page lands here. Hydrate instantly instead of re-streaming.
+    const snap = loadSnapshot(question);
+    if (snap) {
+      safeDispatch({ kind: "hydrate", state: snap });
+      return;
+    }
+
+    safeDispatch({ kind: "reset" });
 
     let res: Response;
     try {
@@ -51,7 +82,7 @@ export function useInvestigation() {
       });
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
-      dispatch({
+      safeDispatch({
         kind: "event",
         event: {
           type: "investigation_failed",
@@ -62,7 +93,7 @@ export function useInvestigation() {
     }
 
     if (!res.ok || !res.body) {
-      dispatch({
+      safeDispatch({
         kind: "event",
         event: {
           type: "investigation_failed",
@@ -90,7 +121,7 @@ export function useInvestigation() {
             if (!json) continue;
             try {
               const ev = JSON.parse(json) as InvestigationEvent;
-              dispatch({ kind: "event", event: ev });
+              safeDispatch({ kind: "event", event: ev });
             } catch {
               // ignore malformed chunk; the stream will recover or end
             }
@@ -100,7 +131,7 @@ export function useInvestigation() {
       }
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
-        dispatch({
+        safeDispatch({
           kind: "event",
           event: {
             type: "investigation_failed",
@@ -109,7 +140,7 @@ export function useInvestigation() {
         });
       }
     }
-  }, []);
+  }, [safeDispatch]);
 
   const resolveDisambiguation = useCallback(
     async (disambiguationId: string, merged: boolean) => {

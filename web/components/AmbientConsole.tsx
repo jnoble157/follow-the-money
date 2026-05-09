@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useInvestigation } from "@/lib/investigations/useInvestigation";
 import { HERO_INVESTIGATIONS } from "@/lib/investigations/registry";
 import { PlanTrace } from "./PlanTrace";
-import { Narrative } from "./Narrative";
+import { Report } from "./Report";
 import { EvidenceGraph } from "./EvidenceGraph";
 import { DonorTable } from "./DonorTable";
 import { DisambiguationModal } from "./DisambiguationModal";
@@ -73,12 +73,7 @@ export function AmbientConsole() {
           <PlanTrace steps={state.planSteps} status={state.status} />
         </aside>
         <section className="overflow-auto rounded-md border border-rule bg-white p-6">
-          <Narrative
-            question={state.question}
-            chunks={state.narrative}
-            status={state.status}
-            failureReason={state.failureReason}
-          />
+          <Report state={state} />
         </section>
         <aside className="space-y-4 overflow-auto">
           <div className="rounded-md border border-rule bg-white p-4">

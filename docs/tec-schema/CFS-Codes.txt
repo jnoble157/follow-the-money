@@ -1,0 +1,592 @@
+                            TEXAS ETHICS COMMISSION
+    EXPLANATION OF COMMON CODES FOUND IN THE CAMPAIGN FINANCE ONLINE DATABASE
+
+This file provides descriptions of the different common codes used throught the 
+Texas Ethics Commission Campaign Finance digital data.
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Form Type Codes used to state the specific type of Digital TEC Form. 
+These codes are used in the 'formTypeCd' fields.  
+
+    Form Code            Code Description
+------------------    -----------------------------------------------------------
+COH                   Candidate/Officeholder
+JCOH                  Judicial Candidate/Officeholder
+COHFR                 Candidate/Officeholder Designation of Final Report
+COHUC                 Unexpended Contributions For Candidates/Officeholders
+COHSS                 Candidate/Officeholder Special Session Report
+SCCOH                 State/County Chair Candidate/Officeholder
+SCCOHFR               State/County Chair Candidate/Officeholder Designation of Final Report
+GPAC                  General-Purpose Committee
+MPAC                  Monthly Filing General-Purpose Committee
+SPAC                  Specific-Purpose Committee
+SPACSS                Specific-Purpose Committee Special Session Report
+JSPAC                 Judicial Specific-Purpose Committee
+JSPACSS               Judicial Specific-Purpose Committee Special Session Report
+SCSPAC                State/County Specific-Purpose Committee
+DCE                   Report of Direct Campaign Expenditures
+PACDR                 Political Committee Affidavit of Dissolution
+JSPACDR               Judicial Specific-Purpose Committee Affidavit of Dissolution
+SCSPACDR              State/County Specific-Purpose Committee Affidavit of Dissolution
+CEC                   County Executive Committee
+MCEC                  Monthly Filing County Executive Committee
+PTYCORP               Political Party Report Regarding Funds from Corporations and Labor Organizations
+SPK                   Candidate For Speaker Of The Texas House Of Representatives
+SPKUC                 Unexpended Contributions For Former Candidate For Speaker Of The Texas House Of Representatives
+LEG                   Legislative Caucus Report of Contributions and Expenditures
+ASIFSPAC              As-If Specific Purpose Committee
+DAILYCCOH             Candidate/Officeholder Daily Pre-Election Report
+DAILYCPAC             Political Committee Daily Pre-Election Report of Contributions
+DAILYEPAC             Political Committee Daily Pre-Election Report of Expenditures
+DIRE                  Daily Pre-Election Report of Direct Expenditures
+CORCOH                Correction Affidavit For Candidate/Officeholder
+CORJCOH               Correction Affidavit For Judicial Candidate/Officeholder
+CORPAC                Correction Affidavit For Candidate/OfficeholdPolitical Committee
+CORPTY                Correction Affidavit For Political Party Report Regarding Funds from Corporations/Labor Organizations
+CORSPK                Correction Affidavit For Candidate For Speaker Of The Texas House Of Representatives
+CORLEG                Correction Affidavit For Legislative Caucus
+CORDAILYCCOH          Correction Affidavit For Candidate/Officeholder Daily Pre-Election Report
+CORDAILYCPAC          Correction Affidavit For Political Committee Daily Pre-Election Report of Contributions
+CORDAILYEPAC          Correction Affidavit For Political Committee Daily Pre-Election Report of Expenditures
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Report Type Codes used to state the different types of Report a specific report can cover.
+These codes are used in the 'reportTypeCd' fields.  
+
+    Report Code                Code Description    
+----------------------      --------------------------------------------------
+
+SEMIJAN                     January Semiannual Report
+SEMIJUL                     July Semiannual Report
+CFJAN                       Monthly January Report
+CFFEB                       Monthly February Report
+CFMAR                       Monthly March Report
+CFAPR                       Monthly April Report
+CFMAY                       Monthly May Report
+CFJUN                       Monthly June Report
+CFJUL                       Monthly July Report
+CFAUG                       Monthly August Report
+CFSEP                       Monthly September Report
+CFOCT                       Monthly October Report
+CFNOV                       Monthly November Report
+CFDEC                       Monthly December Report
+E08DAYBEF                   8 Day Before Election Report
+E30DAYBEF                   30 Day Before Election Report
+E50DAYBEF                   50 Day Before Election Report
+RUNOFF                      Runoff Election Report
+DAILYCCOH                   Daily Pre-Election Report for Candidate/Officeholders
+DAILYCPAC                   Daily Pre-Election Report for PAC Contributions
+DAILYEPAC                   Daily Pre-Election Report for PAC Expenditures
+A10DAYAFT                   10th Day After Campaign Treasurer Appointment
+A15DAYAFT                   15th Day After Campaign Treasurer Appointment
+FINAL                       Final Report
+PACDR                       PAC Dissolution Report
+500EXCEED                   Exceeded Modified Reporting Limit Report
+SPKJAN                      January 1 Speaker Report
+SPKMAR                      March 1 Speaker Report
+SPKMAY                      May 1 Speaker Report
+SPKJUL                      July 1 Speaker Report
+SPKSEP                      September 1 Speaker Report
+SPKNOV                      November 1 Speaker Report
+BRSSPK                      Speaker - Day Before Regular Session Convenes Report
+BSSSPK                      Speaker - Day Before Special Session Convenes Report
+UNEXPCONT                   Unexpended Contributions Report
+UNEXPCONT_FINAL             Final Unexpended Contributions Report
+SPKUC                       Speaker Unexpended Contributions Report
+SS                          Special Session Report
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Description of the Schedules used for each record of activity on a report.
+These codes are used in the 'schedFormTypeCd' fields.  
+
+  Schedule        Schedule Description                                                            Category
+------------    -------------------------------------                                           -------------------
+A1              Monetary Political Contributions                                                CONTRIBUTION
+A2              Non-Monetary (In-Kind) Political Contributions                                  CONTRIBUTION
+A2SS            Non-Monetary (In-Kind) Political Contributions (Special Session)                CONTRIBUTION
+AJ1             Monetary Political Contributions (Judicial)                                     CONTRIBUTION
+AL              Non-Caucus Member Contributions                                                 CONTRIBUTION
+AS1             Monetary Contributions (Speaker)                                                CONTRIBUTION
+AS2             In-Kind Contributions (Speaker)                                                 CONTRIBUTION
+C1              Monetary Contributions From Corporation Or Labor Organization                   CONTRIBUTION
+C2              Non-Monetary (In-Kind) Contributions From Corporation Or Labor Organization     CONTRIBUTION
+C3              Monetary Support From Corporation Or Labor Organization                         CONTRIBUTION
+C4              Non-Monetary Support From Corporation Or Labor Organization                     CONTRIBUTION
+K               Interest, Credits, Gains, Refunds, And Contributions Returned To Filer          CREDIT
+COHUC2          Candidate/Officeholder Report Of Unexpended Contributions Part 2                EXPENDITURE
+F1              Political Expenditures From Political Contributions                             EXPENDITURE
+F2              Unpaid Incurred Obligations                                                     EXPENDITURE
+F3              Purchase Of Investments From Political Contributions                            EXPENDITURE
+F4              Expenditures Made by Credit Card                                                EXPENDITURE
+FL              Legislative Caucus Expenditures                                                 EXPENDITURE
+FS              Expenditures (Speaker)                                                          EXPENDITURE
+G               Political Expenditures From Personal Funds                                      EXPENDITURE
+H               Payment From Political Contributions To The Business Of A C/OH                  EXPENDITURE
+I               Non-Political Expenditures From Political Contributions                         EXPENDITURE
+SPKUCFS         Expenditures (Speaker)                                                          EXPENDITURE
+E               Loans                                                                           LOAN
+EJ              Loans (Judicial)                                                                LOAN
+EL              Loans To Legislative Caucus                                                     LOAN
+ES              Loans (Speaker)                                                                 LOAN
+L               Outstanding Loans                                                               LOAN
+B               Pledged Contributions                                                           PLEDGE
+BJ              Pledged Contributions (Judicial)                                                PLEDGE
+BJSS            Pledged Contributions (Judicial Special Session)                                PLEDGE
+BSS             Pledged Contributions (Special Session)                                         PLEDGE
+D               Pledged Contributions From Corporation Or Labor Organization                    PLEDGE
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Description of the different Office Codes used on the Reports.
+These codes are used in the 'candidateHoldOfficeCd' and 'candidateSeekOfficeCd' fields.  
+
+    Office Code                 Code Description
+-----------------------     -----------------------------------------------------
+AGRICULTUR                  Agriculture Commissioner 
+ATTYGEN                     Attorney General 
+COMPTROLLER                 Comptroller 
+PARTYCHAIRCO                County Party Chair 
+JUSTICE_COA                 Court of Appeals, Justice 
+CHIEFJUSTICE_COA            Court of Appeals, Chief Justice 
+JUDGE_COCA                  Court of Criminal Appeals, Judge 
+PRESIDINGJUDGE_COCA         Court of Criminal Appeals, Presiding Judge 
+CRIMINAL_DISTATTY           Criminal District Attorney 
+CRIMINAL_JUDGEDIST          Criminal District Court Judge 
+CRIMINAL_JUDGEDIST_DAL      Criminal District Court Judge, Dallas Co. 
+CRIMINAL_JUDGEDIST_JEF      Criminal District Court Judge, Jefferson Co. 
+CRIMINAL_JUDGEDIST_TAR      Criminal District Court Judge, Tarrant Co. 
+DISTATTY                    District Attorney 
+DISTATTY_MULTI              District Attorney 
+JUDGEDIST                   District Judge 
+JUDGEDIST_MULTI             District Judge  
+JUDGEDIST_FAMILY            Family District Court Judge 
+JUDGE_BUS                   Business District Court Judge
+GOVERNOR                    Governor 
+LANDCOMM                    Land Commissioner 
+LTGOVERNOR                  Lieutenant Governor 
+NONE                        None 
+OTHER                       Other Office  
+RRCOMM                      Railroad Commissioner 
+RRCOMM_UNEXPIRED            Railroad Commissioner, Unexpired Term 
+SOS                         Secretary of State 
+JUDGE_SENIOR                Senior Judge 
+STATEEDU                    State Board of Education 
+STATE_CHAIR                 State Chairman 
+STATEREP                    State Representative 
+STATESEN                    State Senator 
+JUDGESTATCO                 Statutory County Judge 
+CHIEFJUSTICE_SC             Supreme Court Chief Justice 
+JUSTICE_SC                  Supreme Court Justice 
+COL_MULTI_1                 1st Multicounty Court Of Law
+COL_MULTI_2                 2nd Multicounty Court Of Law
+
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Description of the different Expenditure category codes reported on Expenditure data.
+These codes are used in the 'expendCatCd' fields.
+
+    Category Code           Code Description
+-------------------     -------------------------------
+ADVERTISE               Advertising Expense 
+ACCOUNT                 Accounting/Banking 
+CONSULT                 Consulting Expense 
+CREDITCARD              Credit Card Payment 
+EVENT                   Event Expense 
+FEES                    Fees 
+GIFTS                   Gift/Awards/Memorials Expense 
+LEGAL                   Legal Services 
+FOOD                    Food/Beverage Expense 
+POLLING                 Polling Expense 
+PRINTING                Printing Expense 
+SALARIES                Salaries/Wages/Contract Labor 
+FUNDRAISE               Solicitation/Fundraising Expense 
+TRAVELIN                Travel In District 
+TRAVELOUT               Travel Out of District 
+OVERHEAD                Office Overhead/Rental Expense 
+LOAN                    Loan Repayment/Reimbursement 
+TRANSPORT               Transportation Equipment & Related Expense
+DONATIONS               Contributions/Donations Made By Candidate/Officeholder/Political Committee
+OTHER                   OTHER 
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Description of the different types of Transportation codes reported on Travel data.
+These codes are used in the 'transportationTypeCd' fields.
+
+  Transporatation Code        Code Description
+------------------------    ------------------------------ 
+COMMAIR                     Commercial Airplane
+PRIVAIR                     Private Airplane
+COMMAUTO                    Commercial Automobile
+PRIVAUTO                    Private Automobile
+RAIL                        Railroad
+BAGFEES                     Baggage Fees
+COMMBOAT                    Commercial Boat
+PRIVBOAT                    Private Boat
+OTHER                       Other
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Description of the different Name Titles used for individual people's names.
+These codes are used in the '[Type]NamePrefixCd' fields.
+
+    Title Code          Code Description
+----------------    -----------------------
+AGENT               Agent
+BRIGADIER           Brig. Gen.
+CAPTAIN             Capt.
+CEO                 CEO
+COLONEL             Colonel
+COMMISSNR           Commissioner
+DR                  Dr.
+ESTATE              The Estate of
+GENERAL             General
+HONORABLE           The Honorable
+JUDGE               Judge
+LADY                Lady
+LT                  Lt.
+LTGENERAL           Lt. Gen.
+MAJOR               Major
+MAJORGEN            Maj. Gen.
+MISS                Miss
+MONSIGNOR           Monsignor
+MR                  Mr.
+MRS                 Mrs.
+MS                  Ms.
+OFFICER             Officer
+PROFESSOR           Prof.
+RABBI               Rabbi
+REPRESENTATIVE      Rep.
+REVEREND            Rev.
+SENATOR             Sen.
+SGT                 Sgt.
+SISTER              Sister
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Description of the different Name Suffixes used for individual people's names.
+These codes are used in the '[Type]NameSuffixCd' fields.
+
+  Suffix Code           Code Description
+---------------       -------------------
+AUD                   Au.D
+CDT                   C.D.T
+CPA                   CPA
+DC                    D.C.
+DDS                   D.D.S
+DJ                    DJ
+DMD                   DMD
+DO                    D.O.
+DPM                   DPM
+DRPH                  DrPH
+DSN                   DSN
+DVM                   DVM
+EDD                   Ed.D.
+ESQ                   Esq.
+I                     I
+II                    II
+III                   III
+IV                    IV
+JD                    J.D.
+JR                    Jr.
+JRMD                  Jr MD
+LAC                   L.AC.
+LLB                   LLB
+LLC                   LLC
+LMSW                  LMSW
+LVN                   LVN
+MA                    M.A.
+MBA                   MBA
+MD                    M.D.
+MDDDS                 MDDDS
+MDMS                  MD MS
+MDPHD                 MDPhD
+MED                   M.Ed.
+MHA                   MHA
+MPS                   MPS
+OD                    O.D.
+PA                    P.A.
+PAC                   PA-C
+PC                    P.C.
+PE                    P.E.
+PG                    P.G.
+PHD                   Ph.D
+PT                    P.T.
+RDH                   RDH
+RET                   Ret.
+RN                    R.N.
+RPH                   R.Ph.
+SR                    Sr.
+V                     V
+VI                    VI
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Description of the different Country codes used for address data.
+These codes are used in the '[Type]CountryCd' fields.
+
+  Country Code        Code Label
+---------------     --------------
+USA                 United States
+CAN                 Canada
+MEX                 Mexico
+UMI                 United States Minor Outlying Islands
+ALA                 Aland Islands
+AFG                 Afghanistan
+ALB                 Albania
+DZA                 Algeria
+ASM                 American Samoa
+AND                 Andorra
+AGO                 Angola
+AIA                 Anguilla
+ATA                 Antarctica
+ATG                 Antigua and Barbuda
+ARG                 Argentina
+ARM                 Armenia
+ABW                 Aruba
+AUS                 Australia
+AUT                 Austria
+AZE                 Azerbaijan
+BHS                 Bahamas
+BHR                 Bahrain
+BGD                 Bangladesh
+BRB                 Barbados
+BLR                 Belarus
+BEL                 Belgium
+BLZ                 Belize
+BEN                 Benin
+BMU                 Bermuda
+BTN                 Bhutan
+BOL                 Bolivia, Plurinational State of
+BES                 Bonaire, Sint Eustatius and Saba
+BIH                 Bosnia and Herzegovina
+BWA                 Botswana
+BVT                 Bouvet Island
+BRA                 Brazil
+IOT                 British Indian Ocean Territory
+BRN                 Brunei Darussalam
+BGR                 Bulgaria
+BFA                 Burkina Faso
+BDI                 Burundi
+CIV                 Cote d'Ivoire
+KHM                 Cambodia
+CMR                 Cameroon
+CPV                 Cape Verde
+CYM                 Cayman Islands
+CAF                 Central African Republic
+TCD                 Chad
+CHL                 Chile
+CHN                 China
+CXR                 Christmas Island
+CCK                 Cocos (Keeling) Islands
+COL                 Colombia
+COM                 Comoros
+COG                 Congo
+COD                 Congo, the Democratic Republic of the
+COK                 Cook Islands
+CRI                 Costa Rica
+HRV                 Croatia
+CUB                 Cuba
+CUW                 Curacao
+CYP                 Cyprus
+CZE                 Czech Republic
+DNK                 Denmark
+DJI                 Djibouti
+DMA                 Dominica
+DOM                 Dominican Republic
+ECU                 Ecuador
+EGY                 Egypt
+SLV                 El Salvador
+GNQ                 Equatorial Guinea
+ERI                 Eritrea
+EST                 Estonia
+ETH                 Ethiopia
+FLK                 Falkland Islands (Malvinas)
+FRO                 Faroe Islands
+FJI                 Fiji
+FIN                 Finland
+FRA                 France
+GUF                 French Guiana
+PYF                 French Polynesia
+ATF                 French Southern Territories
+GAB                 Gabon
+GMB                 Gambia
+GEO                 Georgia
+DEU                 Germany
+GHA                 Ghana
+GIB                 Gibraltar
+GRC                 Greece
+GRL                 Greenland
+GRD                 Grenada
+GLP                 Guadeloupe
+GUM                 Guam
+GTM                 Guatemala
+GGY                 Guernsey
+GIN                 Guinea
+GNB                 Guinea-Bissau
+GUY                 Guyana
+HTI                 Haiti
+HMD                 Heard Island and McDonald Islands
+VAT                 Holy See (Vatican City State)
+HND                 Honduras
+HKG                 Hong Kong
+HUN                 Hungary
+ISL                 Iceland
+IND                 India
+IDN                 Indonesia
+IRN                 Iran, Islamic Republic of
+IRQ                 Iraq
+IRL                 Ireland
+IMN                 Isle of Man
+ISR                 Israel
+ITA                 Italy
+JAM                 Jamaica
+JPN                 Japan
+JEY                 Jersey
+JOR                 Jordan
+KAZ                 Kazakhstan
+KEN                 Kenya
+KIR                 Kiribati
+PRK                 Korea, Democratic People's Republic of
+KOR                 Korea, Republic of
+KWT                 Kuwait
+KGZ                 Kyrgyzstan
+LAO                 Lao People's Democratic Republic
+LVA                 Latvia
+LBN                 Lebanon
+LSO                 Lesotho
+LBR                 Liberia
+LBY                 Libya
+LIE                 Liechtenstein
+LTU                 Lithuania
+LUX                 Luxembourg
+MAC                 Macao
+MKD                 Macedonia, the former Yugoslav Republic of
+MDG                 Madagascar
+MWI                 Malawi
+MYS                 Malaysia
+MDV                 Maldives
+MLI                 Mali
+MLT                 Malta
+MHL                 Marshall Islands
+MTQ                 Martinique
+MRT                 Mauritania
+MUS                 Mauritius
+MYT                 Mayotte
+FSM                 Micronesia, Federated States of
+MDA                 Moldova, Republic of
+MCO                 Monaco
+MNG                 Mongolia
+MNE                 Montenegro
+MSR                 Montserrat
+MAR                 Morocco
+MOZ                 Mozambique
+MMR                 Myanmar
+NAM                 Namibia
+NRU                 Nauru
+NPL                 Nepal
+NLD                 Netherlands
+NCL                 New Caledonia
+NZL                 New Zealand
+NIC                 Nicaragua
+NER                 Niger
+NGA                 Nigeria
+NIU                 Niue
+NFK                 Norfolk Island
+MNP                 Northern Mariana Islands
+NOR                 Norway
+OMN                 Oman
+PAK                 Pakistan
+PLW                 Palau
+PSE                 Palestine, State of
+PAN                 Panama
+PNG                 Papua New Guinea
+PRY                 Paraguay
+PER                 Peru
+PHL                 Philippines
+PCN                 Pitcairn
+POL                 Poland
+PRT                 Portugal
+PRI                 Puerto Rico
+QAT                 Qatar
+REU                 Reunion
+ROU                 Romania
+RUS                 Russian Federation
+RWA                 Rwanda
+BLM                 Saint Barthelemy
+SHN                 Saint Helena, Ascension and Tristan da Cunha
+KNA                 Saint Kitts and Nevis
+LCA                 Saint Lucia
+MAF                 Saint Martin (French part)
+SPM                 Saint Pierre and Miquelon
+VCT                 Saint Vincent and the Grenadines
+WSM                 Samoa
+SMR                 San Marino
+STP                 Sao Tome and Principe
+SAU                 Saudi Arabia
+SEN                 Senegal
+SRB                 Serbia
+SYC                 Seychelles
+SLE                 Sierra Leone
+SGP                 Singapore
+SXM                 Sint Maarten (Dutch part)
+SVK                 Slovakia
+SVN                 Slovenia
+SLB                 Solomon Islands
+SOM                 Somalia
+ZAF                 South Africa
+SGS                 South Georgia and the South Sandwich Islands
+SSD                 South Sudan
+ESP                 Spain
+LKA                 Sri Lanka
+SDN                 Sudan
+SUR                 Suriname
+SJM                 Svalbard and Jan Mayen
+SWZ                 Swaziland
+SWE                 Sweden
+CHE                 Switzerland
+SYR                 Syrian Arab Republic
+TWN                 Taiwan, Province of China
+TJK                 Tajikistan
+TZA                 Tanzania, United Republic of
+THA                 Thailand
+TLS                 Timor-Leste
+TGO                 Togo
+TKL                 Tokelau
+TON                 Tonga
+TTO                 Trinidad and Tobago
+TUN                 Tunisia
+TUR                 Turkey
+TKM                 Turkmenistan
+TCA                 Turks and Caicos Islands
+TUV                 Tuvalu
+UGA                 Uganda
+UKR                 Ukraine
+ARE                 United Arab Emirates
+GBR                 United Kingdom
+URY                 Uruguay
+UZB                 Uzbekistan
+VUT                 Vanuatu
+VEN                 Venezuela, Bolivarian Republic of
+VNM                 Viet Nam
+VGB                 Virgin Islands, British
+VIR                 Virgin Islands, U.S.
+WLF                 Wallis and Futuna
+ESH                 Western Sahara
+YEM                 Yemen
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Code used to describe a Filer's Judicial declaration of intent.
+These codes are used in the 'filerJdiCd' field. 
+
+
+    JDI Code           		Code Description
+-------------------     -------------------------------
+ Y			 Yes
+ N			 No
+ IA			 Interim Appointment

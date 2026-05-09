@@ -518,5 +518,86 @@
     "grounding": "model_knowledge",
     "sources": [],
     "generatedAt": "2026-05-09T23:56:35.348Z"
+  },
+  {
+    "slug": "dan-patrick-57897",
+    "text": "Dan Patrick is the Lieutenant Governor of Texas, presiding over the Texas Senate and serving as a statewide elected official. He served in the Texas Senate and worked as a broadcaster and media personality before holding statewide office.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:56:47.920Z"
+  },
+  {
+    "slug": "aaron-f-reitz-83762",
+    "text": "Aaron F. Reitz is a Texas attorney who served as Deputy Attorney General for Legal Strategy in the Office of the Texas Attorney General and later served as chief of staff to a US senator. He has also held a leadership role at the US Department of Justice and remains active in statewide legal and public affairs.",
+    "model": "gpt-5-mini",
+    "grounding": "web_search",
+    "sources": [
+      {
+        "title": "texastribune.org",
+        "url": "https://www.texastribune.org/2026/02/16/aaon-reitz-texas-attorney-general-2026-primary-gop/"
+      },
+      {
+        "title": "texasattorneygeneral.gov",
+        "url": "https://www.texasattorneygeneral.gov/news/releases/deputy-legal-strategy-aaron-reitz-departs-attorney-generals-office-serve-us-senators-chief-staff"
+      },
+      {
+        "title": "texasattorneygeneral.gov",
+        "url": "https://www.texasattorneygeneral.gov/es/news/releases/subprocurador-general-de-estrategia-legal-aaron-reitz-deja-la-procuraduria-general-de-texas-para"
+      },
+      {
+        "title": "texasattorneygeneral.gov",
+        "url": "https://www.texasattorneygeneral.gov/es/node/239686"
+      },
+      {
+        "title": "texastribune.org",
+        "url": "https://www.texastribune.org/2025/06/10/texas-attorney-general-aaron-reitz-gop-primary-paxton/"
+      },
+      {
+        "title": "texasattorneygeneral.gov",
+        "url": "https://www.texasattorneygeneral.gov/news/releases/attorney-general-ken-paxton-congratulates-aaron-reitz-being-sworn-assistant-attorney-general-us"
+      }
+    ],
+    "generatedAt": "2026-05-09T23:57:00.836Z"
+  },
+  {
+    "slug": "ann-johnson-67972",
+    "text": "Ann Johnson is a Democratic State Representative in the Texas House of Representatives. She serves in the Texas state legislature, working on legislation and representing constituents in her jurisdiction.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:57:06.828Z"
+  },
+  {
+    "slug": "janie-lopez-85982",
+    "text": "Janie Lopez is a Republican state representative serving in the Texas House of Representatives. She represents a district in south Texas and carries out legislative duties on behalf of her constituents at the state level.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:57:10.831Z"
+  },
+  {
+    "slug": "allen-b-west-83877",
+    "text": "Allen B. West is an American politician, attorney, and retired US Army lieutenant colonel who served as a US Representative and remains active in Texas politics. He serves as a County Party Chair in Texas state and participates in party leadership and public commentary.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:57:24.854Z"
+  },
+  {
+    "slug": "robert-l-duncan-21131",
+    "text": "Robert L. Duncan is a State Senator in the Texas state legislature. He serves as a public official representing constituents and participating in state legislative affairs.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:57:29.254Z"
+  },
+  {
+    "slug": "drew-alan-springer-jr-67769",
+    "text": "Drew Alan Springer Jr is a Texas state legislator. He serves in the Texas Legislature representing constituents at the state level and participates in legislative committees and duties related to state policy.",
+    "model": "gpt-5-mini",
+    "grounding": "model_knowledge",
+    "sources": [],
+    "generatedAt": "2026-05-09T23:57:43.070Z"
   }
 ]

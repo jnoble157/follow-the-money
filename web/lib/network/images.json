@@ -13,8 +13,8 @@
   "client:AUSTIN BAPTIST CHURCH": {
     "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/UnivBaptistChurchAustinTX.JPG/250px-UnivBaptistChurchAustinTX.JPG",
     "title": "University Baptist Church (Austin, Texas) [wiki]",
-    "fetchedAt": "2026-05-09T18:28:56.161Z",
-    "v": 8
+    "fetchedAt": "2026-05-09T19:20:28.396Z",
+    "v": 9
   },
   "client:Aquila Commercial, LLC": {
     "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQeOeI_zRXAP8OjV9HhFYUpA1o5wJpIWFz6Q&s",
@@ -35,9 +35,10 @@
     "v": 9
   },
   "client:BLENHEIM CORPORATION": {
-    "url": null,
-    "fetchedAt": "2026-05-09T18:24:57.186Z",
-    "v": 8
+    "url": "https://commons.wikimedia.org/wiki/Special:FilePath/ISS%20Blenheim%2C%20New%20Zealand.jpg?width=160",
+    "title": "Blenheim [wikidata]",
+    "fetchedAt": "2026-05-09T19:20:08.546Z",
+    "v": 9
   },
   "client:BROCK CONSULTING GROUP": {
     "url": null,
@@ -63,9 +64,10 @@
     "v": 9
   },
   "client:CWS CAPITAL PARTNERS, LLC": {
-    "url": null,
-    "fetchedAt": "2026-05-09T18:10:51.557Z",
-    "v": 5
+    "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdbI48l0SdZenhpa00feEipGUwoY3aD_UJCw&s",
+    "title": "Real Estate Management Firm - 1031 Exchange Advisor | CWS Capital | CWS  Capital [serp]",
+    "fetchedAt": "2026-05-09T19:20:04.970Z",
+    "v": 9
   },
   "client:Circuit of the Americas": {
     "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Austin_circuit.svg/250px-Austin_circuit.svg.png",
@@ -124,9 +126,16 @@
     "v": 2
   },
   "client:HYDE PARK BAPTIST CHURCH": {
-    "url": null,
-    "fetchedAt": "2026-05-09T18:28:56.506Z",
-    "v": 8
+    "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxcpdhO87cfg71b6UKljwoj-qQ9KBPxt81NA&s",
+    "title": "Hyde Park Baptist Church | Celebration Ministry Staffing [serp]",
+    "fetchedAt": "2026-05-09T19:20:13.202Z",
+    "v": 9
+  },
+  "client:Helsinki Partners, LLC": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Suomenlinna_%28cropped%29.jpg/250px-Suomenlinna_%28cropped%29.jpg",
+    "title": "Helsinki [wiki]",
+    "fetchedAt": "2026-05-09T19:20:37.819Z",
+    "v": 9
   },
   "client:Insurance Auto Auctions": {
     "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTyMEVdmvWlQ4tWBcneuCIxPkBX6wUyFjrNTw&s",
@@ -137,8 +146,8 @@
   "client:Kaur": {
     "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/19th_century_depiction_of_a_Sikh_woman_from_a_Haveli.jpg/250px-19th_century_depiction_of_a_Sikh_woman_from_a_Haveli.jpg",
     "title": "Kaur [wiki]",
-    "fetchedAt": "2026-05-09T18:30:42.675Z",
-    "v": 8
+    "fetchedAt": "2026-05-09T19:20:28.652Z",
+    "v": 9
   },
   "client:Kilroy Realty, L.P.": {
     "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRwsPxdgCrkqCxw30ySVhVAUOvjOpjHQOcaA&s",
@@ -164,9 +173,10 @@
     "v": 9
   },
   "client:MANIFOLD REAL ESTATE": {
-    "url": null,
-    "fetchedAt": "2026-05-09T18:13:22.630Z",
-    "v": 6
+    "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS8yzF763ASSNTaEfvy6C_xsJxGU-FbGnLlXQ&s",
+    "title": "Manifold's dual-tower plan for downtown Austin wins key vote - Austin  Business Journal [serp]",
+    "fetchedAt": "2026-05-09T19:20:09.441Z",
+    "v": 9
   },
   "client:MEREDITH FAMILY REVOCABLE TRUST": {
     "url": null,
@@ -187,13 +197,14 @@
   "client:ORACLE": {
     "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/John_William_Waterhouse_-_Consulting_the_Oracle_-_Christie%27s.jpg/250px-John_William_Waterhouse_-_Consulting_the_Oracle_-_Christie%27s.jpg",
     "title": "Oracle [wiki]",
-    "fetchedAt": "2026-05-09T18:39:21.462Z",
-    "v": 8
+    "fetchedAt": "2026-05-09T19:20:28.907Z",
+    "v": 9
   },
   "client:PACITTI": {
-    "url": null,
-    "fetchedAt": "2026-05-09T18:18:12.885Z",
-    "v": 6
+    "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfoHtQjlWfBXhuUxBuISlKSEImXDGV_byYWg&s",
+    "title": "Pacitti Name Meaning, Family History, Family Crest & Coats of Arms [serp]",
+    "fetchedAt": "2026-05-09T19:20:11.073Z",
+    "v": 9
   },
   "client:PC Land LLC": {
     "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsiJK3w5-9Ytj4fYq77zxTH0G1OhZKAK3faw&s",
@@ -235,9 +246,10 @@
     "v": 8
   },
   "client:Streamline Advisory Partners, LLC": {
-    "url": null,
-    "fetchedAt": "2026-05-09T18:11:16.511Z",
-    "v": 5
+    "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTAjk07x13HsM4lI5gPGb50muLdyv1YjwtbwA&s",
+    "title": "Streamline Advisory Partners | LinkedIn [serp]",
+    "fetchedAt": "2026-05-09T19:20:07.766Z",
+    "v": 9
   },
   "client:THE UNIVERSITY OF TEXAS SYSTEM": {
     "url": "https://upload.wikimedia.org/wikipedia/en/thumb/2/20/UofTsystem_seal.svg/250px-UofTsystem_seal.svg.png",
@@ -248,8 +260,8 @@
   "client:TRAMMELL CROW": {
     "url": "https://upload.wikimedia.org/wikipedia/commons/5/5a/Crowstrammellmarg.jpg",
     "title": "Trammell Crow [wiki]",
-    "fetchedAt": "2026-05-09T18:12:41.457Z",
-    "v": 6
+    "fetchedAt": "2026-05-09T19:20:11.564Z",
+    "v": 9
   },
   "client:TWC-1626, LLC": {
     "url": null,
@@ -274,14 +286,16 @@
     "v": 9
   },
   "client:VELOCITY CREDIT UNION": {
-    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/M2VelocityEMratioUS052009.png/250px-M2VelocityEMratioUS052009.png",
-    "title": "Velocity of money",
-    "fetchedAt": "2026-05-09T18:04:45.362Z"
+    "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPn-BOAMNOmhAwHrbfsWCSgaNS5-4AWIyLVQ&s",
+    "title": "A Better Way to Bank | Velocity Credit Union [serp]",
+    "fetchedAt": "2026-05-09T19:20:02.909Z",
+    "v": 9
   },
   "client:WHITE LODGING SERVICES CORPORATION": {
-    "url": null,
-    "fetchedAt": "2026-05-09T18:28:56.507Z",
-    "v": 8
+    "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQPKHNZ4l2gAf9rocbTiKtT20CQz42W5T8dVg&s",
+    "title": "White Lodging Home [serp]",
+    "fetchedAt": "2026-05-09T19:20:37.409Z",
+    "v": 9
   },
   "client:Whitfield": {
     "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Approaching%20Whitfield%20Roundabout%20-%20geograph.org.uk%20-%201846177.jpg?width=160",
@@ -391,8 +405,8 @@
   "donor:HNTB Corporation": {
     "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/HNTB_Headquarters_Kansas_City.jpg/250px-HNTB_Headquarters_Kansas_City.jpg",
     "title": "HNTB [wiki]",
-    "fetchedAt": "2026-05-09T18:26:06.651Z",
-    "v": 8
+    "fetchedAt": "2026-05-09T19:20:00.273Z",
+    "v": 9
   },
   "donor:Heising-Simons Foundation": {
     "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTjaGC5L0ffsZvttufprFeuJcEFNAJ7LMuEBA&s",
@@ -472,9 +486,9 @@
     "v": 9
   },
   "donor:Uber Tech": {
-    "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRrUHNL0Qd1ux49yd72jb5OK1Up49h8acM9g&s",
-    "title": "ByteByteGo | Uber Tech Stack [serp]",
-    "fetchedAt": "2026-05-09T18:40:45.674Z",
+    "url": "https://play-lh.googleusercontent.com/AQtSF5Sl18yp3mQ2tcbOrBLekb7cyP3kyg5BB1uUuc55zfcnbkCDLHFTBwZfYiu1aDI",
+    "title": "Uber [manual]",
+    "fetchedAt": "2026-05-09T19:20:24.151Z",
     "v": 9
   },
   "employer:AFSCME": {

@@ -2,7 +2,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { EntityKind, NetworkNode } from "./build";
 
-// Wikipedia-backed image enrichment for the network graph.
+// Image enrichment for the network graph (Wikipedia → Wikidata → Clearbit →
+// SerpAPI cascade). Cache lives in lib/network/images.json; bump
+// FILTER_VERSION to invalidate stale entries.
 //
 // Strategy: for each entity (politician, donor, employer, lobbyist, lobby
 // client) we generate one or more search terms from the raw filing string,

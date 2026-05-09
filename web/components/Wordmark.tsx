@@ -9,8 +9,8 @@ type Props = {
 
 export function Wordmark({ right, href = "/" as Route }: Props) {
   return (
-    <header className="border-b border-rule bg-page/90 backdrop-blur">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-3">
+    <header className="sticky top-0 z-50 border-b border-rule bg-page/90 backdrop-blur">
+      <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-3">
         <Link href={href} className="group flex items-baseline gap-3">
           <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted group-hover:text-ink">
             TX · Money

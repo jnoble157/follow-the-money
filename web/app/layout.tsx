@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AttributionFooter } from "@/components/AttributionFooter";
-import { SearchBar } from "@/components/SearchBar";
+import { NavBar } from "@/components/NavBar";
 import { Wordmark } from "@/components/Wordmark";
 import "@/styles/globals.css";
 
@@ -18,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col">
-        <Wordmark right={<SearchBar variant="header" />} />
+        <Wordmark right={<NavBar />} />
         <div className="flex-1 flex flex-col">{children}</div>
         <AttributionFooter />
       </body>

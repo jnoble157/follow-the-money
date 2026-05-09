@@ -22,12 +22,12 @@ export default function HomePage() {
         <p className="max-w-[820px] text-[16px] leading-relaxed text-muted">
           Every number cites the underlying TEC or City of Austin filing.
         </p>
-        <div className="max-w-[820px] pt-2">
+        <div className="pt-2">
           <SearchBar variant="hero" autoFocus />
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Trending />
         <div className="space-y-6">
           <OfficialsList />

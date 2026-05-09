@@ -19,7 +19,21 @@ export type ProfileKind =
   | "firm"       // employer / lobby client
   | "pac";       // committee
 
-export type Jurisdiction = "austin" | "tx_state";
+export type Jurisdiction = "austin" | "tx_state" | "tx_federal";
+
+// Stats surfaced on the home-page officials table. Built by
+// scripts/ingest/build_officials_manifest.py from Parquet and merged with the
+// registry entry.
+export type OfficialWithStats = {
+  slug: string;
+  name: string;
+  role: string;
+  jurisdiction: Jurisdiction;
+  donationCount: number;
+  totalRaised: number;
+  avgDonation: number;
+  yearsActive: number;
+};
 
 export type ProfileStat = {
   label: string;

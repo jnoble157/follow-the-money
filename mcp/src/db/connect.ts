@@ -43,9 +43,21 @@ export async function getConnection(): Promise<DuckDBConnection> {
     const conn = await instance.connect();
     for (const [view, rel] of Object.entries(VIEWS)) {
       const abs = path.join(PARQUET, rel).replace(/'/g, "''");
-      await conn.run(
-        `CREATE OR REPLACE VIEW ${view} AS SELECT * FROM '${abs}'`,
-      );
+      try {
+        await conn.run(
+          `CREATE OR REPLACE VIEW ${view} AS SELECT * FROM '${abs}'`,
+        );
+      } catch (err) {
+        // A missing parquet file (e.g. when only a subset of the data
+        // ships in a deploy) should not poison the entire connection —
+        // earlier behavior failed every subsequent query. Log and skip
+        // so the views that DO have data stay queryable.
+        const msg = err instanceof Error ? err.message : String(err);
+        // eslint-disable-next-line no-console
+        console.warn(
+          `db: skipping view "${view}" (path ${abs}): ${msg}`,
+        );
+      }
     }
     return conn;
   })();

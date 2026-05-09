@@ -80,7 +80,7 @@ def main() -> int:
     parser.add_argument(
         "--limit",
         type=int,
-        default=1000,
+        default=2200,
         help="number of donor rows to write",
     )
     parser.add_argument(
@@ -744,6 +744,7 @@ def build_donors(con: duckdb.DuckDBPyConnection, limit: int) -> tuple[list[dict]
             donor_key,
             recipient,
             total,
+            contribution_count,
             recipient_slug,
             recipient_role,
             recipient_jurisdiction,
@@ -759,6 +760,7 @@ def build_donors(con: duckdb.DuckDBPyConnection, limit: int) -> tuple[list[dict]
         item = {
             "recipient": recipient,
             "total": money_number(total),
+            "contributionCount": int(contribution_count),
             "source": contribution_citation(
                 dataset=dataset,
                 row_id=row_id,
@@ -775,7 +777,18 @@ def build_donors(con: duckdb.DuckDBPyConnection, limit: int) -> tuple[list[dict]
         entry["topRecipients"].append(item)
 
     for row in donor_yearly_rows(con):
-        donor_key, year, total, dataset, row_id, donor, recipient, source_amount, date_text = row
+        (
+            donor_key,
+            year,
+            total,
+            contribution_count,
+            dataset,
+            row_id,
+            donor,
+            recipient,
+            source_amount,
+            date_text,
+        ) = row
         entry = donors.get(donor_key)
         if not entry:
             continue
@@ -783,6 +796,7 @@ def build_donors(con: duckdb.DuckDBPyConnection, limit: int) -> tuple[list[dict]
             {
                 "year": int(year),
                 "total": money_number(total),
+                "contributionCount": int(contribution_count),
                 "source": contribution_citation(
                     dataset=dataset,
                     row_id=row_id,
@@ -920,6 +934,7 @@ def donor_recipient_rows(con: duckdb.DuckDBPyConnection) -> list[tuple]:
             MAX(recipientName) AS recipientName,
             MAX(recipientRole) AS recipientRole,
             MAX(recipientJurisdiction) AS recipientJurisdiction,
+            COUNT(*)::INTEGER AS contributionCount,
             SUM(amount) AS total
           FROM rows
           GROUP BY donorKey, recipientGroup
@@ -968,6 +983,7 @@ def donor_recipient_rows(con: duckdb.DuckDBPyConnection) -> list[tuple]:
           r.donorKey,
           COALESCE(r.recipientName, d.recipient) AS recipient,
           r.total,
+          r.contributionCount,
           r.recipientSlug,
           r.recipientRole,
           r.recipientJurisdiction,
@@ -995,7 +1011,11 @@ def donor_yearly_rows(con: duckdb.DuckDBPyConnection) -> list[tuple]:
     return con.execute(
         """
         WITH yearly_totals AS (
-          SELECT b.donorKey, b.year, SUM(b.amount) AS total
+          SELECT
+            b.donorKey,
+            b.year,
+            COUNT(*)::INTEGER AS contributionCount,
+            SUM(b.amount) AS total
           FROM donor_base b
           JOIN top_donor_keys k ON b.donorKey = k.donorKey
           WHERE b.year IS NOT NULL
@@ -1023,6 +1043,7 @@ def donor_yearly_rows(con: duckdb.DuckDBPyConnection) -> list[tuple]:
           y.donorKey,
           y.year,
           y.total,
+          y.contributionCount,
           l.dataset,
           l.sourceRowId,
           l.rawName,

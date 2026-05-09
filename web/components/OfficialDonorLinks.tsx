@@ -54,7 +54,9 @@ export function OfficialDonorLinks({ donors, startIndex = 40 }: Props) {
                 </td>
                 <td className="px-3 py-2 text-right font-mono tnum text-ink">
                   {formatMoney(donor.total, { cents: true })}
-                  <Footnote index={startIndex + i} citation={donor.source} />
+                  {donor.contributionCount === 1 ? (
+                    <Footnote index={startIndex + i} citation={donor.source} />
+                  ) : null}
                 </td>
               </tr>
             ))}

@@ -18,6 +18,8 @@ files under `data/parquet/`. It queries Austin + TEC contributions, writes the
 official roster and official backlink rows, writes a donor summary for list
 pages, and writes organization donor detail rows with source-row citations for
 each rendered amount.
+By default it writes the top 2,200 donor summaries by total; use `--limit` to
+build a smaller or larger donor roster.
 
 Do not commit the generated manifest JSON. The files are large derived data and
 are ignored by git. Keep `officials_map.json` tracked; it is the small curated

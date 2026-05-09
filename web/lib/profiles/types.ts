@@ -52,6 +52,7 @@ export type OfficialDetail = OfficialWithStats & {
 export type DonorRecipient = {
   recipient: string;
   total: number;
+  contributionCount: number;
   source: Citation;
   recipientSlug?: string;
   recipientRole?: string;
@@ -61,6 +62,7 @@ export type DonorRecipient = {
 export type DonorYearlyTotal = {
   year: number;
   total: number;
+  contributionCount: number;
   source: Citation;
 };
 

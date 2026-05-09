@@ -7,7 +7,7 @@
 | Donor definition | Deduplicated person/org, aggregated across all contributions |
 | Dataset | Austin + TEC combined |
 | Delivery | Generated static manifests (`*_manifest.json`, gitignored) |
-| Scale | Top 1000+ donors by total |
+| Scale | Top 2200+ donors by total |
 | Table columns | Name, Total, Contributions, Avg, Employer, Years Active |
 | Filters | Donor type tabs (Individual / Organization / All) + text search |
 | Name dedup | Simple normalization (uppercase, "Last, First" for individuals) |
@@ -41,15 +41,15 @@
   - `primaryCity` — most frequent `contributorStreetCity`.
   - `primaryZip` — most frequent `contributorStreetPostalCode`.
   - `donorType` — `'individual'` or `'organization'`.
-  - `topRecipients` — array of top 8 `{ recipient, total }`.
-  - `yearlyTotals` — array of `{ year, total }`.
+  - `topRecipients` — array of top 8 `{ recipient, total, contributionCount }`.
+  - `yearlyTotals` — array of `{ year, total, contributionCount }`.
   - `employerVariants` — array of distinct raw employer strings.
   - `displayName` — most frequent original-casing variant.
-- Sort by `total DESC`, take top 1000.
+- Sort by `total DESC`, take top 2200.
 - Generate slug: `kebab-case(name) + '-' + zip`.
 - Write `web/lib/profiles/donors_manifest.json`.
 - Also builds officials manifest with same logic as existing script.
-- Add `--limit` flag (default 1000 donors, no row limit) and `--sample` flag that reads only the first N rows of each Parquet for quick iteration. Default behavior processes everything.
+- Add `--limit` flag (default 2200 donors, no row limit) and `--sample` flag that reads only the first N rows of each Parquet for quick iteration. Default behavior processes everything.
 
 ### 2. TypeScript Types
 
@@ -57,8 +57,8 @@
 
 Add:
 ```ts
-export type DonorRecipient = { recipient: string; total: number };
-export type DonorYearlyTotal = { year: number; total: number };
+export type DonorRecipient = { recipient: string; total: number; contributionCount: number };
+export type DonorYearlyTotal = { year: number; total: number; contributionCount: number };
 export type DonorWithStats = {
   slug: string;
   displayName: string;

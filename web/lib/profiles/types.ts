@@ -54,7 +54,7 @@ export type OfficialBio = {
   slug: string;
   text: string;
   model: string;
-  grounding: "model_knowledge" | "web_search";
+  grounding: "manual" | "model_knowledge" | "web_search";
   sources: {
     title: string;
     url: string;

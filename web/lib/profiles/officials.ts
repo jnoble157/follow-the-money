@@ -57,7 +57,11 @@ function isOfficialBio(value: unknown): value is OfficialBio {
     typeof row.slug === "string" &&
     typeof row.text === "string" &&
     typeof row.model === "string" &&
-    (row.grounding === "model_knowledge" || row.grounding === "web_search") &&
+    (
+      row.grounding === "manual" ||
+      row.grounding === "model_knowledge" ||
+      row.grounding === "web_search"
+    ) &&
     typeof row.generatedAt === "string" &&
     Array.isArray(row.sources)
   );

@@ -1,131 +1,275 @@
 [
   {
     "slug": "greg-abbott",
-    "text": "Greg Abbott is the Governor of Texas and serves as the state's chief executive officer. He is a Republican who leads statewide governance and oversees the administration of state agencies and initiatives.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:45:33.062Z"
+    "text": "Greg Abbott is the Governor of Texas and a Republican statewide officeholder. Before becoming governor, he served as Texas attorney general, on the Supreme Court of Texas, and as a state district judge. His public profile is closely tied to executive authority, legal strategy, border policy, and the state's relationship with the federal government. He remains a central figure in Texas Republican politics.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Office of the Texas Governor",
+        "url": "https://gov.texas.gov/governor-abbott"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "dan-patrick",
-    "text": "Dan Patrick is the Lieutenant Governor of Texas, serving as the state's second-highest executive officer and presiding officer of the Texas Senate. He is a Republican elected to statewide office and previously worked as a radio and television broadcaster.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:45:40.211Z"
+    "text": "Dan Patrick is the Lieutenant Governor of Texas and a Republican statewide officeholder. In that role, he presides over the Texas Senate and has major influence over which legislation moves through the chamber. Before winning statewide office, Patrick served in the Texas Senate and built a public profile in radio and television. His political brand is closely associated with conservative legislative priorities and Republican primary politics.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Office of the Lieutenant Governor",
+        "url": "https://www.ltgov.texas.gov/about/"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "beto-orourke",
-    "text": "Beto O'Rourke is an American politician who served as a US Representative from Texas. He has been active in Texas politics as a Democratic candidate for statewide office.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:45:48.199Z"
+    "text": "Beto O'Rourke is a Democratic politician from El Paso who served in the US House of Representatives. Before Congress, he served on the El Paso City Council and built a profile around border, veterans, and civic issues. He later became a statewide Democratic nominee in Texas and a national campaign figure. His Texas political profile is tied to high-visibility statewide campaigns and grassroots organizing.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Beto_O%27Rourke"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "wendy-davis",
-    "text": "Wendy R. Davis is a Democratic politician who served as a member of the Texas State Senate. She was also a candidate for governor of Texas.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:45:54.546Z"
+    "text": "Wendy Davis is a Democratic attorney and former Texas state senator from Fort Worth. She served in local office before entering the Texas Senate, where she became a prominent voice on education, health care, and women's rights. Davis later ran for governor and remained active in legal and advocacy work. Her public profile is closely tied to state legislative debates and Democratic statewide politics.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas Legislative Reference Library",
+        "url": "https://lrl.texas.gov/legeleaders/members/memberdisplay.cfm?memberID=5652"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "ken-paxton",
-    "text": "Ken Paxton is the Attorney General of Texas, serving as the state's chief legal officer. He is a member of the Republican Party and oversees legal matters and litigation on behalf of the state.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:46:00.384Z"
+    "text": "Ken Paxton is the Attorney General of Texas and a Republican statewide officeholder. Before becoming attorney general, he served in the Texas House and Texas Senate and worked as an attorney. His office represents Texas in litigation, issues legal opinions, and handles consumer protection and child support enforcement. Paxton is a highly visible Republican legal official in state and national politics.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Office of the Attorney General",
+        "url": "https://www.texasattorneygeneral.gov/about-office"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "christi-l-craddick-30098",
-    "text": "Christi L. Craddick is a Railroad Commissioner for the state of Texas. She serves on the Railroad Commission of Texas, the state agency responsible for regulating oil and gas operations, pipelines, and related safety programs.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:46:12.976Z"
+    "text": "Christi Craddick is a Republican member of the Railroad Commission of Texas. The commission regulates the state's oil and gas sector and related energy infrastructure. Craddick is an attorney from Midland with a background in energy, law, and statewide campaigns. Her public role sits at the intersection of Texas energy regulation and Republican statewide politics.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Railroad Commission of Texas",
+        "url": "https://www.rrc.texas.gov/about-us/commissioners/christi-craddick/"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
+    "slug": "matthew-m-phelan-62288",
+    "text": "Matthew M. Phelan is better known publicly as Dade Phelan, a Republican member of the Texas House from Southeast Texas. He has served as Speaker of the Texas House and as a committee leader on state affairs, natural resources, and budgeting issues. Outside the Legislature, Phelan has worked in commercial real estate development. His profile is tied to House leadership, Gulf Coast regional issues, and intraparty Republican debates.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas House of Representatives",
+        "url": "https://house.texas.gov/members/2905/biography"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "donald-b-huffines-69651",
-    "text": "Donald B. Huffines is a Texas state senator who serves in the Texas Legislature and represents constituents at the state level. He is a member of the Republican Party and carries out legislative duties including sponsoring and voting on state laws.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:46:29.492Z"
+    "text": "Don Huffines is a Republican businessman and former Texas state senator from Dallas. He served in the Texas Senate after a career in real estate development. Huffines later became a statewide Republican candidate and a frequent voice in conservative Texas politics. His public profile is tied to property, transportation, fiscal policy, and Republican primary campaigns.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas Legislative Reference Library",
+        "url": "https://lrl.texas.gov/legeLeaders/members/memberDisplay.cfm?memberID=5766"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
+    "slug": "william-h-white-18964",
+    "text": "William H. White is better known as Bill White, a Democratic businessman and former mayor of Houston. Before city office, he worked in federal energy policy and in the private energy sector. As mayor, White built a reputation around city operations, fiscal management, and disaster response. He later became the Democratic nominee for governor of Texas.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Bill_White_(Texas_politician)"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
+    "slug": "david-m-middleton-ii-81727",
+    "text": "David M. Middleton II is better known as Mayes Middleton, a Republican member of the Texas Senate. He previously served in the Texas House and has worked in oil, ranching, and business interests along the Gulf Coast. In the Legislature, Middleton has been associated with conservative fiscal and governance issues. His profile in state politics has expanded beyond his Senate seat through statewide Republican campaigning.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas Legislative Reference Library",
+        "url": "https://www.lrl.texas.gov/legeLeaders/members/memberDisplay.cfm?memberID=5826"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "george-p-bush-68738",
-    "text": "George P. Bush is an American attorney and Republican politician who served as Texas Land Commissioner. He has been a statewide candidate in Texas and oversaw the state agency responsible for land management and veterans' land programs.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:46:58.148Z"
+    "text": "George P. Bush is a Republican attorney and former Texas Land Commissioner. Before statewide office, he worked in law, education, business, and the US Navy Reserve. As land commissioner, his work centered on public lands, veterans programs, disaster recovery, and stewardship of the Alamo. He later sought higher statewide office within the Republican Party.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "George P. Bush",
+        "url": "https://www.georgepbush.com/about/"
+      },
+      {
+        "title": "Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/George_P._Bush"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "glenn-hegar-jr-51286",
-    "text": "Glenn Hegar Jr is the Texas Comptroller of Public Accounts and a Republican statewide officeholder. He oversees state fiscal operations and is responsible for financial reporting, revenue estimation, and administration of certain state fiscal programs.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:47:03.253Z"
+    "text": "Glenn Hegar is a Republican attorney and former Texas Comptroller of Public Accounts. Before statewide office, he served in both chambers of the Texas Legislature. As comptroller, he was associated with state revenue estimates, tax administration, and oversight of state finances. He later moved into higher education leadership as chancellor of the Texas A&M University System.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas A&M University System",
+        "url": "https://chancellor.tamus.edu/about/"
+      },
+      {
+        "title": "Texas Comptroller",
+        "url": "https://comptroller.texas.gov/about/media-center/news/20250619-texas-comptroller-glenn-hegar-welcomes-kelly-hancock-to-comptrollers-office-1750300171508"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "kirk-watson",
-    "text": "Kirk Watson is the Mayor of Austin and serves as the chief executive of the City of Austin. He previously served in the Texas Legislature and has worked in law and municipal public service.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:47:12.065Z"
+    "text": "Kirk Watson is the mayor of Austin and a former Texas state senator. He has served Austin in citywide office across separate periods, with a public profile centered on transportation, city management, and regional growth. In the Texas Senate, Watson was associated with health care, higher education, and Central Texas infrastructure. He is an attorney and former state attorney-general candidate.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "City of Austin",
+        "url": "https://www.austintexas.gov/mayor"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "john-whitmire-19581",
-    "text": "John Whitmire is a Texas state senator who serves in the Texas Legislature representing a Houston-area constituency. He is a member of the Democratic Party and has served in elected office in Texas for many years.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:47:19.438Z"
+    "text": "John Whitmire is the mayor of Houston and a former Democratic state senator. Before becoming mayor, he built a long career in the Texas Legislature, including work in both chambers. His legislative profile was closely tied to criminal justice, public safety, and state budget issues. As mayor, he has focused on city operations, policing, and Houston's fiscal pressures.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "City of Houston",
+        "url": "https://www.houstontx.gov/mayor/bio.html"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
+    "slug": "tec-00019628-19628",
+    "text": "Robert D. Bullock was a Democratic Texas public official better known as Bob Bullock. He served as lieutenant governor, comptroller, secretary of state, and a member of the Texas House. Bullock was known for a forceful style of legislative negotiation and for shaping state finance and tax administration. His name remains attached to Texas political history and to the state history museum in Austin.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas State Cemetery",
+        "url": "https://cemetery.texas.gov/locate-a-plot/plotholder/bob-bullock"
+      },
+      {
+        "title": "Texas State History Museum Foundation",
+        "url": "https://www.tshmf.org/inspiration.html"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "judith-zaffirini-20971",
-    "text": "Judith Zaffirini is a Texas State Senator who represents constituents in the Texas state legislature. She is a member of the Democratic Party and serves on legislative committees and works on state policy matters.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:47:32.047Z"
+    "text": "Judith Zaffirini is a Democratic member of the Texas Senate from South Texas. Before and alongside her legislative career, she worked in communications, education, and public service. In the Senate, she has been associated with higher education, health and human services, and budget issues. Her profile is tied to Laredo, border-region policy, and long-running committee work.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Judith_Zaffirini"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "dawn-c-buckingham-m-d-69001",
-    "text": "Dawn C. Buckingham is the Texas Land Commissioner, responsible for management of state lands and related resources. She is a physician and former member of the Texas Legislature who serves in statewide executive office.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:48:06.111Z"
+    "text": "Dawn Buckingham is the Texas Land Commissioner and a Republican statewide officeholder. She is a physician who previously served in the Texas Senate before moving to the General Land Office. Her agency work centers on public lands, veterans programs, coastal recovery, disaster response, and the Alamo. Her political profile combines medical, legislative, and statewide executive experience.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas General Land Office",
+        "url": "https://www.glo.texas.gov/about-glo/about-the-commissioner"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "juan-hinojosa-13805",
-    "text": "Juan Hinojosa is a Texas State Senator and a member of the Democratic Party. He serves in the Texas Legislature representing constituents on state legislative matters.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:48:13.171Z"
+    "text": "Juan \"Chuy\" Hinojosa is a Democratic member of the Texas Senate from South Texas. He is an attorney and Marine veteran who previously served in the Texas House. In the Legislature, Hinojosa has worked on criminal justice, transportation, higher education, and border-region infrastructure. His public profile is closely connected to the Rio Grande Valley, Corpus Christi, and South Texas state policy.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas Senate",
+        "url": "https://senate.texas.gov/member.php?d=20"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "morgan-d-meyer-69344",
-    "text": "Morgan D. Meyer is a State Representative serving in the Texas Legislature. He is a Republican elected official who participates in drafting and reviewing state legislation and serving on legislative committees.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:48:19.749Z"
+    "text": "Morgan Meyer is a Republican member of the Texas House from Dallas. He is an attorney who has chaired the House Ways and Means Committee. In the Legislature, Meyer has worked on tax policy, public finance, and laws addressing human trafficking and child protection. His public profile is tied to Dallas-area representation and House fiscal policy.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas House of Representatives",
+        "url": "https://house.texas.gov/members/3075/biography"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "tom-craddick-20051",
-    "text": "Tom Craddick is a Texas State Representative who has served in the Texas House of Representatives and previously held leadership as Speaker of the House. He is a Republican serving in the state legislature and carries out legislative duties and committee work on behalf of his constituents.",
-    "model": "gpt-5-mini",
-    "grounding": "model_knowledge",
-    "sources": [],
-    "generatedAt": "2026-05-09T23:48:25.997Z"
+    "text": "Tom Craddick is a Republican member of the Texas House from Midland and a former Speaker of the Texas House. He has been a major figure in West Texas politics and in the rise of the modern Texas Republican Party. His legislative work has often intersected with energy, transportation, ethics, and House procedure. Outside the Capitol, Craddick has worked in business and remains closely identified with the Permian Basin.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas House of Representatives",
+        "url": "https://www.house.texas.gov/members/2610/biography"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "todd-a-hunter-20493",
@@ -142,6 +286,19 @@
     "grounding": "model_knowledge",
     "sources": [],
     "generatedAt": "2026-05-09T23:48:44.881Z"
+  },
+  {
+    "slug": "jane-nelson-20673",
+    "text": "Jane Nelson is the Texas Secretary of State and a Republican public official. Before joining the executive branch, she served in the Texas Senate and was known for work on budget, health, and education issues. Her current office oversees elections administration, business filings, state records, and international protocol functions for Texas.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas Secretary of State",
+        "url": "https://www.sos.state.tx.us/about/sosbio.shtml"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "robert-lee-nichols-35962",
@@ -166,6 +323,19 @@
     "grounding": "model_knowledge",
     "sources": [],
     "generatedAt": "2026-05-09T23:49:28.262Z"
+  },
+  {
+    "slug": "r-christopher-bell-56697",
+    "text": "R. Christopher Bell is better known as Chris Bell, a Democratic attorney and former Houston public official. He served on Houston City Council and in the US House before becoming a Texas gubernatorial nominee. His public profile is tied to ethics, urban policy, and Democratic statewide campaigns.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Biographical Directory of the United States Congress",
+        "url": "https://bioguide.congress.gov/search/bio/B001241"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "john-carona-sr-19837",
@@ -240,12 +410,77 @@
     "generatedAt": "2026-05-09T23:51:17.419Z"
   },
   {
+    "slug": "e-jeffrey-wentworth-20977",
+    "text": "E. Jeffrey Wentworth is a Republican attorney and former Texas legislator from the San Antonio area. He served in the Texas House and later in the Texas Senate. His legislative profile included transportation, local government, open records, and state institutional issues.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas Legislative Reference Library",
+        "url": "https://lrl.texas.gov/legeLeaders/members/memberDisplay.cfm?memberID=364"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
+    "slug": "michael-e-collier-69397",
+    "text": "Michael E. Collier is better known as Mike Collier, a Democratic accountant, business executive, and Texas statewide candidate. He has run for lieutenant governor and comptroller while emphasizing fiscal management and public-school finance. His public profile is tied to Democratic efforts to compete for statewide executive offices in Texas.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Axios Austin",
+        "url": "https://www.axios.com/local/austin/2021/10/04/mike-collier-lieutenant-governor-texas-bid"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
+    "slug": "phillip-s-phil-king-36483",
+    "text": "Phil King is a Republican member of the Texas Senate and a former longtime member of the Texas House. He is an attorney, former police officer, and Texas State Guard officer from North Texas. His legislative profile is tied to energy, criminal justice, telecommunications, and conservative state policy.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Phil King",
+        "url": "https://www.philking.com/about/"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
+    "slug": "tec-00025028-25028",
+    "text": "George W. Bush is a Republican former Governor of Texas and former President of the United States. Before national office, he worked in energy, baseball ownership, and Republican politics in Texas. His governorship focused on education, tort reform, criminal justice, and executive leadership before his presidential campaign.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas Legislative Reference Library",
+        "url": "https://lrl.texas.gov/legeleaders/governors/govPage.cfm?governorID=43"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
     "slug": "ryan-sitton-67797",
     "text": "Ryan Sitton is an engineer and former member of the Texas Railroad Commission, the state agency that regulates aspects of the oil and gas industry. He has worked in the energy sector and has been a candidate for statewide office in Texas.",
     "model": "gpt-5-mini",
     "grounding": "model_knowledge",
     "sources": [],
     "generatedAt": "2026-05-09T23:51:50.427Z"
+  },
+  {
+    "slug": "phillip-wayne-huffines-81004",
+    "text": "Phillip Wayne Huffines is a Dallas businessman and Republican political figure. He has been active in Dallas County Republican Party leadership and in Texas conservative politics. His public profile is connected to real estate, party organization, and the Huffines family political network.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Dallas Morning News",
+        "url": "https://www.dallasnews.com/news/politics/2016/08/16/dallas-county-republican-party-elects-phillip-huffines-as-new-chairman/"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "kelton-g-seliger-52862",
@@ -272,6 +507,19 @@
     "generatedAt": "2026-05-09T23:52:23.576Z"
   },
   {
+    "slug": "stephen-p-allison-82201",
+    "text": "Stephen P. Allison is better known as Steve Allison, a Republican former member of the Texas House from San Antonio. Before legislative office, he worked as an attorney and served in civic and education roles. His public profile is tied to public education, local governance, and moderate Republican politics in Bexar County.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas House of Representatives",
+        "url": "https://house.texas.gov/members/member-page/?district=121"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
     "slug": "walter-w-christian-32395",
     "text": "Walter W. Christian is a Republican who serves as a Railroad Commissioner for the state of Texas. He previously held elected office in the Texas Legislature and works on matters related to energy regulation and utilities.",
     "model": "gpt-5-mini",
@@ -286,6 +534,19 @@
     "grounding": "model_knowledge",
     "sources": [],
     "generatedAt": "2026-05-09T23:52:42.569Z"
+  },
+  {
+    "slug": "richard-friedman-56764",
+    "text": "Richard Friedman is better known as Kinky Friedman, a writer, musician, humorist, and Texas political candidate. He ran for governor as an independent and later sought statewide office as a Democrat. His public profile mixed entertainment, satire, animal welfare, and outsider political campaigns.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Dallas Morning News",
+        "url": "https://www.dallasnews.com/news/2010/02/15/democratic-primary-for-texas-agriculture-commissioner/"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "sid-miller-42143",
@@ -320,12 +581,38 @@
     "generatedAt": "2026-05-09T23:53:03.204Z"
   },
   {
+    "slug": "peter-p-flores-80439",
+    "text": "Peter P. Flores is better known as Pete Flores, a Republican member of the Texas Senate. Before legislative service, he worked for Texas Parks and Wildlife and rose through the state game-warden ranks. His public profile is tied to border-region representation, law enforcement, natural resources, and rural Texas issues.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas Legislative Reference Library",
+        "url": "https://www.lrl.texas.gov/legeLeaders/members/memberdisplay.cfm?memberID=5822"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
     "slug": "drew-darby-51651",
     "text": "Drew Darby is a State Representative in the Texas House of Representatives. He serves as a Republican legislator representing constituents in the Texas state legislature and participates in crafting and voting on state laws.",
     "model": "gpt-5-mini",
     "grounding": "model_knowledge",
     "sources": [],
     "generatedAt": "2026-05-09T23:53:18.459Z"
+  },
+  {
+    "slug": "sarah-m-davis-66272",
+    "text": "Sarah M. Davis is a Republican attorney and former member of the Texas House from Houston. She built a profile as a more independent Republican voice on health care, ethics, and social-policy issues. After leaving the Legislature, she remained active in public affairs, law, and advocacy connected to Texas politics.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Sarah_Davis_(Texas_politician)"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "nathaniel-w-parker-iv-58399",
@@ -344,6 +631,19 @@
     "generatedAt": "2026-05-09T23:53:43.765Z"
   },
   {
+    "slug": "john-lujan-iii-58435",
+    "text": "John Lujan III is a Republican member of the Texas House from the San Antonio area. Before legislative office, he worked as a firefighter, sheriff's deputy, and small-business owner. His public profile is tied to public safety, workforce issues, and competitive South Texas legislative politics.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas House of Representatives",
+        "url": "https://house.texas.gov/index.php/members/3145/biography"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
     "slug": "john-l-kuempel-66988",
     "text": "John L. Kuempel is a State Representative serving in the Texas House of Representatives. He represents constituents in the Texas state government and participates in the legislative process, including sponsoring and voting on legislation and serving on legislative committees.",
     "model": "gpt-5-mini",
@@ -352,12 +652,38 @@
     "generatedAt": "2026-05-09T23:53:54.686Z"
   },
   {
+    "slug": "david-h-cain-19792",
+    "text": "David H. Cain was a Democratic member of the Texas Legislature. He served in both the Texas House and Texas Senate, representing North and East Texas communities. His legislative profile included economic development, state affairs, civil justice, and local-government issues.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas State Cemetery",
+        "url": "https://cemetery.texas.gov/locate-a-plot/plotholder/david-h-cain"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
     "slug": "sylvester-turner-20872",
     "text": "Sylvester Turner is an American attorney and politician who served as a member of the Texas House of Representatives. He later became mayor of Houston and has worked in municipal government and legal practice.",
     "model": "gpt-5-mini",
     "grounding": "model_knowledge",
     "sources": [],
     "generatedAt": "2026-05-09T23:54:11.322Z"
+  },
+  {
+    "slug": "marc-andrew-lahood-86466",
+    "text": "Marc Andrew LaHood is a Republican member of the Texas House from San Antonio. He is an attorney with a background in criminal defense and local civic work. His public profile is tied to Bexar County politics, House Republican debates, and legal issues at the state Capitol.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas House of Representatives",
+        "url": "https://house.texas.gov/members/4595"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "justin-a-holland-80066",
@@ -448,6 +774,32 @@
     "generatedAt": "2026-05-09T23:55:24.843Z"
   },
   {
+    "slug": "gary-gates-jr-51418",
+    "text": "Gary Gates Jr. is a Republican member of the Texas House from Fort Bend County. He is a businessman with a background in real estate and property operations. His public profile is tied to housing, appropriations, local-government finance, and suburban Republican politics.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas House of Representatives",
+        "url": "https://house.texas.gov/members/3920/biography"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
+    "slug": "walter-t-price-iv-66243",
+    "text": "Walter T. Price IV is better known as Four Price, a Republican former member of the Texas House from Amarillo. He is an attorney who represented Panhandle communities in the Legislature. His public profile is tied to health care, mental health, regional infrastructure, and House leadership debates.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas House of Representatives",
+        "url": "https://house.texas.gov/members/member-page/?district=87"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
     "slug": "leticia-van-de-putte-20909",
     "text": "Leticia Van De Putte is an American politician who served as a member of the Texas State Senate. She has also held statewide office in Texas and been active in state legislative affairs.",
     "model": "gpt-5-mini",
@@ -520,6 +872,19 @@
     "generatedAt": "2026-05-09T23:56:35.348Z"
   },
   {
+    "slug": "david-sibley-21032",
+    "text": "David Sibley is a Republican former Texas state senator and former mayor of Waco. Before and after legislative office, he worked in law, dentistry, and public affairs. His legislative profile included business regulation, telecommunications, electric utility policy, and Central Texas regional issues.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas Tribune",
+        "url": "https://www.texastribune.org/2010/03/17/officially-sibleys-in/"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
     "slug": "dan-patrick-57897",
     "text": "Dan Patrick is the Lieutenant Governor of Texas, presiding over the Texas Senate and serving as a statewide elected official. He served in the Texas Senate and worked as a broadcaster and media personality before holding statewide office.",
     "model": "gpt-5-mini",
@@ -577,6 +942,19 @@
     "generatedAt": "2026-05-09T23:57:10.831Z"
   },
   {
+    "slug": "adan-hinojosa-86098",
+    "text": "Adan Hinojosa is publicly known as Adam Hinojosa, a Republican member of the Texas Senate from South Texas. He is a small-business owner from the Corpus Christi area. His public profile is tied to economic development, energy, ports, agriculture, and Republican organizing in the Rio Grande Valley and Coastal Bend.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Texas Senate",
+        "url": "https://www.senate.texas.gov/press.php?id=27-20250117a"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
+  },
+  {
     "slug": "allen-b-west-83877",
     "text": "Allen B. West is an American politician, attorney, and retired US Army lieutenant colonel who served as a US Representative and remains active in Texas politics. He serves as a County Party Chair in Texas state and participates in party leadership and public commentary.",
     "model": "gpt-5-mini",
@@ -591,6 +969,19 @@
     "grounding": "model_knowledge",
     "sources": [],
     "generatedAt": "2026-05-09T23:57:29.254Z"
+  },
+  {
+    "slug": "chrysta-castaneda-84031",
+    "text": "Chrysta Castañeda is a Dallas attorney, engineer, and Democratic candidate for the Texas Railroad Commission. Her legal work has focused on oil and gas, energy markets, and technical litigation. Her public profile is tied to energy regulation, flaring, mineral rights, and Democratic statewide campaigns.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "The Castañeda Firm",
+        "url": "https://www.castaneda-firm.com/team/chrysta-castaneda/"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "drew-alan-springer-jr-67769",
@@ -623,6 +1014,19 @@
     "grounding": "model_knowledge",
     "sources": [],
     "generatedAt": "2026-05-09T23:58:02.123Z"
+  },
+  {
+    "slug": "justin-b-busby-66759",
+    "text": "Justin B. Busby is a justice of the Supreme Court of Texas. Before joining the state's highest civil court, he served as an appellate judge and worked in appellate law. His public profile is tied to civil appeals, judicial administration, and statewide judicial elections.",
+    "model": "manual-curation",
+    "grounding": "manual",
+    "sources": [
+      {
+        "title": "Supreme Court of Texas",
+        "url": "https://www.txcourts.gov/supreme/about-the-court/justices/justice-j-busby/"
+      }
+    ],
+    "generatedAt": "2026-05-10T00:00:00.000Z"
   },
   {
     "slug": "robert-l-hall-iii-67980",

@@ -79,10 +79,114 @@ export function listOfficialsForHome(): OfficialEntry[] {
   ];
 }
 
+type ProfileOverride = Pick<OfficialEntry, "name" | "role" | "jurisdiction">;
+
+const PROFILE_OVERRIDES = new Map<string, ProfileOverride>([
+  [
+    "christi-l-craddick-30098",
+    { name: "Christi Craddick", role: "Railroad Commissioner", jurisdiction: "tx_state" },
+  ],
+  [
+    "matthew-m-phelan-62288",
+    { name: "Dade Phelan", role: "Texas State Representative", jurisdiction: "tx_state" },
+  ],
+  [
+    "donald-b-huffines-69651",
+    { name: "Don Huffines", role: "Former Texas State Senator", jurisdiction: "tx_state" },
+  ],
+  [
+    "william-h-white-18964",
+    {
+      name: "Bill White",
+      role: "Former Houston mayor, gubernatorial candidate",
+      jurisdiction: "tx_state",
+    },
+  ],
+  [
+    "david-m-middleton-ii-81727",
+    { name: "Mayes Middleton", role: "Texas State Senator", jurisdiction: "tx_state" },
+  ],
+  [
+    "george-p-bush-68738",
+    { name: "George P. Bush", role: "Former Texas Land Commissioner", jurisdiction: "tx_state" },
+  ],
+  [
+    "glenn-hegar-jr-51286",
+    { name: "Glenn Hegar", role: "Former Texas Comptroller", jurisdiction: "tx_state" },
+  ],
+  [
+    "john-whitmire-19581",
+    { name: "John Whitmire", role: "Houston mayor, former state senator", jurisdiction: "tx_state" },
+  ],
+  [
+    "tec-00019628-19628",
+    { name: "Bob Bullock", role: "Former Lieutenant Governor of Texas", jurisdiction: "tx_state" },
+  ],
+  [
+    "r-christopher-bell-56697",
+    { name: "Chris Bell", role: "Former US representative, gubernatorial candidate", jurisdiction: "tx_state" },
+  ],
+  [
+    "michael-e-collier-69397",
+    { name: "Mike Collier", role: "Lieutenant governor candidate", jurisdiction: "tx_state" },
+  ],
+  [
+    "phillip-s-phil-king-36483",
+    { name: "Phil King", role: "Texas State Senator", jurisdiction: "tx_state" },
+  ],
+  [
+    "tec-00025028-25028",
+    { name: "George W. Bush", role: "Former Texas Governor, US President", jurisdiction: "tx_state" },
+  ],
+  [
+    "phillip-wayne-huffines-81004",
+    { name: "Phillip Huffines", role: "Dallas Republican Party figure", jurisdiction: "tx_state" },
+  ],
+  [
+    "richard-friedman-56764",
+    { name: "Kinky Friedman", role: "Agriculture commissioner candidate", jurisdiction: "tx_state" },
+  ],
+  [
+    "peter-p-flores-80439",
+    { name: "Pete Flores", role: "Texas State Senator", jurisdiction: "tx_state" },
+  ],
+  [
+    "john-lujan-iii-58435",
+    { name: "John Lujan", role: "Texas State Representative", jurisdiction: "tx_state" },
+  ],
+  [
+    "walter-t-price-iv-66243",
+    { name: "Four Price", role: "Former Texas State Representative", jurisdiction: "tx_state" },
+  ],
+  [
+    "adan-hinojosa-86098",
+    { name: "Adam Hinojosa", role: "Texas State Senator", jurisdiction: "tx_state" },
+  ],
+  [
+    "dawn-c-buckingham-m-d-69001",
+    { name: "Dawn Buckingham", role: "Texas Land Commissioner", jurisdiction: "tx_state" },
+  ],
+  [
+    "juan-hinojosa-13805",
+    { name: "Juan Hinojosa", role: "Texas State Senator", jurisdiction: "tx_state" },
+  ],
+  [
+    "morgan-d-meyer-69344",
+    { name: "Morgan Meyer", role: "Texas State Representative", jurisdiction: "tx_state" },
+  ],
+  [
+    "tom-craddick-20051",
+    { name: "Tom Craddick", role: "Texas State Representative", jurisdiction: "tx_state" },
+  ],
+]);
+
 const OFFICIAL_OVERRIDES = new Map(
-  listOfficialsForHome()
-    .filter((o): o is OfficialEntry & { slug: string } => !!o.slug)
-    .map((o) => [o.slug, o]),
+  [
+    ...PROFILE_OVERRIDES,
+    ...listOfficialsForHome()
+      .filter((o): o is OfficialEntry & { slug: string } => !!o.slug)
+      .map((o) => [o.slug, o] as const),
+  ],
 );
 
 export function listOfficialsWithStats(): OfficialWithStats[] {

@@ -104,6 +104,7 @@ const INSTRUCTIONS = [
   "Some display names and aliases are campaign committees; infer the person only when the name is unambiguous.",
   "Use stable public facts you already know. When web_search is available, use it only if your own knowledge is not enough to be highly certain.",
   "Return status skip, confidence low, an empty bio, and a short reason when identity or biography facts are uncertain.",
+  "Use durable wording. Prefer has served, has worked, or is a Texas public official instead of saying the person currently serves, represents, oversees, or is the officeholder.",
   "The bio must be exactly two sentences, under eighty words total, and mention the person's public role.",
   "If your draft is one sentence, split it into two before returning it.",
   "Do not include dates, years, district numbers, ages, dollar amounts, counts, private donor names, or election totals.",
@@ -183,7 +184,11 @@ function isOfficialBio(value: unknown): value is OfficialBio {
     typeof row.slug === "string" &&
     typeof row.text === "string" &&
     typeof row.model === "string" &&
-    (row.grounding === "model_knowledge" || row.grounding === "web_search") &&
+    (
+      row.grounding === "manual" ||
+      row.grounding === "model_knowledge" ||
+      row.grounding === "web_search"
+    ) &&
     typeof row.generatedAt === "string" &&
     Array.isArray(row.sources)
   );
@@ -278,14 +283,18 @@ function requestBody(
           allowed_domains: [
             "austintexas.gov",
             "ballotpedia.org",
+            "capitol.texas.gov",
             "en.wikipedia.org",
             "gov.texas.gov",
             "house.texas.gov",
+            "justfacts.votesmart.org",
+            "ltgov.texas.gov",
             "lrl.texas.gov",
             "senate.texas.gov",
+            "sos.state.tx.us",
+            "sos.texas.gov",
             "texasattorneygeneral.gov",
             "texastribune.org",
-            "ltgov.texas.gov",
           ],
         },
         user_location: {
@@ -478,6 +487,7 @@ function rejectionReason(text: string, profile: ProfileInput): string | null {
   if (/[0-9$]/.test(text)) return "contains a numeric claim";
   if (!mentionsKnownName(text, profile)) return "does not name the official";
   if (!mentionsPublicRole(text)) return "does not mention a public role";
+  if (currentOfficeClaim(text)) return "uses a current-tense office claim";
   if (/\b(this app|profile|filing|filings|campaign-finance|donor|donors|contribution|source material|appears in)\b/i.test(text)) {
     return "mentions app or filing context";
   }
@@ -495,7 +505,9 @@ function canRetry(reason: string): boolean {
     reason === "not a two- or three-sentence bio" ||
     reason === "bio is over eighty words" ||
     reason === "contains a numeric claim" ||
-    reason === "mentions app or filing context"
+    reason === "mentions app or filing context" ||
+    reason === "does not mention a public role" ||
+    reason === "uses a current-tense office claim"
   );
 }
 
@@ -517,6 +529,10 @@ function mentionsKnownName(text: string, profile: ProfileInput): boolean {
 
 function mentionsPublicRole(text: string): boolean {
   return /\b(governor|lieutenant governor|attorney general|representative|senator|mayor|council|commissioner|judge|legislator|lawmaker|candidate|officeholder|public official|politician)\b/i.test(text);
+}
+
+function currentOfficeClaim(text: string): boolean {
+  return /\b(currently serves|serves as|serving as|serves in|serves on|represents constituents|oversees|leads statewide governance|is the (?:governor|lieutenant governor|attorney general|secretary of state|comptroller|land commissioner|mayor)|is a (?:state senator|state representative|railroad commissioner|justice of the supreme court))\b/i.test(text);
 }
 
 function nameTokenSets(profile: ProfileInput): string[][] {

@@ -5,6 +5,8 @@ import { listAllProfileSlugs } from "@/lib/profiles/registry";
 
 type Params = { slug: string };
 
+export const dynamic = "force-dynamic";
+
 export function generateStaticParams(): Params[] {
   return listAllProfileSlugs().map((slug) => ({ slug }));
 }
